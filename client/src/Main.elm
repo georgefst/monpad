@@ -106,13 +106,13 @@ viewMain model =
             ]
             []
         , div
-            [ Attr.class "root"
-            , Attr.style "display" "flex"
+            [ Attr.style "display" "flex"
             , Attr.style "width" "100%"
             , Attr.style "align-items" "center"
             , Attr.style "justify-content" "space-evenly"
             , Attr.style "width" "100%"
             , Attr.style "height" "100vh"
+            , Attr.style "background-color" "#a1d5f7"
             ]
             [ viewLeft model, viewRight model ]
         ]

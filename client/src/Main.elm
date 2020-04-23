@@ -173,7 +173,7 @@ viewRight _ =
         rad =
             70
 
-        circum =
+        diameter =
             2 * rad
     in
     List.map
@@ -185,7 +185,7 @@ viewRight _ =
                     )
                 |> C.on "pointerdown" (JD.succeed <| Update <| ButtonDown c)
                 |> C.on "pointerup" (JD.succeed <| Update <| ButtonUp c)
-                |> shift ( x * circum, y * circum )
+                |> shift ( x * diameter, y * diameter )
         )
         buts
         |> group

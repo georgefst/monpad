@@ -112,7 +112,7 @@ viewMain model =
             , Attr.style "justify-content" "space-evenly"
             , Attr.style "width" "100%"
             , Attr.style "height" "100vh"
-            , Attr.style "background-color" "#a1d5f7"
+            , Attr.style "background-color" "#cee7f7"
             ]
             [ viewLeft model, viewRight model ]
         ]

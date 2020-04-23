@@ -12,3 +12,7 @@ rSmall : Float
 rSmall = 60
 rBig : Float
 rBig = 175
+
+-- button radius
+rButton : Float
+rButton = 70

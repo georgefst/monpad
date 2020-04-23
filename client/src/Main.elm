@@ -170,15 +170,12 @@ viewRight _ =
             , ( ( 1, -1 ), Green )
             ]
 
-        rad =
-            70
-
         diameter =
-            2 * rad
+            2 * rButton
     in
     List.map
         (\( ( x, y ), c ) ->
-            circle rad
+            circle rButton
                 |> styled
                     ( uniform <| buttonCol c
                     , solid thick (uniform Color.black)

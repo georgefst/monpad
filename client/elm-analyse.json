@@ -1,0 +1,10 @@
+{
+    "checks": {
+        "ExposeAll": false,
+        "ImportAll": false,
+        "TriggerWords": false,
+        "UnusedImport": false,
+        "UnusedImportAlias": false,
+        "UnusedImportedVariable": false
+    }
+}

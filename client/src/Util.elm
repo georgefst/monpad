@@ -1,5 +1,6 @@
 module Util exposing (..)
 
+import Color
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
@@ -33,3 +34,17 @@ decodeVec2 =
     Json.Decode.succeed Vec2.vec2
         |> Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.float)
         |> Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)
+
+
+darkColor : Color.Color -> Color.Color
+darkColor c =
+    let
+        { red, green, blue, alpha } =
+            Color.toRgba c
+    in
+    Color.fromRgba
+        { red = red / 2
+        , green = green / 2
+        , blue = blue / 2
+        , alpha = alpha / 2
+        }

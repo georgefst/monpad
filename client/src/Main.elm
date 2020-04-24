@@ -3,7 +3,7 @@ module Main exposing (main)
 import Auto.Button exposing (..)
 import Auto.Endpoints exposing (..)
 import Auto.Update exposing (..)
-import Basics.Extra exposing (uncurry)
+import Basics.Extra exposing (flip, uncurry)
 import Browser exposing (..)
 import Collage exposing (..)
 import Collage.Events as C
@@ -24,6 +24,7 @@ import Maybe exposing (withDefault)
 import String exposing (words)
 import Tuple exposing (first, mapSecond)
 import Util exposing (..)
+import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
 
 
 main : Program () Model Msg
@@ -161,7 +162,7 @@ viewLeft model =
 
 
 viewRight : MainModel -> Html Msg
-viewRight _ =
+viewRight model =
     let
         buts =
             [ ( ( 0, 0 ), Blue )
@@ -172,16 +173,23 @@ viewRight _ =
 
         diameter =
             2 * rButton
+
+        buttonCol1 b =
+            if memberListSet b model.pressed then
+                buttonCol b |> darkColor
+
+            else
+                buttonCol b
     in
     List.map
         (\( ( x, y ), c ) ->
             circle rButton
                 |> styled
-                    ( uniform <| buttonCol c
+                    ( uniform <| buttonCol1 c
                     , solid thick (uniform Color.black)
                     )
                 |> C.on "pointerdown" (JD.succeed <| Update <| ButtonDown c)
-                |> C.on "pointerup" (JD.succeed <| Update <| ButtonUp c)
+                |> C.on "pointerout" (JD.succeed <| Update <| ButtonUp c)
                 |> shift ( x * diameter, y * diameter )
         )
         buts
@@ -218,6 +226,7 @@ type Model
 type alias MainModel =
     { username : String
     , stickPos : Vec2
+    , pressed : ListSet Button
     }
 
 
@@ -246,6 +255,7 @@ initSimple u _ =
     ( MainState
         { username = u
         , stickPos = vec2 0 0
+        , pressed = emptyListSet
         }
     , Cmd.none
     )
@@ -298,6 +308,7 @@ updateInit msg model =
                     MainState
                         { username = u
                         , stickPos = vec2 0 0
+                        , pressed = emptyListSet
                         }
 
         _ ->
@@ -317,11 +328,11 @@ updateMain msg model =
             let
                 model1 =
                     case u of
-                        ButtonUp _ ->
-                            model
+                        ButtonUp b ->
+                            { model | pressed = removeListSet b <| model.pressed }
 
-                        ButtonDown _ ->
-                            model
+                        ButtonDown b ->
+                            { model | pressed = addListSet b <| model.pressed }
 
                         Stick p ->
                             { model | stickPos = p }

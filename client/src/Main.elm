@@ -152,6 +152,7 @@ viewLeft model =
             circle rBack
                 |> filled (uniform <| Color.hsla 0 0 0 0)
                 |> C.on "pointermove" (JD.map getOffset Pointer.eventDecoder)
+                |> C.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
 
         -- used to extrude envelope to cover everywhere 'small' might go
         full =

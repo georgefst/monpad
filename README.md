@@ -30,4 +30,4 @@ Advanced
 
 It is worth familiarising yourself with both build tools, [here](https://www.haskell.org/cabal/users-guide/nix-local-build-overview.html) and [here](https://guide.elm-lang.org/install/elm.html).
 
-For building a standalone executable and HTML file, you may want commands such as `cabal v2-install` and `elm make src/Main.elm --optimize --output dist/main.html`, respectively.
+For building a standalone executable and HTML file, you may want commands such as `cabal v2-install --installdir $HOME/bin --install-method copy --overwrite-policy always` and `elm make src/Main.elm --optimize --output dist/main.html`, respectively.

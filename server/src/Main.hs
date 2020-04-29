@@ -81,8 +81,8 @@ app = serve (Proxy @API) server
 main :: IO ()
 main = do
     putStrLn $ "Running server on port " <> show port
-    run 8001 $ myCors app
-    where port = 8001 :: Port
+    run port $ myCors app
+    where port = 8001
 
 -- from https://github.com/haskell-servant/servant-swagger/issues/45
 -- TODO understand this more fully

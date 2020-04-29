@@ -21,7 +21,7 @@ Note that if your version of `cabal` is at least `3.0` you can just use `cabal u
 Client
 ------
 
-Open a terminal in the `client` directory. Run `elm reactor`. In a web browser, navigate to the address shown in the terminal (probably `http://localhost:8000`)
+Open a terminal in the `client` directory. Run `elm reactor`. In a web browser, navigate to the address shown in the terminal (probably `http://localhost:8000`).
 
 To access from an external device (eg. a phone, so that the controls actually work properly), you'll need to use your IP address in place of `localhost`. You will also need to update the value of `urlBase` in `src/Config.elm` to match (don't change the port!), so that the client knows where to find the server. Note that if you are using `elm reactor`, you don't need to do anything to propagate changes to the code - just refresh the web page.
 

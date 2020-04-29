@@ -82,7 +82,7 @@ main :: IO ()
 main = do
     putStrLn $ "Running server on port " <> show port
     run 8001 $ myCors app
-    where port = 8001
+    where port = 8001 :: Port
 
 -- from https://github.com/haskell-servant/servant-swagger/issues/45
 -- TODO understand this more fully

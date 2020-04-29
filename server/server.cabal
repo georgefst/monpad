@@ -1,11 +1,11 @@
 cabal-version:       2.4
-name:                web-gamepad-server
+name:                server
 version:             0.1.0.0
 license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
 
-executable server
+executable web-gamepad-server
   main-is:             Main.hs
   build-depends:       base >= 4.12 && < 5,
                        aeson                ^>= 1.4.7,

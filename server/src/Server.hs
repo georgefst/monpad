@@ -1,6 +1,16 @@
+{-# LANGUAGE NamedFieldPuns #-}
+-- {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-} --TODO move to separate module
 -- module Main (main,elm) where
-module Server where
+module Server (
+    elm,
+    server,
+    ServerConfig(..),
+    Message(..),
+    Update(..),
+    Button(..),
+    V2(..),
+    ) where
 
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -69,21 +79,20 @@ type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Verb 'POST
 -- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Verb 'PUT 200 '[PlainText] Text
 -- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Put '[PlainText] Text
 
-server :: Server API
-server i u = do
-    liftIO $ pPrint m
-    return NoContent
-    where m = Message i u
+--TODO newConnection, startup?
+data ServerConfig = ServerConfig
+    { onMessage :: Message -> IO ()
+    , port :: Port
+    }
 
--- turn the server into a WAI app
-app :: Application
-app = serve (Proxy @API) server
-
-main :: IO ()
-main = do
+server :: ServerConfig -> IO ()
+server ServerConfig{onMessage,port} = do
     putStrLn $ "Running server on port " <> show port
-    run port $ myCors app
-    where port = 8001
+    run port $ myCors $ serve (Proxy @API) handler
+  where
+    handler clientId message = do
+        liftIO $ onMessage Message{clientId,message}
+        return NoContent
 
 -- from https://github.com/haskell-servant/servant-swagger/issues/45
 -- TODO understand this more fully

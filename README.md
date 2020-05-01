@@ -14,7 +14,7 @@ Prerequisites:
 Server
 ------
 
-Open a terminal in the `server` directory. Run `cabal v2-update` to grab the latest package index from [hackage](https://hackage.haskell.org/), then `cabal v2-run`. This will download all dependencies, then build and run the server. The first time you run this, it could take a while.
+Open a terminal in the `server` directory. Run `cabal v2-update` to grab the latest package index from [hackage](https://hackage.haskell.org/), then `cabal v2-run web-gamepad-test`. This will download all dependencies, then build and run the server. The first time you run this, it could take a while.
 
 Note that if your version of `cabal` is at least `3.0` you can just use `cabal update`, `cabal run` etc. as the `v2` build system is now the default.
 

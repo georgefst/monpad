@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-} --TODO move to separate module
-module Main (main,elm) where
+-- module Main (main,elm) where
+module Server where
 
 import           Control.Monad
 import           Control.Monad.IO.Class

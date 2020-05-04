@@ -1,6 +1,4 @@
--- {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-} --TODO move to separate module
--- module Main (main,elm) where
 module Server (
     elm,
     server,
@@ -9,7 +7,7 @@ module Server (
     Update(..),
     Button(..),
     V2(..),
-    ) where
+) where
 
 import           Control.Monad
 import           Control.Monad.IO.Class

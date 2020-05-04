@@ -39,6 +39,7 @@ import           Linear
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.Cors
+import qualified Network.WebSockets as WS
 import           Servant
 import           Servant.API.Verbs
 import           Servant.To.Elm
@@ -77,19 +78,41 @@ type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Verb 'POST
 -- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Put '[PlainText] Text
 
 --TODO newConnection, startup?
-data ServerConfig = ServerConfig
-    { onMessage :: Message -> IO ()
+    -- expand to full-blown State
+data ServerConfig a = ServerConfig
+    { onMessage :: Message -> a -> IO ()
+    , onStart :: Text -> IO a --TODO newtype for ID
     , port :: Port
     }
 
-server :: ServerConfig -> IO ()
-server ServerConfig{onMessage,port} = do
+serverHttp :: ServerConfig () -> IO ()
+serverHttp ServerConfig{onMessage,port} = do
     putStrLn $ "Running server on port " <> show port
     run port $ myCors $ serve (Proxy @API) handler
   where
     handler clientId message = do
-        liftIO $ onMessage Message{clientId,message}
+        liftIO $ onMessage Message{clientId,message} ()
         return NoContent
+
+--TODO use warp rather than 'WS.runServer' (see jemima)
+--TODO reject when username is already in use
+server :: ServerConfig a -> IO ()
+server ServerConfig{onMessage,onStart,port} = do
+    putStrLn $ "Running server on port " <> show port
+    WS.runServer "127.0.0.1" port application
+  where
+    application pending = do
+        conn <- WS.acceptRequest pending
+        clientId <- WS.receiveData conn
+        T.putStrLn $ "New client: " <> clientId
+        s <- onStart clientId
+        WS.withPingThread conn 30 (return ()) $ forever $ do
+            msg <- Aeson.eitherDecode <$> WS.receiveData conn
+            case msg of
+                Left e -> pPrint e --TODO
+                Right message ->
+                    let m = Message{clientId,message}
+                    in  onMessage m s
 
 -- from https://github.com/haskell-servant/servant-swagger/issues/45
 -- TODO understand this more fully

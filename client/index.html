@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            background-color: rgb(207, 231, 247);
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+    <!-- TODO 0.7 is arbitrary - chose for George's phone -->
+    <meta name='viewport' content='width=device-width, initial-scale=0.7, maximum-scale=0.7, user-scalable=no' />
+    <title>Elm + Websockets - George</title>
+    <script type="text/javascript" src="dist/elm.js"></script>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+
+    var socket = new WebSocket('ws://localhost:8001');
+
+    var app = Elm.Main.init({
+        // node: document.getElementById('myapp')
+        //TODO what would enabling this do?
+    });
+
+    app.ports.sendId.subscribe(function (message) {
+        socket.send(message);
+    });
+    app.ports.sendUpdate.subscribe(function (message) {
+        socket.send(JSON.stringify(message));
+    });
+
+</script>
+
+</html>

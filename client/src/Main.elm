@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Auto.Button exposing (..)
 import Auto.Endpoints exposing (..)
@@ -25,6 +25,14 @@ import String exposing (words)
 import Tuple exposing (first, mapSecond)
 import Util exposing (..)
 import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
+
+
+port sendUpdate :
+    JE.Value
+    -> Cmd msg --TODO type - update only
+
+
+port sendId : String -> Cmd msg
 
 
 main : Program () Model Msg
@@ -99,24 +107,7 @@ viewInitial model =
 viewMain : MainModel -> Document Msg
 viewMain model =
     { title = "Controller"
-    , body =
-        [ Html.node "meta"
-            -- disables zooming, so that we can have sane multi-touch
-            [ Attr.attribute "name" "viewport" --TODO 0.7 is totally arbitrary - designed for George's phone
-            , Attr.attribute "content" "width=device-width, initial-scale=0.7, maximum-scale=0.7, user-scalable=0"
-            ]
-            []
-        , div
-            [ Attr.style "display" "flex"
-            , Attr.style "width" "100%"
-            , Attr.style "align-items" "center"
-            , Attr.style "justify-content" "space-evenly"
-            , Attr.style "width" "100%"
-            , Attr.style "height" "100vh"
-            , Attr.style "background-color" "#cee7f7"
-            ]
-            [ viewLeft model, viewRight model ]
-        ]
+    , body = [ viewLeft model, viewRight model ]
     }
 
 
@@ -258,26 +249,15 @@ initSimple u _ =
         , stickPos = vec2 0 0
         , pressed = emptyListSet
         }
-    , Cmd.none
+    , sendId u
+      --TODO repetition with 'updateInit'
     )
 
 
 type Msg
     = Update Update
-    | ServerResponse ServerResponse
     | EnteredUserName String
     | StartMain
-
-
-type alias ServerResponse =
-    Result
-        ( Http.Error
-        , Maybe
-            { metadata : Http.Metadata
-            , body : String
-            }
-        )
-        ()
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -287,44 +267,40 @@ update msg model =
             ( FailedState s, Cmd.none )
 
         InitialState m ->
-            ( updateInit msg m, Cmd.none )
+            updateInit msg m
 
         MainState m ->
             Tuple.mapFirst MainState <| updateMain msg m
 
 
-updateInit : Msg -> InitModel -> Model
+updateInit : Msg -> InitModel -> ( Model, Cmd Msg )
 updateInit msg model =
     case msg of
         EnteredUserName s ->
-            InitialState { model | username = s }
+            ( InitialState { model | username = s }, Cmd.none )
 
         --TODO validate (contact server, ask whether name is taken)
         StartMain ->
             case model.username of
                 "" ->
-                    InitialState { model | error = "please enter a username" }
+                    ( InitialState { model | error = "please enter a username" }, Cmd.none )
 
                 u ->
-                    MainState
+                    ( MainState
                         { username = u
                         , stickPos = vec2 0 0
                         , pressed = emptyListSet
                         }
+                    , sendId u
+                    )
 
         _ ->
-            FailedState "multi-page"
+            ( FailedState "multi-page", Cmd.none )
 
 
 updateMain : Msg -> MainModel -> ( MainModel, Cmd Msg )
 updateMain msg model =
     case msg of
-        ServerResponse _ ->
-            --TODO do something with this (option to display on side for now?)
-            ( model
-            , Cmd.none
-            )
-
         Update u ->
             let
                 model1 =
@@ -339,7 +315,8 @@ updateMain msg model =
                             { model | stickPos = p }
             in
             ( model1
-            , Cmd.map ServerResponse <| postUpdateById model.username u
+            , sendUpdate <| Auto.Update.encode u
+              --TODO type - update only
             )
 
         _ ->

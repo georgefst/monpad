@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 -- {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-} --TODO move to separate module
 -- module Main (main,elm) where

@@ -51,6 +51,7 @@ common common
                        GeneralizedNewtypeDeriving
                        LambdaCase
                        MultiParamTypeClasses
+                       NamedFieldPuns
                        OverloadedLabels
                        OverloadedStrings
                        PartialTypeSignatures

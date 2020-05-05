@@ -101,6 +101,9 @@ mainHtml Args{address,wsPort} username = doctypehtml_ $
         style_ mainCSS
             <>
         script_ [type_ jsScript] elmJS
+            <>
+        --TODO 0.7 is totally arbitrary (chosen to work with George's phone) - test other devices
+        meta_ [name_ "viewport", content_ "maximum-scale=0.7, user-scalable=no"]
     )
         <>
     body_ mempty

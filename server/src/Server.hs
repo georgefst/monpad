@@ -31,6 +31,7 @@ import           Data.List
 import           Data.IORef
 import qualified Generics.SOP as SOP
 import           GHC.Generics (Generic)
+import           GHC.TypeLits (KnownSymbol,symbolVal)
 import qualified Language.Elm.Definition as Elm
 import qualified Language.Elm.Expression as ElmExpr
 import qualified Language.Elm.Name as Elm
@@ -71,18 +72,22 @@ data Message = Message
     , message :: Update
     } deriving (Eq, Ord, Show)
 
-type API = "gamepad" :> QueryParam "username" Text :> Get '[HTML] (Html ())
+type Root = "gamepad"
+type UsernameParam = "username"
+type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
 --TODO add styling
 loginHtml :: Html ()
-loginHtml = doctypehtml_ $ form_ [action_ "gamepad"] $
-    label_ [for_ "name"] "Username:"
+loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
+    label_ [for_ nameBoxId] "Username:"
         <>
     br_ []
         <>
-    input_ [type_ "text", id_ "name", name_ "username"]
+    input_ [type_ "text", id_ nameBoxId, name_ $ textSym @UsernameParam]
         <>
     input_ [type_ "submit", value_ "Go!"]
+  where
+    nameBoxId = "name"
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
 -- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
@@ -91,14 +96,15 @@ mainHtml ServerConfig{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username 
     head_ (
         style_ mainCSS
             <>
-        script_ [type_ "text/javascript"] elmJS
+        script_ [type_ jsScript] elmJS
     )
         <>
     body_ mempty
         <>
-    script_ [type_ "text/javascript", makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] jsJS
+    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] jsJS
   where
     wsAddr = T.pack $ "ws://" <> wsAddress <> ":" <> show wsPort
+    jsScript = "text/javascript"
 
 --TODO we want more straightforward paths - maybe bring elm project inside the haskell one...
     -- also make sure the directory doesn't contain anything we don't want to serve
@@ -219,3 +225,9 @@ instance HasElmDecoder Value (V2 Double) where
     elmDecoder = ElmExpr.Global $ Elm.Qualified ["Util"] "decodeVec2"
 instance HasElmType (V2 Double) where
     elmType = Elm.Global $ Elm.Qualified ["Math","Vector2"] "Vec2"
+
+
+{- Util -}
+
+textSym :: forall a. KnownSymbol a => Text
+textSym = T.pack $ symbolVal $ Proxy @a

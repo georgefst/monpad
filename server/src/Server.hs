@@ -3,6 +3,7 @@ module Server (
     elm,
     server,
     ServerConfig(..),
+    defaultConfig,
     Message(..),
     Update(..),
     Button(..),
@@ -11,10 +12,12 @@ module Server (
 
 import           Control.Monad
 import           Control.Monad.IO.Class
+import           Control.Concurrent.Async
 import           Data.Aeson (ToJSON,FromJSON,Value)
 import qualified Data.Aeson as Aeson
 import           Data.Bool
 import qualified Data.ByteString as BS
+import           Data.Composition
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Maybe
 import           Data.Proxy
@@ -36,12 +39,15 @@ import qualified Language.Elm.Simplification as Elm
 import qualified Language.Elm.Type as Elm
 import           Language.Haskell.To.Elm
 import           Linear
+import           Lucid
+import           Lucid.Base (makeAttribute)
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.Cors
 import qualified Network.WebSockets as WS
 import           Servant
 import           Servant.API.Verbs
+import           Servant.HTML.Lucid
 import           Servant.To.Elm
 import           System.Directory
 import           System.FilePath
@@ -65,70 +71,110 @@ data Message = Message
     , message :: Update
     } deriving (Eq, Ord, Show)
 
---TODO various things to investigate here:
-    -- why can't we use eg. 'PutNoContent'? (https://github.com/folq/servant-to-elm/issues/2)
-    -- changing POST to PUT results in a CORS error
-    -- why does returing Text only work if we say it's 'JSON' rather than 'PlainText'?
---TODO HTTP is probably a lot more expensive than we really want anyway - use websockets? WebRTC? QUIC?
-    -- remember we have the advantage of communicating over LAN
-    -- JSON could be a bit expensive as well for that matter...
--- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> GetNoContent
-type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Verb 'POST 204 '[PlainText] NoContent
--- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Verb 'PUT 200 '[PlainText] Text
--- type API = "update" :> Capture "id" Text :> ReqBody '[JSON] Update :> Put '[PlainText] Text
+type API = "gamepad" :> QueryParam "username" Text :> Get '[HTML] (Html ())
 
---TODO newConnection, startup?
+--TODO add styling
+loginHtml :: Html ()
+loginHtml = doctypehtml_ $ form_ [action_ "gamepad"] $
+    label_ [for_ "name"] "Username:"
+        <>
+    br_ []
+        <>
+    input_ [type_ "text", id_ "name", name_ "username"]
+        <>
+    input_ [type_ "submit", value_ "Go!"]
+
+--TODO investigate performance - is it expensive to reassemble the HTML for a new username?
+-- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
+mainHtml :: ServerConfig a -> StaticData -> Text -> Html ()
+mainHtml ServerConfig{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username = doctypehtml_ $
+    head_ (
+        style_ mainCSS
+            <>
+        script_ [type_ "text/javascript"] elmJS
+    )
+        <>
+    body_ mempty
+        <>
+    script_ [type_ "text/javascript", makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] jsJS
+  where
+    wsAddr = T.pack $ "ws://" <> wsAddress <> ":" <> show wsPort
+
+--TODO we want more straightforward paths - maybe bring elm project inside the haskell one...
+    -- also make sure the directory doesn't contain anything we don't want to serve
+    -- actually it might be cool to use file-embed and keep to a single executable (removing 'StaticData' type)
+loadStaticData :: IO StaticData
+loadStaticData = do
+    elmJS <- T.readFile "../client/dist/elm.js"
+    jsJS <- T.readFile "../client/manual/js.js"
+    mainCSS <- T.readFile "../client/manual/main.css"
+    return StaticData{elmJS,jsJS,mainCSS}
+
+data StaticData = StaticData
+    { elmJS :: Text
+    , jsJS :: Text
+    , mainCSS :: Text
+    }
+
+--TODO newConnection, startup, end?
     -- expand to full-blown State
+--TODO stronger typing for addresses etc.
+--TODO use command line args for most of these
 data ServerConfig a = ServerConfig
     { onMessage :: Message -> a -> IO ()
     , onStart :: Text -> IO a --TODO newtype for ID
-    , port :: Port
+    , httpPort :: Port
+    , wsPort :: Port
+    , wsAddress :: String
+    , wsPingTime :: Int
     }
 
-serverHttp :: ServerConfig () -> IO ()
-serverHttp ServerConfig{onMessage,port} = do
-    putStrLn $ "Running server on port " <> show port
-    run port $ myCors $ serve (Proxy @API) handler
-  where
-    handler clientId message = do
-        liftIO $ onMessage Message{clientId,message} ()
-        return NoContent
+defaultConfig :: ServerConfig ()
+defaultConfig = ServerConfig
+    { onMessage = \m () -> pPrint m
+    , onStart = \clientId -> T.putStrLn $ "New client: " <> clientId
+    , httpPort = 8080
+    , wsPort = 8001
+    , wsAddress = "localhost"
+    , wsPingTime = 30
+    }
+
+--TODO security - currently we just trust the names
+server :: ServerConfig a -> IO ()
+server sc = httpServer sc `race_` websocketServer sc
+
+--TODO reject when username is already in use
+httpServer :: ServerConfig a -> IO ()
+httpServer sc@ServerConfig{httpPort} = do
+    sd <- loadStaticData
+    let handleMain = return . mainHtml sc sd
+        handleLogin = return loginHtml
+    run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
---TODO reject when username is already in use
-server :: ServerConfig a -> IO ()
-server ServerConfig{onMessage,onStart,port} = do
-    putStrLn $ "Running server on port " <> show port
-    WS.runServer "127.0.0.1" port application
+websocketServer :: ServerConfig a -> IO ()
+websocketServer ServerConfig{onMessage,onStart,wsPort,wsAddress,wsPingTime} =
+    WS.runServer wsAddress wsPort application
   where
+    --TODO JSON is unnecessarily expensive - use binary once API is stable?
     application pending = do
         conn <- WS.acceptRequest pending
-        clientId <- WS.receiveData conn
-        T.putStrLn $ "New client: " <> clientId
+        clientId <- WS.receiveData conn --TODO we send this back and forth rather a lot...
         s <- onStart clientId
-        WS.withPingThread conn 30 (return ()) $ forever $ do
+        WS.withPingThread conn wsPingTime (return ()) $ forever $ do
             msg <- Aeson.eitherDecode <$> WS.receiveData conn
             case msg of
-                Left e -> pPrint e --TODO
-                Right message ->
-                    let m = Message{clientId,message}
-                    in  onMessage m s
-
--- from https://github.com/haskell-servant/servant-swagger/issues/45
--- TODO understand this more fully
--- | Allow Content-Type header with values other then allowed by simpleCors.
-myCors :: Middleware
-myCors = cors $ const $ Just policy
-    where policy = simpleCorsResourcePolicy { corsRequestHeaders = ["Content-Type"] }
+                Left e -> pPrint e --TODO handle error
+                Right message -> onMessage Message{clientId,message} s
 
 
+--TODO move to separate module
 {- Elm generation -}
 
 elm :: FilePath -> IO ()
 elm src =
     let definitions = Elm.simplifyDefinition <$>
-            map (elmEndpointDefinition "Config.urlBase" ["Auto", "Endpoints"]) (elmEndpoints @API)
-                <> jsonDefinitions @Button <> jsonDefinitions @Update <> jsonDefinitions @(V2 Double)
+            jsonDefinitions @Button <> jsonDefinitions @Update <> jsonDefinitions @(V2 Double)
         modules = Elm.modules definitions
         auto = src </> "Auto"
     in do

@@ -1,7 +1,6 @@
 port module Main exposing (main)
 
 import Auto.Button exposing (..)
-import Auto.Endpoints exposing (..)
 import Auto.Update exposing (..)
 import Basics.Extra exposing (flip, uncurry)
 import Browser exposing (..)
@@ -10,7 +9,6 @@ import Collage.Events as C
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Color
-import Config exposing (..)
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events exposing (..)
@@ -32,20 +30,8 @@ port sendUpdate :
     -> Cmd msg --TODO type - update only
 
 
-port sendId : String -> Cmd msg
-
-
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
-    let
-        init =
-            case username of
-                Nothing ->
-                    initFull
-
-                Just s ->
-                    initSimple s
-    in
     document { init = init, update = update, view = view, subscriptions = always Sub.none }
 
 
@@ -55,63 +41,12 @@ main =
 
 view : Model -> Document Msg
 view model =
-    case model of
-        MainState m ->
-            viewMain m
-
-        FailedState s ->
-            viewFail s
-
-        InitialState m ->
-            viewInitial m
-
-
-viewFail : String -> Document Msg
-viewFail s =
-    { title = "Not good"
-    , body = [ text s ]
-    }
-
-
-
---TODO style better
-
-
-viewInitial : InitModel -> Document Msg
-viewInitial model =
-    { title = "Enter details"
-    , body =
-        [ table
-            []
-            [ div []
-                [ text "Username: "
-                , input
-                    [ onInput EnteredUserName
-                    ]
-                    []
-                ]
-            , div []
-                [ button
-                    [ onClick StartMain
-                    ]
-                    [ text "Go!"
-                    ]
-                ]
-            , div []
-                [ text model.error ]
-            ]
-        ]
-    }
-
-
-viewMain : MainModel -> Document Msg
-viewMain model =
-    { title = "Controller"
+    { title = "Gamepad"
     , body = [ viewLeft model, viewRight model ]
     }
 
 
-viewLeft : MainModel -> Html Msg
+viewLeft : Model -> Html Msg
 viewLeft model =
     let
         rBack =
@@ -153,7 +88,7 @@ viewLeft model =
         [ svg full ]
 
 
-viewRight : MainModel -> Html Msg
+viewRight : Model -> Html Msg
 viewRight model =
     let
         buts =
@@ -209,116 +144,68 @@ buttonCol b =
 {- Model -}
 
 
-type Model
-    = MainState MainModel
-    | InitialState InitModel
-    | FailedState String
-
-
-type alias MainModel =
+type alias Model =
     { username : String
     , stickPos : Vec2
     , pressed : ListSet Button
     }
 
 
-type alias InitModel =
-    { username : String
-    , error : String
-    }
+type Msg
+    = Update Update
 
 
-{-| no startup screen - use the given username
--}
-initFull : flags -> ( Model, Cmd Msg )
-initFull _ =
-    ( InitialState
-        { username = ""
-        , error = ""
-        }
+type alias Flags =
+    --TODO JSON?
+    String
+
+
+init : Flags -> ( Model, Cmd Msg )
+init username =
+    ( { username = username
+      , stickPos = vec2 0 0
+      , pressed = emptyListSet
+      }
     , Cmd.none
     )
 
 
-{-| no startup screen - use the given username
--}
-initSimple : String -> flags -> ( Model, Cmd Msg )
-initSimple u _ =
-    ( MainState
-        { username = u
-        , stickPos = vec2 0 0
-        , pressed = emptyListSet
-        }
-    , sendId u
-      --TODO repetition with 'updateInit'
-    )
-
-
-type Msg
-    = Update Update
-    | EnteredUserName String
-    | StartMain
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model of
-        FailedState s ->
-            ( FailedState s, Cmd.none )
-
-        InitialState m ->
-            updateInit msg m
-
-        MainState m ->
-            Tuple.mapFirst MainState <| updateMain msg m
-
-
-updateInit : Msg -> InitModel -> ( Model, Cmd Msg )
-updateInit msg model =
-    case msg of
-        EnteredUserName s ->
-            ( InitialState { model | username = s }, Cmd.none )
-
-        --TODO validate (contact server, ask whether name is taken)
-        StartMain ->
-            case model.username of
-                "" ->
-                    ( InitialState { model | error = "please enter a username" }, Cmd.none )
-
-                u ->
-                    ( MainState
-                        { username = u
-                        , stickPos = vec2 0 0
-                        , pressed = emptyListSet
-                        }
-                    , sendId u
-                    )
-
-        _ ->
-            ( FailedState "multi-page", Cmd.none )
-
-
-updateMain : Msg -> MainModel -> ( MainModel, Cmd Msg )
-updateMain msg model =
     case msg of
         Update u ->
             let
                 model1 =
                     case u of
                         ButtonUp b ->
-                            { model | pressed = removeListSet b <| model.pressed }
+                            { model | pressed = removeListSet b model.pressed }
 
                         ButtonDown b ->
-                            { model | pressed = addListSet b <| model.pressed }
+                            { model | pressed = addListSet b model.pressed }
 
                         Stick p ->
                             { model | stickPos = p }
             in
             ( model1
             , sendUpdate <| Auto.Update.encode u
-              --TODO type - update only
             )
 
-        _ ->
-            --TODO remove case when multi-page (use Browser.application ?)
-            ( model, Cmd.none )
+
+
+-- for analog stick
+--TODO make these three relative to screen size
+
+
+rSmall : Float
+rSmall =
+    60
+
+
+rBig : Float
+rBig =
+    175
+
+
+rButton : Float
+rButton =
+    70

@@ -4,6 +4,8 @@ module Server (
     server,
     ServerConfig(..),
     defaultConfig,
+    Args(..),
+    defaultArgs,
     Message(..),
     Update(..),
     Button(..),
@@ -94,7 +96,7 @@ loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
 -- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
 mainHtml :: Args -> Text -> Html ()
-mainHtml Args{wsAddress,wsPort} username = doctypehtml_ $
+mainHtml Args{address,wsPort} username = doctypehtml_ $
     head_ (
         style_ mainCSS
             <>
@@ -105,7 +107,7 @@ mainHtml Args{wsAddress,wsPort} username = doctypehtml_ $
         <>
     script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] jsJS
   where
-    wsAddr = T.pack $ "ws://" <> wsAddress <> ":" <> show wsPort
+    wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"
 
 --TODO newConnection, startup, end?
@@ -113,32 +115,38 @@ mainHtml Args{wsAddress,wsPort} username = doctypehtml_ $
 --TODO stronger typing for addresses etc.
 --TODO use command line args for most of these
 data ServerConfig a = ServerConfig
-    { onMessage :: Message -> a -> IO ()
-    , onStart :: Text -> IO a --TODO newtype for ID
+    { onStart :: Args -> IO ()
+    , onNewConnection :: Text -> IO a --TODO newtype for ID
+    , onMessage :: Message -> a -> IO ()
     , getArgs :: IO Args
     }
 
 --TODO manual parser to allow short options, defaults, help text etc.
--- defaultArgs :: Args
--- defaultArgs = Args
---     { httpPort = 8080
---     , wsPort = 8001
---     , wsAddress = "localhost"
---     , wsPingTime = 30
---     }
+defaultArgs :: Args
+defaultArgs = Args
+    { httpPort = 8000
+    , wsPort = 8001
+    , address = "localhost"
+    , wsPingTime = 30
+    }
 --TODO better name (perhaps this should be 'ServerConfig'...)
+-- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30
 data Args = Args
     { httpPort :: Port
     , wsPort :: Port
-    , wsAddress :: String
+    , address :: String --TODO only affects WS, not HTTP (why do we only need config for the former?)
     , wsPingTime :: Int
     }
     deriving (Show,Generic,ParseRecord)
 
 defaultConfig :: ServerConfig ()
 defaultConfig = ServerConfig
-    { onMessage = \m () -> pPrint m
-    , onStart = \clientId -> T.putStrLn $ "New client: " <> clientId
+    { onStart = \Args{httpPort,wsPort,address} -> do
+        T.putStrLn $ "Starting server at: " <> T.pack address
+        T.putStrLn $ "  HTTP server at port: " <> showT httpPort
+        T.putStrLn $ "  Websocket server at port: " <> showT wsPort
+    , onNewConnection = \clientId -> T.putStrLn $ "New client: " <> clientId
+    , onMessage = \m () -> pPrint m
     , getArgs = getRecord "Web gamepad"
     }
 
@@ -146,6 +154,7 @@ defaultConfig = ServerConfig
 server :: ServerConfig a -> IO ()
 server sc = do
     args <- getArgs sc
+    onStart sc args
     httpServer args `race_` websocketServer args sc
 
 --TODO reject when username is already in use
@@ -157,14 +166,14 @@ httpServer args@Args{httpPort} = do
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
 websocketServer :: Args -> ServerConfig a -> IO ()
-websocketServer Args{wsPort,wsAddress,wsPingTime} ServerConfig{onMessage,onStart} =
-    WS.runServer wsAddress wsPort application
+websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onMessage,onNewConnection} =
+    WS.runServer address wsPort application
   where
     --TODO JSON is unnecessarily expensive - use binary once API is stable?
     application pending = do
         conn <- WS.acceptRequest pending
         clientId <- WS.receiveData conn --TODO we send this back and forth rather a lot...
-        s <- onStart clientId
+        s <- onNewConnection clientId
         WS.withPingThread conn wsPingTime (return ()) $ forever $ do
             msg <- Aeson.eitherDecode <$> WS.receiveData conn
             case msg of
@@ -229,3 +238,6 @@ instance HasElmType (V2 Double) where
 
 textSym :: forall a. KnownSymbol a => Text
 textSym = T.pack $ symbolVal $ Proxy @a
+
+showT :: Show a => a -> Text
+showT = T.pack . show

@@ -7,6 +7,7 @@ maintainer:          georgefsthomas@gmail.com
 
 common common
   other-modules:       Server
+                       Embed
   hs-source-dirs:      src
   ghc-options:         -Wall
                        -Wno-unused-imports
@@ -19,6 +20,7 @@ common common
                        directory            ^>= 1.3.3,
                        elm-syntax           ^>= 0.3.0,
                        extra                ^>= 1.7.1,
+                       file-embed           ^>= 0.0.11.2,
                        filepath             ^>= 1.4.2,
                        generic-lens         ^>= 2.0.0,
                        generics-sop         ^>= 0.5.0,

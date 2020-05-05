@@ -29,6 +29,7 @@ import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Render.Text
 import           Data.List
 import           Data.IORef
+import           Embed
 import qualified Generics.SOP as SOP
 import           GHC.Generics (Generic)
 import           GHC.TypeLits (KnownSymbol,symbolVal)
@@ -92,8 +93,8 @@ loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
 -- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
-mainHtml :: Args -> StaticData -> Text -> Html ()
-mainHtml Args{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username = doctypehtml_ $
+mainHtml :: Args -> Text -> Html ()
+mainHtml Args{wsAddress,wsPort} username = doctypehtml_ $
     head_ (
         style_ mainCSS
             <>
@@ -106,22 +107,6 @@ mainHtml Args{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username = doctyp
   where
     wsAddr = T.pack $ "ws://" <> wsAddress <> ":" <> show wsPort
     jsScript = "text/javascript"
-
---TODO we want more straightforward paths - maybe bring elm project inside the haskell one...
-    -- also make sure the directory doesn't contain anything we don't want to serve
-    -- actually it might be cool to use file-embed and keep to a single executable (removing 'StaticData' type)
-loadStaticData :: IO StaticData
-loadStaticData = do
-    elmJS <- T.readFile "../client/dist/elm.js"
-    jsJS <- T.readFile "../client/manual/js.js"
-    mainCSS <- T.readFile "../client/manual/main.css"
-    return StaticData{elmJS,jsJS,mainCSS}
-
-data StaticData = StaticData
-    { elmJS :: Text
-    , jsJS :: Text
-    , mainCSS :: Text
-    }
 
 --TODO newConnection, startup, end?
     -- expand to full-blown State
@@ -166,8 +151,7 @@ server sc = do
 --TODO reject when username is already in use
 httpServer :: Args -> IO ()
 httpServer args@Args{httpPort} = do
-    sd <- loadStaticData
-    let handleMain = return . mainHtml args sd
+    let handleMain = return . mainHtml args
         handleLogin = return loginHtml
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 

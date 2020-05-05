@@ -46,6 +46,7 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.Cors
 import qualified Network.WebSockets as WS
+import           Options.Generic
 import           Servant
 import           Servant.API.Verbs
 import           Servant.HTML.Lucid
@@ -91,8 +92,8 @@ loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
 -- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
-mainHtml :: ServerConfig a -> StaticData -> Text -> Html ()
-mainHtml ServerConfig{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username = doctypehtml_ $
+mainHtml :: Args -> StaticData -> Text -> Html ()
+mainHtml Args{wsAddress,wsPort} StaticData{elmJS,jsJS,mainCSS} username = doctypehtml_ $
     head_ (
         style_ mainCSS
             <>
@@ -129,37 +130,50 @@ data StaticData = StaticData
 data ServerConfig a = ServerConfig
     { onMessage :: Message -> a -> IO ()
     , onStart :: Text -> IO a --TODO newtype for ID
-    , httpPort :: Port
+    , getArgs :: IO Args
+    }
+
+--TODO manual parser to allow short options, defaults, help text etc.
+-- defaultArgs :: Args
+-- defaultArgs = Args
+--     { httpPort = 8080
+--     , wsPort = 8001
+--     , wsAddress = "localhost"
+--     , wsPingTime = 30
+--     }
+--TODO better name (perhaps this should be 'ServerConfig'...)
+data Args = Args
+    { httpPort :: Port
     , wsPort :: Port
     , wsAddress :: String
     , wsPingTime :: Int
     }
+    deriving (Show,Generic,ParseRecord)
 
 defaultConfig :: ServerConfig ()
 defaultConfig = ServerConfig
     { onMessage = \m () -> pPrint m
     , onStart = \clientId -> T.putStrLn $ "New client: " <> clientId
-    , httpPort = 8080
-    , wsPort = 8001
-    , wsAddress = "localhost"
-    , wsPingTime = 30
+    , getArgs = getRecord "Web gamepad"
     }
 
 --TODO security - currently we just trust the names
 server :: ServerConfig a -> IO ()
-server sc = httpServer sc `race_` websocketServer sc
+server sc = do
+    args <- getArgs sc
+    httpServer args `race_` websocketServer args sc
 
 --TODO reject when username is already in use
-httpServer :: ServerConfig a -> IO ()
-httpServer sc@ServerConfig{httpPort} = do
+httpServer :: Args -> IO ()
+httpServer args@Args{httpPort} = do
     sd <- loadStaticData
-    let handleMain = return . mainHtml sc sd
+    let handleMain = return . mainHtml args sd
         handleLogin = return loginHtml
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
-websocketServer :: ServerConfig a -> IO ()
-websocketServer ServerConfig{onMessage,onStart,wsPort,wsAddress,wsPingTime} =
+websocketServer :: Args -> ServerConfig a -> IO ()
+websocketServer Args{wsPort,wsAddress,wsPingTime} ServerConfig{onMessage,onStart} =
     WS.runServer wsAddress wsPort application
   where
     --TODO JSON is unnecessarily expensive - use binary once API is stable?

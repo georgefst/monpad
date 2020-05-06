@@ -41,9 +41,9 @@ elmJS = unsafePerformIO $ readAbs (".." </> "elm" </> "build", "elm.js")
 jsJS = unsafePerformIO $ readAbs (".." </> "src-other", "main.js")
 
 readAbs :: (FilePath,FilePath) -> IO Text
-readAbs (p,f) = do
+readAbs (path,file) = do
     interactive <- (== "<interactive>") <$> getProgName --TODO filthy...
-    exePath <- if interactive then return p else takeDirectory <$> getExecutablePath
-    T.readFile $ exePath </> f
+    path' <- if interactive then return path else takeDirectory <$> getExecutablePath
+    T.readFile $ path' </> file
 
 #endif

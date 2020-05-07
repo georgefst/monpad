@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-} --TODO move to separate module
-module Server (
+module Lib (
     elm,
     server,
     ServerConfig(..),

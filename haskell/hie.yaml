@@ -1,7 +1,7 @@
 cradle:
   cabal:
-    - path: ./src/Linux.hs
-      component: "web-gamepad-linux"
+    - path: ./src/lib
+      component: "web-gamepad"
 
-    - path: ./src
+    - path: ./src/test
       component: "web-gamepad-test"

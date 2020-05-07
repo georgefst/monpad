@@ -104,9 +104,9 @@ library
     CPP
 
 executable web-gamepad-test
-  main-is: Main.hs
   import:
     common
+  main-is: Main.hs
   hs-source-dirs:
     src/test
   build-depends:

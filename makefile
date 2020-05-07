@@ -9,12 +9,11 @@ ELM_SRC_FILES = $(shell find elm/src -type f -name '*')
 MANUAL_DIRS = $(shell find src-other -type d)
 MANUAL_FILES = $(shell find src-other -type f -name '*')
 
-dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/server.cabal
-	cd haskell && cabal clean #TODO incremental
+dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	cd haskell && cabal build web-gamepad-test --flags="full"
 	find haskell/dist-newstyle -name 'web-gamepad-test' -type f -exec cp {} dist \;
 
-dist/debug/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/server.cabal
+dist/debug/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	cp elm/build/* dist/debug/
 	cp src-other/* dist/debug/
 	cd haskell && cabal build web-gamepad-test

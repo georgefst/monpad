@@ -5,7 +5,9 @@ module Lib (
     ServerConfig(..),
     defaultConfig,
     Args(..),
+    defaultArgs,
     getCommandLineArgs,
+    argParser,
     Message(..),
     ClientID(..),
     Update(..),
@@ -53,7 +55,7 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.Cors
 import qualified Network.WebSockets as WS
-import           Options.Generic
+import           Options.Applicative
 import           Servant
 import           Servant.API.Verbs
 import           Servant.HTML.Lucid
@@ -129,10 +131,6 @@ defaultArgs = Args
     , wsPingTime = 30
     }
 
---TODO export parser instead, so it can be composed
-getCommandLineArgs :: Text -> IO Args
-getCommandLineArgs = getRecord
-
 --TODO better name (perhaps this should be 'ServerConfig'...)
 --TODO stronger typing for addresses etc.
 -- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30
@@ -142,7 +140,44 @@ data Args = Args
     , address :: String --TODO only affects WS, not HTTP (why do we only need config for the former?)
     , wsPingTime :: Int
     }
-    deriving (Show,Generic,ParseRecord)
+    deriving Show
+
+getCommandLineArgs :: IO Args
+getCommandLineArgs = execParser opts
+  where
+    opts = info (helper <*> argParser) (fullDesc <> header "Web gamepad")
+
+argParser :: Parser Args
+argParser = Args
+    <$> option auto
+        (  long "http-port"
+        <> short 'p'
+        <> metavar "PORT"
+        <> value httpPort
+        <> showDefault
+        <> help "Port for the HTTP server" )
+    <*> option auto
+        (  long "ws-port"
+        <> short 'w'
+        <> metavar "PORT"
+        <> value wsPort
+        <> showDefault
+        <> help "Port for the websocket server" )
+    <*> strOption
+        (  long "address"
+        <> short 'a'
+        <> metavar "ADDRESS"
+        <> value address
+        <> showDefault
+        <> help "Address for the HTTP server" )
+    <*> option auto
+        (  long "ws-ping-time"
+        <> help "Interval (in seconds) between pings to each websocket"
+        <> value wsPingTime
+        <> showDefault
+        <> metavar "INT" )
+  where
+    Args{httpPort,wsPort,address,wsPingTime} = defaultArgs
 
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s = ServerConfig

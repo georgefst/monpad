@@ -85,6 +85,7 @@ library
     microlens ^>= 0.4.11,
     monad-loops ^>= 0.4.3,
     mtl ^>= 2.2.2,
+    optparse-applicative ^>= 0.15.1.0,
     pretty-simple ^>= 3.2.2,
     prettyprinter ^>= 1.6.1,
     servant ^>= 0.17,
@@ -99,8 +100,6 @@ library
     wai-extra ^>= 3.0.29,
     warp ^>= 3.3.9,
     websockets ^>= 0.12.7,
-    optparse-generic,
-    --TODO remove - use manual parser
   other-extensions:
     CPP
 

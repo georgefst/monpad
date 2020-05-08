@@ -9,7 +9,7 @@ ELM_SRC_FILES = $(shell find elm/src -type f -name '*')
 MANUAL_DIRS = $(shell find src-other -type d)
 MANUAL_FILES = $(shell find src-other -type f -name '*')
 
-dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
+dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_DIRS) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	cd haskell && cabal clean #TODO incremental
 	cd haskell && cabal build web-gamepad-test --flags="release"
 	find haskell/dist-newstyle -name 'web-gamepad-test' -type f -exec cp {} dist \;
@@ -17,7 +17,7 @@ dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILE
 # just an alias
 debug: dist/debug/web-gamepad-test
 
-dist/debug/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_FILES) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
+dist/debug/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_DIRS) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	#TODO separate targets so no copy when no change
 	cp elm/build/* dist/debug/
 	cp src-other/* dist/debug/

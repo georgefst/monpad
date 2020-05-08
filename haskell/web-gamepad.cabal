@@ -5,7 +5,7 @@ license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
 
-flag full
+flag release
   Description: Distributable build. Optimise, embed assets etc.
   Default: False
   Manual: True
@@ -53,14 +53,14 @@ library
     Embed
   hs-source-dirs:
     src/lib
-  if flag(full)
+  if flag(release)
     other-extensions:
       TemplateHaskell
     --TODO does -O3 do anything?
     ghc-options:
       -O3
     cpp-options:
-      -DFULL
+      -DRELEASE
     build-depends:
       file-embed ^>= 0.0.11.2,
       template-haskell ^>= { 2.14, 2.15 },

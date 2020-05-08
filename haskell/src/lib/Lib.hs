@@ -166,11 +166,8 @@ data ServerConfig e s = ServerConfig
 
 defaultConfig :: ServerConfig () ()
 defaultConfig = ServerConfig
-    { onStart = \Args{httpPort,wsPort,address} -> T.putStr $ T.unlines
-        [ "Starting server at: " <> T.pack address
-        , "  HTTP server at port: " <> showT httpPort
-        , "  Websocket server at port: " <> showT wsPort
-        ]
+    { onStart = \Args{httpPort,address} -> T.putStrLn $
+        "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> textSym @Root
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
     , onEnd = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i

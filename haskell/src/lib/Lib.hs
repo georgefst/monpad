@@ -182,6 +182,8 @@ httpServer args@Args{httpPort} = do
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
 --TODO JSON is unnecessarily expensive - use binary once API is stable?
+--TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
+    -- we may actually wish to respond to different errors differently
 websocketServer :: Args -> ServerConfig e s -> IO ()
 websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onEnd} =
     WS.runServer address wsPort $ \pending -> do

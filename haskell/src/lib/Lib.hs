@@ -100,7 +100,6 @@ mainHtml Args{address,wsPort} username = doctypehtml_ $
     wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"
 
---TODO manual parser to allow short options, defaults, help text etc.
 defaultArgs :: Args
 defaultArgs = Args
     { httpPort = 8000
@@ -111,7 +110,6 @@ defaultArgs = Args
 
 --TODO better name (perhaps this should be 'ServerConfig'...)
 --TODO stronger typing for addresses etc.
--- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30
 data Args = Args
     { httpPort :: Port
     , wsPort :: Port

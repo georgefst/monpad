@@ -11,8 +11,6 @@ ws.onopen = function (event) {
 
     var app = Elm.Main.init({
         flags: username
-        // node: document.getElementById('myapp')
-        //TODO what would enabling this do?
     });
 
     app.ports.sendUpdate.subscribe(function (message) {

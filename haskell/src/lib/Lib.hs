@@ -188,9 +188,8 @@ websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onM
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn --TODO we send this back and forth rather a lot...
         bracket (onNewConnection clientId) (onEnd clientId . fst) $ \(e,s0) ->
-            WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s -> do
-                msg <- Aeson.eitherDecode <$> WS.receiveData conn
-                case msg of
+            WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
+                (Aeson.eitherDecode <$> WS.receiveData conn) >>= \case
                     Left err -> pPrint err >> return s --TODO handle error
                     Right message -> onMessage Message{clientId,message} e s
 

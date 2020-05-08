@@ -50,6 +50,8 @@ library
   exposed-modules:
     Lib
   other-modules:
+    Orphans.Aeson
+    Elm
     Embed
   hs-source-dirs:
     src/lib

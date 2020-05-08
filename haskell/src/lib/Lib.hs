@@ -171,12 +171,10 @@ httpServer args@Args{httpPort} = do
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
+--TODO JSON is unnecessarily expensive - use binary once API is stable?
 websocketServer :: Args -> ServerConfig e s -> IO ()
 websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onEnd} =
-    WS.runServer address wsPort application
-  where
-    --TODO JSON is unnecessarily expensive - use binary once API is stable?
-    application pending = do
+    WS.runServer address wsPort $ \pending -> do
         conn <- WS.acceptRequest pending
         clientId <- WS.receiveData conn --TODO we send this back and forth rather a lot...
         bracket (onNewConnection clientId) (onEnd clientId . fst) $ \(e,s0) ->

@@ -147,7 +147,7 @@ argParser = Args
         <> metavar "ADDRESS"
         <> value address
         <> showDefault
-        <> help "Address for the HTTP server" )
+        <> help "Address for the websocket server" )
     <*> option auto
         (  long "ws-ping-time"
         <> help "Interval (in seconds) between pings to each websocket"

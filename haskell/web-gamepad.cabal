@@ -4,6 +4,9 @@ version:             0.1.0.0
 license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
+extra-source-files:
+  rsc/**/*.css
+  rsc/**/*.js
 
 flag release
   Description: Distributable build. Optimise, embed assets etc.

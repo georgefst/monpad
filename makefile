@@ -6,26 +6,23 @@ HS_SRC_FILES = $(shell find haskell/src -type f -name '*')
 ELM_SRC_DIRS = $(shell find elm/src -type d)
 ELM_SRC_FILES = $(shell find elm/src -type f -name '*')
 
-MANUAL_DIRS = $(shell find src-other -type d)
-MANUAL_FILES = $(shell find src-other -type f -name '*')
+RSC_DIRS = $(shell find haskell/rsc -type d)
+RSC_FILES = $(shell find haskell/rsc -type f -name '*')
 
-dist/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_DIRS) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
+dist/web-gamepad-test: elm $(RSC_DIRS) $(RSC_FILES) $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	mkdir -p dist
-	cd haskell && cabal clean #TODO incremental
-	cd haskell && cabal build web-gamepad-test --flags="release"
-	find haskell/dist-newstyle -name 'web-gamepad-test' -type f -exec cp {} dist \;
+	cd haskell && cabal install web-gamepad-test --installdir ../dist --install-method copy --overwrite always --flags="release"
 
-# just an alias
-debug: dist/debug/web-gamepad-test
-
-dist/debug/web-gamepad-test: elm/build/elm.js src-other/ $(MANUAL_DIRS) $(MANUAL_FILES) haskell/src/ $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
+dist/debug/web-gamepad-test: elm $(RSC_DIRS) $(RSC_FILES) $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
 	mkdir -p dist/debug
-	#TODO separate targets so no copy when no change
-	cp elm/build/* dist/debug/
-	cp src-other/* dist/debug/
-	cd haskell && cabal build web-gamepad-test
-	find haskell/dist-newstyle -name 'web-gamepad-test' -type f -exec cp {} dist/debug \;
-	#TODO use 'install'?
+	cp -r haskell/rsc dist/debug
+	cd haskell && cabal install web-gamepad-test --installdir ../dist/debug --install-method copy --overwrite always
 
-elm/build/elm.js: elm/src/ $(ELM_SRC_DIRS) $(ELM_SRC_FILES) elm/elm.json
-	cd elm && elm make src/Main.elm --optimize --output build/elm.js
+haskell/rsc/dist/elm.js: $(ELM_SRC_DIRS) $(ELM_SRC_FILES) elm/elm.json
+	cd elm && elm make src/Main.elm --optimize --output ../haskell/rsc/dist/elm.js
+
+# just aliases
+debug: dist/debug/web-gamepad-test
+elm: haskell/rsc/dist/elm.js
+clean:
+	rm -rf haskell/rsc/dist

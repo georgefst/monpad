@@ -70,6 +70,8 @@ type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 --TODO add styling
 loginHtml :: Html ()
 loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
+    style_ mainCSS
+        <>
     label_ [for_ nameBoxId] "Username:"
         <>
     br_ []

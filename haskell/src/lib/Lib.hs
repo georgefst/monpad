@@ -12,7 +12,9 @@ module Lib (
     V2(..),
 ) where
 
+import           Control.Exception
 import           Control.Monad
+import           Control.Monad.Loops
 import           Control.Monad.IO.Class
 import           Control.Concurrent.Async
 import           Data.Aeson (ToJSON,FromJSON,Value)
@@ -113,17 +115,6 @@ mainHtml Args{address,wsPort} username = doctypehtml_ $
     wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"
 
---TODO newConnection, startup, end?
-    -- expand to full-blown State
---TODO stronger typing for addresses etc.
---TODO use command line args for most of these
-data ServerConfig a = ServerConfig
-    { onStart :: Args -> IO ()
-    , onNewConnection :: Text -> IO a --TODO newtype for ID
-    , onMessage :: Message -> a -> IO ()
-    , getArgs :: IO Args
-    }
-
 --TODO manual parser to allow short options, defaults, help text etc.
 defaultArgs :: Args
 defaultArgs = Args
@@ -133,6 +124,7 @@ defaultArgs = Args
     , wsPingTime = 30
     }
 --TODO better name (perhaps this should be 'ServerConfig'...)
+--TODO stronger typing for addresses etc.
 -- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30
 data Args = Args
     { httpPort :: Port
@@ -142,19 +134,29 @@ data Args = Args
     }
     deriving (Show,Generic,ParseRecord)
 
-defaultConfig :: ServerConfig ()
+-- | `e` is a fixed environment. 's' is an updateable state.
+data ServerConfig e s = ServerConfig
+    { onStart :: Args -> IO ()
+    , onNewConnection :: Text -> IO (e,s) --TODO newtype for ID
+    , onMessage :: Message -> e -> s -> IO s
+    , onEnd :: Text -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
+    , getArgs :: IO Args
+    }
+
+defaultConfig :: ServerConfig () ()
 defaultConfig = ServerConfig
     { onStart = \Args{httpPort,wsPort,address} -> do
         T.putStrLn $ "Starting server at: " <> T.pack address
         T.putStrLn $ "  HTTP server at port: " <> showT httpPort
         T.putStrLn $ "  Websocket server at port: " <> showT wsPort
-    , onNewConnection = \clientId -> T.putStrLn $ "New client: " <> clientId
-    , onMessage = \m () -> pPrint m
+    , onNewConnection = \clientId -> fmap ((),) $ T.putStrLn $ "New client: " <> clientId
+    , onMessage = \m () () -> pPrint m
+    , onEnd = \clientId () -> T.putStrLn $ "Client disconnected: " <> clientId
     , getArgs = getRecord "Web gamepad"
     }
 
 --TODO security - currently we just trust the names
-server :: ServerConfig a -> IO ()
+server :: ServerConfig e s -> IO ()
 server sc = do
     args <- getArgs sc
     onStart sc args
@@ -168,20 +170,20 @@ httpServer args@Args{httpPort} = do
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
-websocketServer :: Args -> ServerConfig a -> IO ()
-websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onMessage,onNewConnection} =
+websocketServer :: Args -> ServerConfig e s -> IO ()
+websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onEnd} =
     WS.runServer address wsPort application
   where
     --TODO JSON is unnecessarily expensive - use binary once API is stable?
     application pending = do
         conn <- WS.acceptRequest pending
         clientId <- WS.receiveData conn --TODO we send this back and forth rather a lot...
-        s <- onNewConnection clientId
-        WS.withPingThread conn wsPingTime (return ()) $ forever $ do
-            msg <- Aeson.eitherDecode <$> WS.receiveData conn
-            case msg of
-                Left e -> pPrint e --TODO handle error
-                Right message -> onMessage Message{clientId,message} s
+        bracket (onNewConnection clientId) (onEnd clientId . fst) $ \(e,s0) ->
+            WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s -> do
+                msg <- Aeson.eitherDecode <$> WS.receiveData conn
+                case msg of
+                    Left err -> pPrint err >> return s --TODO handle error
+                    Right message -> onMessage Message{clientId,message} e s
 
 
 --TODO move to separate module

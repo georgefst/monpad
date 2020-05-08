@@ -83,6 +83,7 @@ library
     linear ^>= 1.21,
     lucid ^>= 2.9.12,
     microlens ^>= 0.4.11,
+    monad-loops ^>= 0.4.3,
     mtl ^>= 2.2.2,
     pretty-simple ^>= 3.2.2,
     prettyprinter ^>= 1.6.1,

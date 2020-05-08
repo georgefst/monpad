@@ -7,6 +7,7 @@ module Lib (
     Args(..),
     getCommandLineArgs,
     Message(..),
+    ClientID(..),
     Update(..),
     Button(..),
     V2(..),
@@ -33,6 +34,7 @@ import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Render.Text
 import           Data.List
 import           Data.IORef
+import           Data.String (IsString)
 import           Embed
 import qualified Generics.SOP as SOP
 import           GHC.Generics (Generic)
@@ -60,6 +62,9 @@ import           System.Directory
 import           System.FilePath
 import           Text.Pretty.Simple
 
+newtype ClientID = ClientID Text
+    deriving newtype (Eq,Ord,Show,IsString)
+
 data Button
     = Blue
     | Yellow
@@ -74,7 +79,7 @@ data Update
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
 
 data Message = Message
-    { clientId :: Text
+    { clientId :: ClientID
     , message :: Update
     } deriving (Eq, Ord, Show)
 
@@ -142,9 +147,9 @@ data Args = Args
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s = ServerConfig
     { onStart :: Args -> IO ()
-    , onNewConnection :: Text -> IO (e,s) --TODO newtype for ID
+    , onNewConnection :: ClientID -> IO (e,s)
     , onMessage :: Message -> e -> s -> IO s
-    , onEnd :: Text -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
+    , onEnd :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
     , getArgs :: IO Args
     }
 
@@ -154,9 +159,9 @@ defaultConfig = ServerConfig
         T.putStrLn $ "Starting server at: " <> T.pack address
         T.putStrLn $ "  HTTP server at port: " <> showT httpPort
         T.putStrLn $ "  Websocket server at port: " <> showT wsPort
-    , onNewConnection = \clientId -> fmap ((),) $ T.putStrLn $ "New client: " <> clientId
+    , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
-    , onEnd = \clientId () -> T.putStrLn $ "Client disconnected: " <> clientId
+    , onEnd = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
     , getArgs = return defaultArgs
     }
 
@@ -180,7 +185,7 @@ websocketServer :: Args -> ServerConfig e s -> IO ()
 websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onEnd} =
     WS.runServer address wsPort $ \pending -> do
         conn <- WS.acceptRequest pending
-        clientId <- WS.receiveData conn --TODO we send this back and forth rather a lot...
+        clientId <- ClientID <$> WS.receiveData conn --TODO we send this back and forth rather a lot...
         bracket (onNewConnection clientId) (onEnd clientId . fst) $ \(e,s0) ->
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s -> do
                 msg <- Aeson.eitherDecode <$> WS.receiveData conn

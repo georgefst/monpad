@@ -5,7 +5,7 @@ module Lib (
     ServerConfig(..),
     defaultConfig,
     Args(..),
-    defaultArgs,
+    getCommandLineArgs,
     Message(..),
     Update(..),
     Button(..),
@@ -124,6 +124,10 @@ defaultArgs = Args
     , wsPingTime = 30
     }
 
+--TODO export parser instead, so it can be composed
+getCommandLineArgs :: Text -> IO Args
+getCommandLineArgs = getRecord
+
 --TODO better name (perhaps this should be 'ServerConfig'...)
 --TODO stronger typing for addresses etc.
 -- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30
@@ -153,7 +157,7 @@ defaultConfig = ServerConfig
     , onNewConnection = \clientId -> fmap ((),) $ T.putStrLn $ "New client: " <> clientId
     , onMessage = \m () () -> pPrint m
     , onEnd = \clientId () -> T.putStrLn $ "Client disconnected: " <> clientId
-    , getArgs = getRecord "Web gamepad"
+    , getArgs = return defaultArgs
     }
 
 --TODO security - currently we just trust the names

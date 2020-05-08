@@ -3,4 +3,4 @@ module Main where
 import Lib
 
 main :: IO ()
-main = server defaultConfig
+main = server defaultConfig{getArgs = getCommandLineArgs "Web gamepad test"}

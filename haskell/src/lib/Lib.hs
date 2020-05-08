@@ -123,6 +123,7 @@ defaultArgs = Args
     , address = "localhost"
     , wsPingTime = 30
     }
+
 --TODO better name (perhaps this should be 'ServerConfig'...)
 --TODO stronger typing for addresses etc.
 -- ./web-gamepad-test --httpPort 8000 --wsPort 8001 --address 192.168.0.18 --wsPingTime 30

@@ -84,8 +84,7 @@ viewLeft model =
         full =
             stack [ front, small |> shift (unVec2 <| Vec2.scale rBig model.stickPos), big ]
     in
-    div []
-        [ svg full ]
+    svgTouch full
 
 
 viewRight : Model -> Html Msg
@@ -121,7 +120,7 @@ viewRight model =
         )
         buts
         |> group
-        |> svg
+        |> svgTouch
 
 
 buttonCol : Button -> Color.Color

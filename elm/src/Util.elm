@@ -1,6 +1,10 @@
 module Util exposing (..)
 
+import Collage exposing (Collage)
+import Collage.Render exposing (svg)
 import Color
+import Html exposing (Html, div)
+import Html.Attributes as Attr
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
@@ -48,3 +52,12 @@ darkColor c =
         , blue = blue / 2
         , alpha = alpha / 2
         }
+
+
+{-| alternative to 'svg' which stops browser/OS from stealing touch events
+-}
+svgTouch : Collage msg -> Html msg
+svgTouch c =
+    --TODO use 'svgExplicit' instead?
+    div [ Attr.style "touch-action" "none" ]
+        [ svg c ]

@@ -72,7 +72,7 @@ loginHtml :: Html ()
 loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
     title_ "Gamepad: login"
         <>
-    style_ mainCSS
+    style_ (mainCSS ())
         <>
     label_ [for_ nameBoxId] "Username:"
         <>
@@ -88,11 +88,11 @@ loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
 -- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
 mainHtml :: Args -> Text -> Html ()
 mainHtml Args{address,wsPort} username = doctypehtml_ $
-    style_ mainCSS
+    style_ (mainCSS ())
         <>
-    script_ [type_ jsScript] elmJS
+    script_ [type_ jsScript] (elmJS ())
         <>
-    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] jsJS
+    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] (jsJS ())
   where
     wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"

@@ -42,11 +42,11 @@ main =
 view : Model -> Document Msg
 view model =
     { title = "Gamepad"
-    , body = [ viewLeft model, viewRight model ]
+    , body = [ svgTouch <| horizontal [ viewLeft model, spacer space space, viewRight model ] ]
     }
 
 
-viewLeft : Model -> Html Msg
+viewLeft : Model -> Collage Msg
 viewLeft model =
     let
         rBack =
@@ -75,19 +75,16 @@ viewLeft model =
 
         front =
             -- invisible - area in which touches are registered
+            -- used to extrude envelope to cover everywhere 'small' might go
             circle rBack
                 |> filled (uniform <| Color.hsla 0 0 0 0)
                 |> C.on "pointermove" (JD.map getOffset Pointer.eventDecoder)
                 |> C.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
-
-        -- used to extrude envelope to cover everywhere 'small' might go
-        full =
-            stack [ front, small |> shift (unVec2 <| Vec2.scale rBig model.stickPos), big ]
     in
-    svgTouch full
+    stack [ front, small |> shift (unVec2 <| Vec2.scale rBig model.stickPos), big ]
 
 
-viewRight : Model -> Html Msg
+viewRight : Model -> Collage Msg
 viewRight model =
     let
         buts =
@@ -120,7 +117,6 @@ viewRight model =
         )
         buts
         |> group
-        |> svgTouch
 
 
 buttonCol : Button -> Color.Color
@@ -208,3 +204,8 @@ rBig =
 rButton : Float
 rButton =
     70
+
+
+space : Float
+space =
+    20

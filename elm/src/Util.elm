@@ -1,9 +1,7 @@
 module Util exposing (..)
 
-import Collage exposing (Collage)
-import Collage.Render exposing (svg)
 import Color
-import Html exposing (Html, div)
+import Html
 import Html.Attributes as Attr
 import Json.Decode
 import Json.Decode.Pipeline

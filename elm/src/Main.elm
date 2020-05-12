@@ -2,25 +2,24 @@ port module Main exposing (main)
 
 import Auto.Button exposing (..)
 import Auto.Update exposing (..)
-import Basics.Extra exposing (flip, uncurry)
+import Basics.Extra exposing (..)
 import Browser exposing (..)
 import Collage exposing (..)
-import Collage.Events as C
+import Collage.Events as Collage
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svgExplicit)
-import Color
+import Color exposing (..)
 import Html exposing (..)
-import Html.Attributes as Attr
+import Html.Attributes exposing (style)
 import Html.Events exposing (..)
 import Html.Events.Extra.Pointer as Pointer
-import Http
 import Json.Decode as JD
 import Json.Encode as JE
-import List exposing (head)
+import List exposing (..)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
-import Maybe exposing (withDefault)
-import String exposing (words)
-import Tuple exposing (first, mapSecond)
+import Maybe exposing (..)
+import String exposing (..)
+import Tuple exposing (..)
 import Util exposing (..)
 import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
 
@@ -43,7 +42,7 @@ view : Model -> Document Msg
 view model =
     { title = "Gamepad"
     , body =
-        [ Collage.Render.svgExplicit
+        [ svgExplicit
             [ let
                 ( x, y ) =
                     sizes.viewBox
@@ -53,7 +52,7 @@ view model =
             --TODO it would be preferable to apply this to the subcomponents instead,
             -- so that we could still pan and zoom in the gaps
             -- https://github.com/timjs/elm-collage/issues/22
-            , Attr.style "touch-action" "none"
+            , style "touch-action" "none"
             ]
           <|
             center <|
@@ -81,18 +80,18 @@ viewLeft model =
 
         big =
             circle sizes.stickRange
-                |> filled (uniform Color.darkCharcoal)
+                |> filled (uniform darkCharcoal)
 
         small =
-            circle sizes.stick |> filled (uniform Color.lightPurple)
+            circle sizes.stick |> filled (uniform lightPurple)
 
         front =
             -- invisible - area in which touches are registered
             -- used to extrude envelope to cover everywhere 'small' might go
             circle rBack
-                |> filled (uniform <| Color.hsla 0 0 0 0)
-                |> C.on "pointermove" (JD.map (Update << Stick << getOffset) Pointer.eventDecoder)
-                |> C.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
+                |> filled (uniform <| hsla 0 0 0 0)
+                |> Collage.on "pointermove" (JD.map (Update << Stick << getOffset) Pointer.eventDecoder)
+                |> Collage.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
     in
     stack [ front, small |> shift (unVec2 <| Vec2.scale sizes.stickRange model.stickPos), big ]
 
@@ -122,30 +121,30 @@ viewRight model =
             circle sizes.button
                 |> styled
                     ( uniform <| buttonCol1 c
-                    , solid thick (uniform Color.black)
+                    , solid thick (uniform black)
                     )
-                |> C.on "pointerdown" (JD.succeed <| Update <| ButtonDown c)
-                |> C.on "pointerout" (JD.succeed <| Update <| ButtonUp c)
+                |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown c)
+                |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp c)
                 |> shift ( x * diameter, y * diameter )
         )
         buts
         |> group
 
 
-buttonCol : Button -> Color.Color
+buttonCol : Button -> Color
 buttonCol b =
     case b of
         Blue ->
-            Color.blue
+            blue
 
         Yellow ->
-            Color.yellow
+            yellow
 
         Red ->
-            Color.red
+            red
 
         Green ->
-            Color.green
+            green
 
 
 

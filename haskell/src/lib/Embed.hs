@@ -18,9 +18,11 @@ jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
 
 #else
 
---TODO AFAICT, there's no way to force an 'unsafePerformIO' to be run every time it's evaluated
-    -- this makes sure this file is always recompiled instead, which is kinda overkill
-{-# OPTIONS_GHC -fforce-recomp #-}
+-- useful unsafe hack to allow assets to be loaded dynamically
+-- the extra `()` is a tad awkward, but it works
+-- we DO NOT want this in a release build
+
+{-# OPTIONS_GHC -fno-full-laziness -fforce-recomp #-}
 
 module Embed where
 

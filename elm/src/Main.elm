@@ -60,11 +60,8 @@ viewLeft model =
 
                 length =
                     min rBig <| Vec2.length v0
-
-                v =
-                    Vec2.normalize v0 |> Vec2.scale (length / rBig)
             in
-            Update <| Stick v
+            Vec2.normalize v0 |> Vec2.scale (length / rBig)
 
         big =
             circle rBig
@@ -78,7 +75,7 @@ viewLeft model =
             -- used to extrude envelope to cover everywhere 'small' might go
             circle rBack
                 |> filled (uniform <| Color.hsla 0 0 0 0)
-                |> C.on "pointermove" (JD.map getOffset Pointer.eventDecoder)
+                |> C.on "pointermove" (JD.map (Update << Stick << getOffset) Pointer.eventDecoder)
                 |> C.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
     in
     stack [ front, small |> shift (unVec2 <| Vec2.scale rBig model.stickPos), big ]

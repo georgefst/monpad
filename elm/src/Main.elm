@@ -7,7 +7,7 @@ import Browser exposing (..)
 import Collage exposing (..)
 import Collage.Events as C
 import Collage.Layout exposing (..)
-import Collage.Render exposing (svg)
+import Collage.Render exposing (svgExplicit)
 import Color
 import Html exposing (..)
 import Html.Attributes as Attr
@@ -42,7 +42,19 @@ main =
 view : Model -> Document Msg
 view model =
     { title = "Gamepad"
-    , body = [ svgTouch <| horizontal [ viewLeft model, spacer space space, viewRight model ] ]
+    , body =
+        [ Collage.Render.svgExplicit
+            [ viewBox -(boxWidth / 2) -(boxHeight / 2) boxWidth boxHeight
+
+            --TODO it would be preferable to apply this to the subcomponents instead,
+            -- so that we could still pan and zoom in the gaps
+            -- https://github.com/timjs/elm-collage/issues/22
+            , Attr.style "touch-action" "none"
+            ]
+          <|
+            center <|
+                horizontal [ viewLeft model, spacer space 0, viewRight model ]
+        ]
     }
 
 
@@ -184,8 +196,18 @@ update msg model =
 
 
 
--- for analog stick
---TODO make these three relative to screen size
+--TODO separate module?
+--TODO increase sizes?
+
+
+boxWidth : Float
+boxWidth =
+    2000
+
+
+boxHeight : Float
+boxHeight =
+    1000
 
 
 rSmall : Float

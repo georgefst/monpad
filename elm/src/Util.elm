@@ -54,10 +54,6 @@ darkColor c =
         }
 
 
-{-| alternative to 'svg' which stops browser/OS from stealing touch events
--}
-svgTouch : Collage msg -> Html msg
-svgTouch c =
-    --TODO use 'svgExplicit' instead?
-    div [ Attr.style "touch-action" "none" ]
-        [ svg c ]
+viewBox : Float -> Float -> Float -> Float -> Html.Attribute msg
+viewBox x y w h =
+    Attr.attribute "viewBox" <| String.join " " <| List.map String.fromFloat [ x, y, w, h ]

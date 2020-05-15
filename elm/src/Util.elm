@@ -1,6 +1,7 @@
 module Util exposing (..)
 
 import Color
+import Color.Interpolate exposing (Space(..), interpolate)
 import Html
 import Html.Attributes as Attr
 import Json.Decode
@@ -40,16 +41,7 @@ decodeVec2 =
 
 darkColor : Color.Color -> Color.Color
 darkColor c =
-    let
-        { red, green, blue, alpha } =
-            Color.toRgba c
-    in
-    Color.fromRgba
-        { red = red / 2
-        , green = green / 2
-        , blue = blue / 2
-        , alpha = alpha / 2
-        }
+    interpolate RGB c Color.black 0.6
 
 
 viewBox : Float -> Float -> Float -> Float -> Html.Attribute msg

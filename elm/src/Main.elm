@@ -45,7 +45,7 @@ view model =
         [ svgExplicit
             [ let
                 ( x, y ) =
-                    sizes.viewBox
+                    ( sizes.viewBox.x, sizes.viewBox.y )
               in
               viewBox -(x / 2) -(y / 2) x y
 
@@ -56,13 +56,13 @@ view model =
             ]
           <|
             center <|
-                horizontal [ viewLeft model, spacer sizes.space 0, viewRight model ]
+                horizontal [ viewStick model, spacer sizes.space 0, viewColourButtons model ]
         ]
     }
 
 
-viewLeft : Model -> Collage Msg
-viewLeft model =
+viewStick : Model -> Collage Msg
+viewStick model =
     let
         rBack =
             sizes.stickRange + sizes.stick
@@ -96,8 +96,8 @@ viewLeft model =
     stack [ front, small |> shift (unVec2 <| Vec2.scale sizes.stickRange model.stickPos), big ]
 
 
-viewRight : Model -> Collage Msg
-viewRight model =
+viewColourButtons : Model -> Collage Msg
+viewColourButtons model =
     let
         buts =
             [ ( ( 0, 0 ), Blue )
@@ -108,31 +108,38 @@ viewRight model =
 
         diameter =
             2 * sizes.button
-
-        buttonCol1 b =
-            if memberListSet b model.pressed then
-                buttonCol b |> darkColor
-
-            else
-                buttonCol b
     in
     List.map
-        (\( ( x, y ), c ) ->
+        (\( ( x, y ), b ) ->
             circle sizes.button
-                |> styled
-                    ( uniform <| buttonCol1 c
-                    , solid thick (uniform black)
-                    )
-                |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown c)
-                |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp c)
+                |> viewButton model b
                 |> shift ( x * diameter, y * diameter )
         )
         buts
         |> group
 
 
-buttonCol : Button -> Color
-buttonCol b =
+viewButton : Model -> Button -> Shape -> Collage Msg
+viewButton model button shape =
+    let
+        col =
+            if memberListSet button model.pressed then
+                buttonColour button |> darkColor
+
+            else
+                buttonColour button
+    in
+    shape
+        |> styled
+            ( uniform col
+            , solid thick <| uniform black
+            )
+        |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown button)
+        |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp button)
+
+
+buttonColour : Button -> Color
+buttonColour b =
     case b of
         Blue ->
             blue
@@ -204,14 +211,14 @@ Line length or radius unless otherwise stated.
 -}
 sizes :
     --TODO 'Config' module?
-    { viewBox : ( Float, Float )
+    { viewBox : { x : Float, y : Float }
     , stick : Float
     , stickRange : Float
     , button : Float
     , space : Float
     }
 sizes =
-    { viewBox = ( 2000, 1000 )
+    { viewBox = { x = 2000, y = 1000 }
     , stick = 120
     , stickRange = 320
     , button = 120

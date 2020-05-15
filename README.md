@@ -15,6 +15,8 @@ If you haven't done so before, run `cabal update` to grab the latest package ind
 
 Run `make` to create an executable in the `dist` folder. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
 
+<!-- TODO readd 'advanced' section when development workflow has ossified -->
+
 Run
 ---
 
@@ -22,4 +24,10 @@ Run the resulting executable to start the server (you can pass the `-h` flag to 
 
 In a web browser, navigate to the address indicated in the terminal (eg. `http://localhost:8000/gamepad`).
 
-<!-- TODO readd 'advanced' section when development workflow has ossified -->
+Compatibility
+-------------
+
+Due to the use of some bleeding-edge features, at time of writing, the client only really works satisfactorily on Firefox Beta for Android:
+
+- The *pointer events* API is unreliable in Chrome (offsets are reported wrong), and in beta in Firefox.
+- Firefox does not currently give permission to switch to fullscreen on a change of rotation.

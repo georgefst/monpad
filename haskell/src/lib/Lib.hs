@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 module Lib (
     server,
     ServerConfig(..),
@@ -13,34 +14,34 @@ module Lib (
     V2(..),
 ) where
 
-import           Control.Exception
-import           Control.Monad
-import           Control.Monad.Loops
-import           Control.Concurrent.Async
-import           Data.Aeson (eitherDecode, ToJSON, FromJSON)
-import           Data.Composition
-import           Data.Maybe
-import           Data.Proxy
-import           Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import           Data.List
-import           Data.String (IsString)
-import           Embed
-import qualified Generics.SOP as SOP
-import           GHC.Generics (Generic)
-import           GHC.TypeLits (KnownSymbol, symbolVal)
-import           Linear
-import           Lucid
-import           Lucid.Base (makeAttribute)
-import           Network.Wai
-import           Network.Wai.Handler.Warp
-import qualified Network.WebSockets as WS
-import           Options.Applicative
-import           Orphans.Aeson
-import           Servant
-import           Servant.HTML.Lucid
-import           Text.Pretty.Simple
+import Control.Concurrent.Async
+import Control.Exception
+import Control.Monad
+import Control.Monad.Loops
+import Data.Aeson (eitherDecode, ToJSON, FromJSON)
+import Data.Composition
+import Data.List
+import Data.Maybe
+import Data.Proxy
+import Data.String (IsString)
+import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
+import Embed
+import Generics.SOP qualified as SOP
+import GHC.Generics (Generic)
+import GHC.TypeLits (KnownSymbol, symbolVal)
+import Linear
+import Lucid
+import Lucid.Base (makeAttribute)
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Network.WebSockets qualified as WS
+import Options.Applicative
+import Orphans.Aeson
+import Servant
+import Servant.HTML.Lucid
+import Text.Pretty.Simple
 
 newtype ClientID = ClientID Text
     deriving newtype (Eq,Ord,Show,IsString)

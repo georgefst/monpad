@@ -2,8 +2,8 @@ Prerequisites:
 --------------
 
 [Haskell](https://www.haskell.org/):
-- `cabal-install` (often just referred to as 'cabal') ≥ 3.0
-- `ghc` ≥ 8.6.5
+- `cabal-install` (often just referred to as 'cabal') ≥ 3.2
+- `ghc` ≥ 8.10.1
 
 [Elm](https://elm-lang.org/):
 - `elm` ≥ 0.19.1

@@ -10,21 +10,21 @@ module Elm (elm) where
 
 import Control.Monad (forM_)
 import Data.Aeson (Value)
+import Data.Aeson qualified as Aeson
+import Data.HashMap.Strict qualified as HashMap
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
+import Generics.SOP qualified as SOP
+import Language.Elm.Definition qualified as Elm
+import Language.Elm.Expression qualified as ElmExpr
+import Language.Elm.Name qualified as Elm
+import Language.Elm.Pretty qualified as Elm
+import Language.Elm.Simplification qualified as Elm
+import Language.Elm.Type qualified as Elm
 import Language.Haskell.To.Elm
 import Lib
-import qualified Data.Aeson as Aeson
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified Generics.SOP as SOP
-import qualified Language.Elm.Definition as Elm
-import qualified Language.Elm.Expression as ElmExpr
-import qualified Language.Elm.Name as Elm
-import qualified Language.Elm.Pretty as Elm
-import qualified Language.Elm.Simplification as Elm
-import qualified Language.Elm.Type as Elm
 import System.Directory
 import System.FilePath
 

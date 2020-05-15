@@ -27,7 +27,7 @@ jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
 module Embed where
 
 import Data.Text (Text)
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import System.Environment
 import System.FilePath
 import System.IO.Unsafe (unsafePerformIO)

@@ -52,7 +52,7 @@ library
   import:
     common
   exposed-modules:
-    Lib
+    WebGamepad
   other-modules:
     Orphans.Aeson
     Elm

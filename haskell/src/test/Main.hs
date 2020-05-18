@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import WebGamepad
 
 main :: IO ()
 main = server defaultConfig{getArgs = getCommandLineArgs}

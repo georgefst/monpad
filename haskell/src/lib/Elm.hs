@@ -24,7 +24,7 @@ import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
 import Language.Elm.Type qualified as Elm
 import Language.Haskell.To.Elm
-import Lib
+import WebGamepad
 import System.Directory
 import System.FilePath
 

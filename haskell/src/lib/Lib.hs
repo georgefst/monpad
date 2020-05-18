@@ -1,4 +1,3 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 module Lib (
     server,
     ServerConfig(..),

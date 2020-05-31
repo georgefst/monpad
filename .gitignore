@@ -2,3 +2,4 @@ build*/
 dist*/
 elm-stuff*/
 .ghc.environment.*
+cabal.project.local*

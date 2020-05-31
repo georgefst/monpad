@@ -6,7 +6,6 @@ module WebGamepad (
     defaultArgs,
     getCommandLineArgs,
     argParser,
-    Message(..),
     ClientID(..),
     Update(..),
     Button(..),
@@ -57,11 +56,6 @@ data Update
     | ButtonDown Button
     | Stick (V2 Double) -- always a vector within the unit circle
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
-
-data Message = Message
-    { clientId :: ClientID
-    , message :: Update
-    } deriving (Eq, Ord, Show)
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -156,8 +150,8 @@ argParser = Args
 data ServerConfig e s = ServerConfig
     { onStart :: Args -> IO ()
     , onNewConnection :: ClientID -> IO (e,s)
-    , onMessage :: Message -> e -> s -> IO s
-    , onEnd :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
+    , onMessage :: Update -> e -> s -> IO s
+    , onDroppedConnection :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
     , getArgs :: IO Args
     }
 
@@ -167,7 +161,7 @@ defaultConfig = ServerConfig
         "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> textSym @Root
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
-    , onEnd = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
+    , onDroppedConnection = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
     , getArgs = return defaultArgs
     }
 
@@ -190,15 +184,16 @@ httpServer args@Args{httpPort} = do
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
 websocketServer :: Args -> ServerConfig e s -> IO ()
-websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onEnd} =
+websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onDroppedConnection} =
     WS.runServer address wsPort $ \pending -> do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn --TODO we send this back and forth rather a lot...
-        bracket (onNewConnection clientId) (onEnd clientId . fst) $ \(e,s0) ->
+        bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
+            --TODO somehow errors aren't shown - e.g. in linux exe, 'toKey = undefined' fails silently
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
                 (eitherDecode <$> WS.receiveData conn) >>= \case
                     Left err -> pPrint err >> return s --TODO handle error
-                    Right message -> onMessage Message{clientId,message} e s
+                    Right upd -> onMessage upd e s
 
 
 {- Util -}

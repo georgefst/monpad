@@ -1,0 +1,6 @@
+source-repository-package
+  type: git
+  location: git://github.com/georgefst/evdev.git
+  subdir: evdev
+
+packages: .

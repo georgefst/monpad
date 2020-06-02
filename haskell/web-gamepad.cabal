@@ -68,9 +68,8 @@ library
   exposed-modules:
     WebGamepad
   other-modules:
-    Orphans.Aeson
-    Elm
     Embed
+    Orphans.V2
   hs-source-dirs:
     src/lib
   if flag(release)
@@ -107,6 +106,7 @@ library
     websockets ^>= 0.12.7,
   other-extensions:
     CPP
+    UndecidableInstances
 
 executable web-gamepad-test
   import:

@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module WebGamepad (
     server,
     ServerConfig(..),
@@ -10,6 +11,7 @@ module WebGamepad (
     Update(..),
     Button(..),
     V2(..),
+    elm,
 ) where
 
 import Control.Concurrent.Async
@@ -17,7 +19,9 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Loops
 import Data.Aeson (eitherDecode, ToJSON, FromJSON)
+import Data.Aeson qualified as J
 import Data.Composition
+import Data.HashMap.Strict qualified as HashMap
 import Data.List
 import Data.Maybe
 import Data.Proxy
@@ -25,10 +29,18 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
-import Embed
+import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
+import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Generics.SOP qualified as SOP
-import GHC.Generics (Generic)
-import GHC.TypeLits (KnownSymbol, symbolVal)
+import GHC.Generics (Generic, Rep)
+import GHC.TypeLits (KnownSymbol)
+import GHC.TypeLits (symbolVal)
+import Language.Elm.Definition qualified as Elm
+import Language.Elm.Name qualified as Elm
+import Language.Elm.Pretty qualified as Elm
+import Language.Elm.Simplification qualified as Elm
+import Language.Haskell.To.Elm (HasElmEncoder(..), HasElmType(..), deriveElmJSONEncoder, deriveElmTypeDefinition)
+import Language.Haskell.To.Elm qualified as Elm
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
@@ -36,10 +48,15 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
 import Options.Applicative
-import Orphans.Aeson
 import Servant
 import Servant.HTML.Lucid
+import System.Directory
+import System.FilePath
 import Text.Pretty.Simple
+import Type.Reflection (Typeable, typeRep)
+
+import Embed
+import Orphans.V2 ()
 
 newtype ClientID = ClientID Text
     deriving newtype (Eq,Ord,Show,IsString)
@@ -50,12 +67,14 @@ data Button
     | Red
     | Green
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
+    deriving (HasElmType, HasElmEncoder J.Value) via ElmType Button
 
 data Update
     = ButtonUp Button
     | ButtonDown Button
     | Stick (V2 Double) -- always a vector within the unit circle
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
+    deriving (HasElmType, HasElmEncoder J.Value) via ElmType Update
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -63,7 +82,7 @@ type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
 --TODO add styling
 loginHtml :: Html ()
-loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
+loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     title_ "Gamepad: login"
         <>
     style_ (mainCSS ())
@@ -72,7 +91,7 @@ loginHtml = doctypehtml_ $ form_ [action_ $ textSym @Root] $
         <>
     br_ []
         <>
-    input_ [type_ "text", id_ nameBoxId, name_ $ textSym @UsernameParam]
+    input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
         <>
     input_ [type_ "submit", value_ "Go!"]
   where
@@ -158,7 +177,7 @@ data ServerConfig e s = ServerConfig
 defaultConfig :: ServerConfig () ()
 defaultConfig = ServerConfig
     { onStart = \Args{httpPort,address} -> T.putStrLn $
-        "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> textSym @Root
+        "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> symbolValT @Root
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
     , onDroppedConnection = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
@@ -196,10 +215,67 @@ websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onM
                     Right upd -> onMessage upd e s
 
 
+{- Elm -}
+
+{- | Auto generate Elm datatypes, encoders/decoders etc.
+It's best to open this file in GHCI and run 'elm'.
+We could make it externally executable and fully integrate with the build process, but there wouldn't be much point
+since the kinds of changes we're likely to make which would require re-running this,
+are likely to require manual changes to Elm code anyway.
+e.g. if we added an extra case to 'Update', it would need to be handled in various Elm functions.
+-}
+elm :: FilePath -> IO ()
+elm src =
+    let definitions = Elm.simplifyDefinition <$>
+            jsonDefinitions' @Button <> jsonDefinitions' @Update <> jsonDefinitions' @(V2 Double)
+        modules = Elm.modules definitions
+        autoFull = src </> T.unpack elmAutoDir
+    in do
+        createDirectoryIfMissing False autoFull
+        mapM_ (removeFile . (autoFull </>)) =<< listDirectory autoFull
+        forM_ (HashMap.toList modules) \(moduleName, contents) ->
+            T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
+                renderStrict $ layoutPretty defaultLayoutOptions contents
+
+-- | A type to derive via.
+newtype ElmType a = ElmType a
+instance (Generic a, J.GToJSON J.Zero (Rep a), Typeable a) => J.ToJSON (ElmType a) where
+    toJSON (ElmType a) = J.genericToJSON jsonOptions a
+instance (Generic a, J.GFromJSON J.Zero (Rep a), Typeable a) => J.FromJSON (ElmType a) where
+    parseJSON = fmap ElmType . J.genericParseJSON jsonOptions
+instance (SOP.HasDatatypeInfo a, SOP.All2 HasElmType (SOP.Code a), Typeable a) =>
+    HasElmType (ElmType a) where
+        elmDefinition =
+            Just $ deriveElmTypeDefinition @a elmOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] $ typeRepT @a
+instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmEncoder J.Value) (SOP.Code a), HasElmType (ElmType a), Typeable a) =>
+    HasElmEncoder J.Value (ElmType a) where
+        elmEncoderDefinition =
+            Just $ deriveElmJSONEncoder @a elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "encode"
+
+elmOptions :: Elm.Options
+elmOptions = Elm.defaultOptions
+
+jsonOptions :: J.Options
+jsonOptions = J.defaultOptions
+
+elmAutoDir :: Text
+elmAutoDir = "Auto"
+
+
 {- Util -}
 
-textSym :: forall a. KnownSymbol a => Text
-textSym = T.pack $ symbolVal $ Proxy @a
+symbolValT :: forall a. KnownSymbol a => Text
+symbolValT = T.pack $ symbolVal $ Proxy @a
 
 showT :: Show a => a -> Text
 showT = T.pack . show
+
+typeRepT :: forall a. Typeable a => Text
+typeRepT = showT $ typeRep @a
+
+-- | Like 'jsonDefinitions', but for types without decoders.
+jsonDefinitions' :: forall t. (HasElmEncoder J.Value t) => [Elm.Definition]
+jsonDefinitions' = catMaybes
+    [ elmDefinition @t
+    , elmEncoderDefinition @J.Value @t
+    ]

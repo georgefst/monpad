@@ -32,13 +32,6 @@ encodeVec2 v =
             Json.Encode.list identity [ Json.Encode.float x, Json.Encode.float y ]
 
 
-decodeVec2 : Json.Decode.Decoder Vec2.Vec2
-decodeVec2 =
-    Json.Decode.succeed Vec2.vec2
-        |> Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.float)
-        |> Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)
-
-
 darkColor : Color.Color -> Color.Color
 darkColor c =
     interpolate RGB c Color.black 0.6

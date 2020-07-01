@@ -1,3 +1,5 @@
+![](data/gamepad.png)
+
 Prerequisites:
 --------------
 

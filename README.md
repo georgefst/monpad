@@ -1,4 +1,4 @@
-![](data/gamepad.png)
+![](data/screenshot.png)
 
 Prerequisites:
 --------------

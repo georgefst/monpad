@@ -25,6 +25,7 @@ import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
 import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
+import Util.Prog exposing (..)
 
 
 port sendUpdate :
@@ -32,60 +33,15 @@ port sendUpdate :
     -> Cmd msg --TODO type - update only
 
 
-main : Program JD.Value FullModel Msg
+main : Program JD.Value (Result JD.Error Model) Msg
 main =
-    document { init = fullInit, update = fullUpdate, view = fullView, subscriptions = always Sub.none }
-
-
-
-{- Error handling -}
-
-
-type alias FullModel =
-    Result Error Model
-
-
-type Error
-    = FlagError JD.Error
-
-
-showError : Error -> String
-showError error =
-    case error of
-        FlagError e ->
-            JD.errorToString e
-
-
-fullInit : JD.Value -> ( FullModel, Cmd Msg )
-fullInit flags =
-    case JD.decodeValue Auto.ElmFlags.decode flags of
-        Ok f ->
-            mapFirst Ok <| init f
-
-        Err e ->
-            ( Err <| FlagError e, Cmd.none )
-
-
-fullUpdate : Msg -> Result Error Model -> ( Result Error Model, Cmd Msg )
-fullUpdate m r =
-    case r of
-        Ok x ->
-            mapFirst Ok <| update m x
-
-        Err e ->
-            ( Err e, Cmd.none )
-
-
-fullView : FullModel -> Document Msg
-fullView model =
-    case model of
-        Ok m ->
-            view m
-
-        Err e ->
-            { title = "Whoops"
-            , body = [ text <| showError e ]
-            }
+    prog
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = always Sub.none
+        , decoder = Auto.ElmFlags.decode
+        }
 
 
 

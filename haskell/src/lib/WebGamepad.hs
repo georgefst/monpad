@@ -12,14 +12,17 @@ module WebGamepad (
     Button(..),
     V2(..),
     elm,
+    printDhallLayoutType,
 ) where
 
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Monad
 import Control.Monad.Loops
-import Data.Aeson (eitherDecode, ToJSON, FromJSON)
+import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
+import Data.Aeson.Text (encodeToLazyText)
+import Data.Either.Validation
 import Data.Composition
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
@@ -28,18 +31,29 @@ import Data.Proxy
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
 import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
-import Generics.SOP qualified as SOP
+import Dhall (FromDhall)
+import Dhall qualified as D
+import Dhall.Core (pretty)
 import GHC.Generics (Generic, Rep)
 import GHC.TypeLits (KnownSymbol)
+import Generics.SOP qualified as SOP
 import GHC.TypeLits (symbolVal)
 import Language.Elm.Definition qualified as Elm
 import Language.Elm.Name qualified as Elm
 import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
-import Language.Haskell.To.Elm (HasElmEncoder(..), HasElmType(..), deriveElmJSONEncoder, deriveElmTypeDefinition)
+import Language.Haskell.To.Elm
+    ( HasElmDecoder,
+      HasElmEncoder (..),
+      HasElmType (..),
+      deriveElmJSONEncoder,
+      deriveElmTypeDefinition,
+      elmDecoderDefinition,
+    )
 import Language.Haskell.To.Elm qualified as Elm
 import Linear
 import Lucid
@@ -47,8 +61,8 @@ import Lucid.Base (makeAttribute)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
-import Options.Applicative
-import Servant
+import Options.Applicative hiding (Success, Failure)
+import Servant hiding (layout)
 import Servant.HTML.Lucid
 import System.Directory
 import System.FilePath
@@ -76,6 +90,32 @@ data Update
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via ElmType Update
 
+-- field names chosen to match 'elm-color's 'fromRgba'
+data Colour = Colour
+    { red :: Double
+    , green :: Double
+    , blue :: Double
+    , alpha :: Double
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Colour
+
+data Layout = Layout
+    { colourBlue :: Colour
+    , colourYellow :: Colour
+    , colourRed :: Colour
+    , colourGreen :: Colour
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Layout
+
+data ElmFlags = ElmFlags
+    { layout :: Layout
+    , username :: Text
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType ElmFlags
+
 type Root = "gamepad"
 type UsernameParam = "username"
 type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
@@ -98,17 +138,17 @@ loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     nameBoxId = "name"
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
--- mainHtml :: Monad m => StaticData -> Text -> HtmlT m ()
-mainHtml :: Args -> Text -> Html ()
-mainHtml Args{address,wsPort} username = doctypehtml_ $
+mainHtml :: ElmFlags -> Args -> Html ()
+mainHtml flags Args{address,wsPort} = doctypehtml_ $
     style_ (mainCSS ())
         <>
     script_ [type_ jsScript] (elmJS ())
         <>
-    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsAddress" wsAddr] (jsJS ())
+    script_ [type_ jsScript, makeAttribute "elmFlags" flagsEnc, makeAttribute "wsAddress" wsAddr] (jsJS ())
   where
     wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"
+    flagsEnc = TL.toStrict $ encodeToLazyText flags
 
 defaultArgs :: Args
 defaultArgs = Args
@@ -194,7 +234,8 @@ server sc = do
 --TODO reject when username is already in use
 httpServer :: Args -> IO ()
 httpServer args@Args{httpPort} = do
-    let handleMain = return . mainHtml args
+    layout <- D.input D.auto $ defaultDhall ()
+    let handleMain username = return $ mainHtml ElmFlags{..} args
         handleLogin = return loginHtml
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 
@@ -226,8 +267,13 @@ e.g. if we added an extra case to 'Update', it would need to be handled in vario
 -}
 elm :: FilePath -> IO ()
 elm src =
-    let definitions = Elm.simplifyDefinition <$>
-            jsonDefinitions' @Button <> jsonDefinitions' @Update <> jsonDefinitions' @(V2 Double)
+    let definitions = Elm.simplifyDefinition
+            <$> decodedTypes @Button
+            <>  decodedTypes @Update
+            <>  decodedTypes @(V2 Double)
+            <>  encodedTypes @ElmFlags
+            <>  encodedTypes @Colour
+            <>  encodedTypes @Layout
         modules = Elm.modules definitions
         autoFull = src </> T.unpack elmAutoDir
     in do
@@ -251,6 +297,10 @@ instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmEncoder J.Value) 
     HasElmEncoder J.Value (ElmType a) where
         elmEncoderDefinition =
             Just $ deriveElmJSONEncoder @a elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "encode"
+instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmDecoder J.Value) (SOP.Code a), HasElmType (ElmType a), Typeable a) =>
+    HasElmDecoder J.Value (ElmType a) where
+        elmDecoderDefinition =
+            Just $ Elm.deriveElmJSONDecoder @a elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "decode"
 
 elmOptions :: Elm.Options
 elmOptions = Elm.defaultOptions
@@ -264,6 +314,11 @@ elmAutoDir = "Auto"
 
 {- Util -}
 
+printDhallLayoutType :: IO ()
+printDhallLayoutType = case D.expected (D.auto @Layout) of
+    Success e -> T.putStrLn $ pretty e
+    Failure x -> print x
+
 symbolValT :: forall a. KnownSymbol a => Text
 symbolValT = T.pack $ symbolVal $ Proxy @a
 
@@ -274,8 +329,15 @@ typeRepT :: forall a. Typeable a => Text
 typeRepT = showT $ typeRep @a
 
 -- | Like 'jsonDefinitions', but for types without decoders.
-jsonDefinitions' :: forall t. (HasElmEncoder J.Value t) => [Elm.Definition]
-jsonDefinitions' = catMaybes
+decodedTypes :: forall t. (HasElmEncoder J.Value t) => [Elm.Definition]
+decodedTypes = catMaybes
     [ elmDefinition @t
     , elmEncoderDefinition @J.Value @t
+    ]
+
+-- | Like 'jsonDefinitions', but for types without encoders.
+encodedTypes :: forall t. (HasElmDecoder J.Value t) => [Elm.Definition]
+encodedTypes = catMaybes
+    [ elmDefinition @t
+    , elmDecoderDefinition @J.Value @t
     ]

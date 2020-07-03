@@ -1,6 +1,9 @@
 port module Main exposing (main)
 
 import Auto.Button exposing (..)
+import Auto.Colour exposing (..)
+import Auto.ElmFlags exposing (..)
+import Auto.Layout exposing (..)
 import Auto.Update exposing (..)
 import Basics.Extra exposing (..)
 import Browser exposing (..)
@@ -29,9 +32,60 @@ port sendUpdate :
     -> Cmd msg --TODO type - update only
 
 
-main : Program Flags Model Msg
+main : Program JD.Value FullModel Msg
 main =
-    document { init = init, update = update, view = view, subscriptions = always Sub.none }
+    document { init = fullInit, update = fullUpdate, view = fullView, subscriptions = always Sub.none }
+
+
+
+{- Error handling -}
+
+
+type alias FullModel =
+    Result Error Model
+
+
+type Error
+    = FlagError JD.Error
+
+
+showError : Error -> String
+showError error =
+    case error of
+        FlagError e ->
+            JD.errorToString e
+
+
+fullInit : JD.Value -> ( FullModel, Cmd Msg )
+fullInit flags =
+    case JD.decodeValue Auto.ElmFlags.decode flags of
+        Ok f ->
+            mapFirst Ok <| init f
+
+        Err e ->
+            ( Err <| FlagError e, Cmd.none )
+
+
+fullUpdate : Msg -> Result Error Model -> ( Result Error Model, Cmd Msg )
+fullUpdate m r =
+    case r of
+        Ok x ->
+            mapFirst Ok <| update m x
+
+        Err e ->
+            ( Err e, Cmd.none )
+
+
+fullView : FullModel -> Document Msg
+fullView model =
+    case model of
+        Ok m ->
+            view m
+
+        Err e ->
+            { title = "Whoops"
+            , body = [ text <| showError e ]
+            }
 
 
 
@@ -124,10 +178,10 @@ viewButton model button shape =
     let
         col =
             if memberListSet button model.pressed then
-                buttonColour button |> darkColor
+                buttonColour model.layout button |> darkColor
 
             else
-                buttonColour button
+                buttonColour model.layout button
     in
     shape
         |> styled
@@ -138,20 +192,20 @@ viewButton model button shape =
         |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp button)
 
 
-buttonColour : Button -> Color
-buttonColour b =
+buttonColour : Layout -> Button -> Color
+buttonColour l b =
     case b of
         Blue ->
-            blue
+            Color.fromRgba l.colourBlue
 
         Yellow ->
-            yellow
+            Color.fromRgba l.colourYellow
 
         Red ->
-            red
+            Color.fromRgba l.colourRed
 
         Green ->
-            green
+            Color.fromRgba l.colourGreen
 
 
 
@@ -160,6 +214,7 @@ buttonColour b =
 
 type alias Model =
     { username : String
+    , layout : Layout
     , stickPos : Vec2
     , pressed : ListSet Button
     }
@@ -169,14 +224,10 @@ type Msg
     = Update Update
 
 
-type alias Flags =
-    --TODO JSON?
-    String
-
-
-init : Flags -> ( Model, Cmd Msg )
-init username =
-    ( { username = username
+init : ElmFlags -> ( Model, Cmd Msg )
+init flags =
+    ( { username = flags.username
+      , layout = flags.layout
       , stickPos = vec2 0 0
       , pressed = emptyListSet
       }

@@ -55,6 +55,7 @@ common common
         PartialTypeSignatures
         PolyKinds
         RankNTypes
+        RecordWildCards
         ScopedTypeVariables
         StandaloneDeriving
         TupleSections

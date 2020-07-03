@@ -1,4 +1,4 @@
-port module Main exposing (main)
+module Main exposing (main)
 
 import Auto.Button exposing (..)
 import Auto.Colour exposing (..)
@@ -21,16 +21,12 @@ import Json.Encode as JE
 import List exposing (..)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
+import Ports exposing (..)
 import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
 import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
 import Util.Prog exposing (..)
-
-
-port sendUpdate :
-    JE.Value
-    -> Cmd msg --TODO type - update only
 
 
 main : Program JD.Value (Result JD.Error Model) Msg
@@ -208,7 +204,7 @@ update msg model =
                             { model | stickPos = p }
             in
             ( model1
-            , sendUpdate <| Auto.Update.encode u
+            , sendUpdate u
             )
 
 

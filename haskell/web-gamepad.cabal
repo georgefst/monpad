@@ -5,124 +5,124 @@ license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
 extra-source-files:
-  rsc/**/*.css
-  rsc/**/*.js
+    rsc/**/*.css
+    rsc/**/*.js
 
 flag release
-  Description: Distributable build. Optimise, embed assets etc.
-  Default: False
-  Manual: True
+    Description: Distributable build. Optimise, embed assets etc.
+    Default: False
+    Manual: True
 
 common common
-  ghc-options:
-    -Wall
-    -Wno-unused-imports
-    -threaded
-  build-depends:
-    base ^>= 4.14,
-    bytestring ^>= 0.10.8,
-    composition ^>= 1.0.2.1,
-    directory ^>= 1.3.3,
-    extra ^>= 1.7.1,
-    filepath ^>= 1.4.2,
-    generic-lens ^>= 2.0.0,
-    linear ^>= 1.21,
-    microlens ^>= 0.4.11,
-    monad-loops ^>= 0.4.3,
-    mtl ^>= 2.2.2,
-    pretty-simple ^>= 3.2.2,
-    text ^>= 1.2.3,
-    transformers ^>= 0.5.6,
-    unordered-containers ^>= 0.2.10,
-  default-language: Haskell2010
-  default-extensions:
-    AllowAmbiguousTypes
-    BlockArguments
-    DataKinds
-    DeriveAnyClass
-    DeriveGeneric
-    DerivingStrategies
-    DerivingVia
-    FlexibleContexts
-    FlexibleInstances
-    GeneralizedNewtypeDeriving
-    ImportQualifiedPost
-    LambdaCase
-    MultiParamTypeClasses
-    NamedFieldPuns
-    OverloadedLabels
-    OverloadedStrings
-    PartialTypeSignatures
-    PolyKinds
-    RankNTypes
-    ScopedTypeVariables
-    StandaloneDeriving
-    TupleSections
-    TypeApplications
-    TypeFamilies
-    TypeOperators
+    ghc-options:
+        -Wall
+        -Wno-unused-imports
+        -threaded
+    build-depends:
+        base ^>= 4.14,
+        bytestring ^>= 0.10.8,
+        composition ^>= 1.0.2.1,
+        directory ^>= 1.3.3,
+        extra ^>= 1.7.1,
+        filepath ^>= 1.4.2,
+        generic-lens ^>= 2.0.0,
+        linear ^>= 1.21,
+        microlens ^>= 0.4.11,
+        monad-loops ^>= 0.4.3,
+        mtl ^>= 2.2.2,
+        pretty-simple ^>= 3.2.2,
+        text ^>= 1.2.3,
+        transformers ^>= 0.5.6,
+        unordered-containers ^>= 0.2.10,
+    default-language: Haskell2010
+    default-extensions:
+        AllowAmbiguousTypes
+        BlockArguments
+        DataKinds
+        DeriveAnyClass
+        DeriveGeneric
+        DerivingStrategies
+        DerivingVia
+        FlexibleContexts
+        FlexibleInstances
+        GeneralizedNewtypeDeriving
+        ImportQualifiedPost
+        LambdaCase
+        MultiParamTypeClasses
+        NamedFieldPuns
+        OverloadedLabels
+        OverloadedStrings
+        PartialTypeSignatures
+        PolyKinds
+        RankNTypes
+        ScopedTypeVariables
+        StandaloneDeriving
+        TupleSections
+        TypeApplications
+        TypeFamilies
+        TypeOperators
 
 library
-  import:
-    common
-  exposed-modules:
-    WebGamepad
-  other-modules:
-    Embed
-    Orphans.V2
-  hs-source-dirs:
-    src/lib
-  if flag(release)
-    other-extensions:
-      TemplateHaskell
-    --TODO does -O3 do anything?
-    ghc-options:
-      -O3
-    cpp-options:
-      -DRELEASE
+    import:
+        common
+    exposed-modules:
+        WebGamepad
+    other-modules:
+        Embed
+        Orphans.V2
+    hs-source-dirs:
+        src/lib
+    if flag(release)
+        other-extensions:
+            TemplateHaskell
+        --TODO does -O3 do anything?
+        ghc-options:
+            -O3
+        cpp-options:
+            -DRELEASE
+        build-depends:
+            file-embed ^>= 0.0.11.2,
+            template-haskell ^>= 2.16,
+    else
+        ghc-options:
+            -O0
     build-depends:
-      file-embed ^>= 0.0.11.2,
-      template-haskell ^>= 2.16,
-  else
-    ghc-options:
-      -O0
-  build-depends:
-    aeson ^>= 1.4.7,
-    async ^>= 2.2.2,
-    elm-syntax ^>= 0.3.0,
-    generics-sop ^>= 0.5.0,
-    haskell-to-elm ^>= 0.3.0,
-    http-types ^>= 0.12.3,
-    lucid ^>= 2.9.12,
-    optparse-applicative ^>= 0.15.1.0,
-    prettyprinter ^>= 1.6.1,
-    servant ^>= 0.17,
-    servant-lucid ^>= 0.9.0.1,
-    servant-server ^>= 0.17,
-    wai ^>= 3.2.2,
-    wai-cors ^>= 0.2.7,
-    wai-extra ^>= 3.0.29,
-    warp ^>= 3.3.9,
-    websockets ^>= 0.12.7,
-  other-extensions:
-    CPP
-    UndecidableInstances
+        aeson ^>= 1.4.7,
+        async ^>= 2.2.2,
+        elm-syntax ^>= 0.3.0,
+        generics-sop ^>= 0.5.0,
+        haskell-to-elm ^>= 0.3.0,
+        http-types ^>= 0.12.3,
+        lucid ^>= 2.9.12,
+        optparse-applicative ^>= 0.15.1.0,
+        prettyprinter ^>= 1.6.1,
+        servant ^>= 0.17,
+        servant-lucid ^>= 0.9.0.1,
+        servant-server ^>= 0.17,
+        wai ^>= 3.2.2,
+        wai-cors ^>= 0.2.7,
+        wai-extra ^>= 3.0.29,
+        warp ^>= 3.3.9,
+        websockets ^>= 0.12.7,
+    other-extensions:
+        CPP
+        UndecidableInstances
 
 executable web-gamepad-test
-  import:
-    common
-  main-is: Main.hs
-  hs-source-dirs:
-    src/test
-  build-depends:
-    web-gamepad
+    import:
+        common
+    main-is: Main.hs
+    hs-source-dirs:
+        src/test
+    build-depends:
+        web-gamepad
 
 executable web-gamepad-linux
-  import:
-    common
-  main-is: Main.hs
-  hs-source-dirs:
-    src/linux
-  build-depends:
-    web-gamepad,
-    evdev,
+    import:
+        common
+    main-is: Main.hs
+    hs-source-dirs:
+        src/linux
+    build-depends:
+        web-gamepad,
+        evdev,

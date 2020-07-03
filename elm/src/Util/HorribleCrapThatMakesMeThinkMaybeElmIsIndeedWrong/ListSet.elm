@@ -1,4 +1,4 @@
-module Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
+module Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong.ListSet exposing (..)
 
 {-| out of site, out of mind
 <https://reasonablypolymorphic.com/blog/elm-is-wrong/>
@@ -7,18 +7,18 @@ module Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
 
 {-| <https://www.reddit.com/r/elm/comments/g7bjxp/sets_of_a_custom_type/>
 -}
-type ListSet a
-    = ListSet (List a)
+type Set a
+    = Set (List a)
 
 
-emptyListSet : ListSet a
-emptyListSet =
-    ListSet []
+empty : Set a
+empty =
+    Set []
 
 
-addListSet : a -> ListSet a -> ListSet a
-addListSet x (ListSet xs) =
-    ListSet <|
+add : a -> Set a -> Set a
+add x (Set xs) =
+    Set <|
         if List.member x xs then
             xs
 
@@ -28,8 +28,8 @@ addListSet x (ListSet xs) =
 
 {-| same as filter . (/=), but more efficient, due to the no-duplicates invariant
 -}
-removeListSet : a -> ListSet a -> ListSet a
-removeListSet x =
+remove : a -> Set a -> Set a
+remove x =
     let
         f xs =
             case xs of
@@ -46,19 +46,19 @@ removeListSet x =
                         -- keep looking
                         y :: f ys
     in
-    toListListSet >> f >> fromListListSet
+    toList >> f >> fromList
 
 
-memberListSet : a -> ListSet a -> Bool
-memberListSet x (ListSet xs) =
+member : a -> Set a -> Bool
+member x (Set xs) =
     List.member x xs
 
 
-toListListSet : ListSet a -> List a
-toListListSet (ListSet xs) =
+toList : Set a -> List a
+toList (Set xs) =
     xs
 
 
-fromListListSet : List a -> ListSet a
-fromListListSet =
-    ListSet
+fromList : List a -> Set a
+fromList =
+    Set

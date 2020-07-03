@@ -25,7 +25,7 @@ import Ports exposing (..)
 import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
-import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong exposing (..)
+import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong.ListSet as ListSet
 import Util.Prog exposing (..)
 
 
@@ -129,7 +129,7 @@ viewButton : Model -> Button -> Shape -> Collage Msg
 viewButton model button shape =
     let
         col =
-            if memberListSet button model.pressed then
+            if ListSet.member button model.pressed then
                 buttonColour model.layout button |> darkColor
 
             else
@@ -168,7 +168,7 @@ type alias Model =
     { username : String
     , layout : Layout
     , stickPos : Vec2
-    , pressed : ListSet Button
+    , pressed : ListSet.Set Button
     }
 
 
@@ -181,7 +181,7 @@ init flags =
     ( { username = flags.username
       , layout = flags.layout
       , stickPos = vec2 0 0
-      , pressed = emptyListSet
+      , pressed = ListSet.empty
       }
     , Cmd.none
     )
@@ -195,10 +195,10 @@ update msg model =
                 model1 =
                     case u of
                         ButtonUp b ->
-                            { model | pressed = removeListSet b model.pressed }
+                            { model | pressed = ListSet.remove b model.pressed }
 
                         ButtonDown b ->
-                            { model | pressed = addListSet b model.pressed }
+                            { model | pressed = ListSet.add b model.pressed }
 
                         Stick p ->
                             { model | stickPos = p }

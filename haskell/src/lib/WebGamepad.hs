@@ -37,7 +37,7 @@ import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Dhall (FromDhall)
 import Dhall qualified as D
-import Dhall.Core (pretty)
+import Dhall.Core qualified as D
 import GHC.Generics (Generic, Rep)
 import GHC.TypeLits (KnownSymbol)
 import Generics.SOP qualified as SOP
@@ -316,7 +316,7 @@ elmAutoDir = "Auto"
 
 printDhallLayoutType :: IO ()
 printDhallLayoutType = case D.expected (D.auto @Layout) of
-    Success e -> T.putStrLn $ pretty e
+    Success e -> T.putStrLn $ D.pretty $ D.normalize e
     Failure x -> print x
 
 symbolValT :: forall a. KnownSymbol a => Text

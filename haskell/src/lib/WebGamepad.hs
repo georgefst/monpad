@@ -1,4 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
+--TODO work out why HLS Fourmolu fails on this file
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+-- {-# OPTIONS_GHC -Wunused-imports #-}
 module WebGamepad (
     server,
     ServerConfig(..),

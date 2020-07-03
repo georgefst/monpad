@@ -30,7 +30,7 @@ ws.onopen = function (event) {
         flags: elmFlags
     });
 
-    app.ports.sendUpdate.subscribe(function (message) {
+    app.ports.sendUpdatePort.subscribe(function (message) {
         ws.send(JSON.stringify(message));
     });
 };

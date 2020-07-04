@@ -1,25 +1,21 @@
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
-let T2 =
-      < CircleButton : Double | RectangleButton : { _1 : Double, _2 : Double } >
+let Button = < Circle : Double | Rectangle : { _1 : Double, _2 : Double } >
 
-let T1 =
-      < Button :
-          { _1 : T2
-          , _2 : Colour
-          }
+let Element =
+      < Button : { button : Button, colour : Colour }
       | Stick :
-          { _1 : Double
-          , _2 : Double
-          , _3 : Colour
-          , _4 : Colour
+          { radius : Double
+          , range : Double
+          , stickColour : Colour
+          , backgroundColour : Colour
           }
       >
 
-let T =
+let Layout =
       { elements :
           List
-            { element : T1
+            { element : Element
             , location : { _1 : Double, _2 : Double }
             , name : Text
             }
@@ -42,28 +38,39 @@ let cols =
       }
 
 in    { elements =
-        [ { element = T1.Button { _1 = T2.CircleButton 120.0, _2 = cols.blue }
+        [ { element =
+              Element.Button
+                { button = Button.Circle 120.0, colour = cols.blue }
           , location = { _1 = 250.0, _2 = 0.0 }
           , name = "Blue"
           }
-        , { element = T1.Button { _1 = T2.CircleButton 120.0, _2 = cols.green }
+        , { element =
+              Element.Button
+                { button = Button.Circle 120.0, colour = cols.green }
           , location = { _1 = 500.0, _2 = -250.0 }
           , name = "Green"
           }
-        , { element = T1.Button { _1 = T2.CircleButton 120.0, _2 = cols.red }
+        , { element =
+              Element.Button { button = Button.Circle 120.0, colour = cols.red }
           , location = { _1 = 750.0, _2 = 0.0 }
           , name = "Red"
           }
-        , { element = T1.Button { _1 = T2.CircleButton 120.0, _2 = cols.yellow }
+        , { element =
+              Element.Button
+                { button = Button.Circle 120.0, colour = cols.yellow }
           , location = { _1 = 500.0, _2 = 250.0 }
           , name = "Yellow"
           }
         , { element =
-              T1.Stick
-                { _1 = 120.0, _2 = 320.0, _3 = cols.white, _4 = cols.black }
+              Element.Stick
+                { radius = 120.0
+                , range = 320.0
+                , stickColour = cols.white
+                , backgroundColour = cols.black
+                }
           , location = { _1 = -500.0, _2 = 0.0 }
           , name = "Main"
           }
         ]
       }
-    : T
+    : Layout

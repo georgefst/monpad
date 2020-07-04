@@ -119,23 +119,19 @@ data FullElement = FullElement
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType FullElement
 
 data Element
-    = StickElement Stick
-    | ButtonElement Button Colour
+    = Stick
+        { radius :: IntDouble
+        , range :: IntDouble
+        , stickColour :: Colour
+        , backgroundColour :: Colour
+        }
+    | Button { button :: Button, colour :: Colour }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Element
 
-data Stick = Stick
-    { radius :: IntDouble
-    , range :: IntDouble
-    , colour :: Colour
-    , backgroundColour :: Colour
-    }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Stick
-
 data Button
-    = CircleButton IntDouble
-    | RectangleButton (V2 Double)
+    = Circle IntDouble
+    | Rectangle (V2 Double)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Button
 
@@ -298,7 +294,6 @@ elm src =
             <>  encodedTypes @FullElement
             <>  encodedTypes @Element
             <>  encodedTypes @Button
-            <>  encodedTypes @Stick
             <>  jsonDefinitions @(V2 Double)
         modules = Elm.modules definitions
         autoFull = src </> T.unpack elmAutoDir

@@ -7,20 +7,20 @@ import Util
 
 
 type Button 
-    = CircleButton Float
-    | RectangleButton Math.Vector2.Vec2
+    = Circle Float
+    | Rectangle Math.Vector2.Vec2
 
 
 decode : Json.Decode.Decoder Button
 decode =
     Json.Decode.field "tag" Json.Decode.string |>
     Json.Decode.andThen (\a -> case a of
-        "CircleButton" ->
-            Json.Decode.succeed CircleButton |>
+        "Circle" ->
+            Json.Decode.succeed Circle |>
             Json.Decode.Pipeline.required "contents" Json.Decode.float
         
-        "RectangleButton" ->
-            Json.Decode.succeed RectangleButton |>
+        "Rectangle" ->
+            Json.Decode.succeed Rectangle |>
             Json.Decode.Pipeline.required "contents" Util.decodeVec2
         
         _ ->

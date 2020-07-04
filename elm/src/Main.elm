@@ -6,7 +6,6 @@ import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.Layout exposing (..)
-import Auto.Stick exposing (..)
 import Auto.Update exposing (..)
 import Basics.Extra exposing (..)
 import Browser exposing (..)
@@ -74,61 +73,61 @@ viewElement : Model -> FullElement -> Collage Msg
 viewElement model element =
     shift (unVec2 element.location) <|
         case element.element of
-            ButtonElement b c ->
+            Button b ->
                 let
                     shape =
-                        case b of
-                            CircleButton r ->
+                        case b.button of
+                            Circle r ->
                                 circle r
 
-                            RectangleButton v ->
+                            Rectangle v ->
                                 uncurry rectangle <| unVec2 v
                 in
                 shape
                     |> styled
-                        ( uniform <| applyWhen (ListSet.member element.name model.pressed) darkColor <| Color.fromRgba c
+                        ( uniform <|
+                            applyWhen (ListSet.member element.name model.pressed) darkColor <|
+                                Color.fromRgba b.colour
                         , solid thick <| uniform black
                         )
                     |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown element.name)
                     |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp element.name)
 
-            StickElement stick ->
-                viewStick model element.name stick
+            Stick stick ->
+                let
+                    rBack =
+                        stick.range + stick.radius
 
+                    getOffset event =
+                        let
+                            v0 =
+                                -- invert y coord and convert tuple to vector
+                                uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
 
-viewStick : Model -> String -> Stick -> Collage Msg
-viewStick model name stick =
-    let
-        rBack =
-            stick.range + stick.radius
+                            length =
+                                min stick.range <| Vec2.length v0
+                        in
+                        Vec2.normalize v0 |> Vec2.scale (length / stick.range)
 
-        getOffset event =
-            let
-                v0 =
-                    -- invert y coord and convert tuple to vector
-                    uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
+                    big =
+                        circle stick.range
+                            |> filled (uniform <| Color.fromRgba stick.backgroundColour)
 
-                length =
-                    min stick.range <| Vec2.length v0
-            in
-            Vec2.normalize v0 |> Vec2.scale (length / stick.range)
+                    small =
+                        circle stick.radius |> filled (uniform <| Color.fromRgba stick.stickColour)
 
-        big =
-            circle stick.range
-                |> filled (uniform <| Color.fromRgba stick.backgroundColour)
-
-        small =
-            circle stick.radius |> filled (uniform <| Color.fromRgba stick.colour)
-
-        front =
-            -- invisible - area in which touches are registered
-            -- used to extrude envelope to cover everywhere 'small' might go
-            circle rBack
-                |> filled (uniform <| hsla 0 0 0 0)
-                |> Collage.on "pointermove" (JD.map (Update << StickMove name << getOffset) Pointer.eventDecoder)
-                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove name <| vec2 0 0)
-    in
-    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
+                    front =
+                        -- invisible - area in which touches are registered
+                        -- used to extrude envelope to cover everywhere 'small' might go
+                        circle rBack
+                            |> filled (uniform <| hsla 0 0 0 0)
+                            |> Collage.on "pointermove"
+                                (JD.map (Update << StickMove element.name << getOffset)
+                                    Pointer.eventDecoder
+                                )
+                            |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| vec2 0 0)
+                in
+                stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
 
 
 

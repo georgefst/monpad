@@ -2,8 +2,11 @@ module Main exposing (main)
 
 import Auto.Button exposing (..)
 import Auto.Colour exposing (..)
+import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
+import Auto.FullElement exposing (..)
 import Auto.Layout exposing (..)
+import Auto.Stick exposing (..)
 import Auto.Update exposing (..)
 import Basics.Extra exposing (..)
 import Browser exposing (..)
@@ -51,7 +54,7 @@ view model =
         [ svgExplicit
             [ let
                 ( x, y ) =
-                    ( sizes.viewBox.x, sizes.viewBox.y )
+                    ( viewBoxSize.x, viewBoxSize.y )
               in
               viewBox -(x / 2) -(y / 2) x y
 
@@ -61,17 +64,43 @@ view model =
             , style "touch-action" "none"
             ]
           <|
-            center <|
-                horizontal [ viewStick model, spacer sizes.space 0, viewColourButtons model ]
+            stack <|
+                List.map (viewElement model) model.layout.elements
         ]
     }
 
 
-viewStick : Model -> Collage Msg
-viewStick model =
+viewElement : Model -> FullElement -> Collage Msg
+viewElement model element =
+    shift (unVec2 element.location) <|
+        case element.element of
+            ButtonElement b c ->
+                let
+                    shape =
+                        case b of
+                            CircleButton r ->
+                                circle r
+
+                            RectangleButton v ->
+                                uncurry rectangle <| unVec2 v
+                in
+                shape
+                    |> styled
+                        ( uniform <| applyWhen (ListSet.member element.name model.pressed) darkColor <| Color.fromRgba c
+                        , solid thick <| uniform black
+                        )
+                    |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown element.name)
+                    |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp element.name)
+
+            StickElement stick ->
+                viewStick model element.name stick
+
+
+viewStick : Model -> String -> Stick -> Collage Msg
+viewStick model name stick =
     let
         rBack =
-            sizes.stickRange + sizes.stick
+            stick.range + stick.radius
 
         getOffset event =
             let
@@ -80,84 +109,26 @@ viewStick model =
                     uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
 
                 length =
-                    min sizes.stickRange <| Vec2.length v0
+                    min stick.range <| Vec2.length v0
             in
-            Vec2.normalize v0 |> Vec2.scale (length / sizes.stickRange)
+            Vec2.normalize v0 |> Vec2.scale (length / stick.range)
 
         big =
-            circle sizes.stickRange
-                |> filled (uniform darkCharcoal)
+            circle stick.range
+                |> filled (uniform <| Color.fromRgba stick.backgroundColour)
 
         small =
-            circle sizes.stick |> filled (uniform lightPurple)
+            circle stick.radius |> filled (uniform <| Color.fromRgba stick.colour)
 
         front =
             -- invisible - area in which touches are registered
             -- used to extrude envelope to cover everywhere 'small' might go
             circle rBack
                 |> filled (uniform <| hsla 0 0 0 0)
-                |> Collage.on "pointermove" (JD.map (Update << Stick << getOffset) Pointer.eventDecoder)
-                |> Collage.on "pointerout" (JD.succeed <| Update <| Stick <| vec2 0 0)
+                |> Collage.on "pointermove" (JD.map (Update << StickMove name << getOffset) Pointer.eventDecoder)
+                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove name <| vec2 0 0)
     in
-    stack [ front, small |> shift (unVec2 <| Vec2.scale sizes.stickRange model.stickPos), big ]
-
-
-viewColourButtons : Model -> Collage Msg
-viewColourButtons model =
-    let
-        buts =
-            [ ( ( 0, 0 ), Blue )
-            , ( ( 1, 1 ), Yellow )
-            , ( ( 2, 0 ), Red )
-            , ( ( 1, -1 ), Green )
-            ]
-
-        diameter =
-            2 * sizes.button
-    in
-    List.map
-        (\( ( x, y ), b ) ->
-            circle sizes.button
-                |> viewButton model b
-                |> shift ( x * diameter, y * diameter )
-        )
-        buts
-        |> group
-
-
-viewButton : Model -> Button -> Shape -> Collage Msg
-viewButton model button shape =
-    let
-        col =
-            if ListSet.member button model.pressed then
-                buttonColour model.layout button |> darkColor
-
-            else
-                buttonColour model.layout button
-    in
-    shape
-        |> styled
-            ( uniform col
-            , solid thick <| uniform black
-            )
-        |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown button)
-        |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp button)
-
-
-buttonColour : Layout -> Button -> Color
-buttonColour l b =
-    case b of
-        Blue ->
-            Color.fromRgba l.colourBlue
-
-        Yellow ->
-            Color.fromRgba l.colourYellow
-
-        Red ->
-            Color.fromRgba l.colourRed
-
-        Green ->
-            Color.fromRgba l.colourGreen
+    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
 
 
 
@@ -168,7 +139,7 @@ type alias Model =
     { username : String
     , layout : Layout
     , stickPos : Vec2
-    , pressed : ListSet.Set Button
+    , pressed : ListSet.Set String
     }
 
 
@@ -200,7 +171,7 @@ update msg model =
                         ButtonDown b ->
                             { model | pressed = ListSet.add b model.pressed }
 
-                        Stick p ->
+                        StickMove t p ->
                             { model | stickPos = p }
             in
             ( model1
@@ -208,22 +179,14 @@ update msg model =
             )
 
 
+
+--TODO make configurable?
+
+
 {-| All constants controlling the size of SVG components.
 With viewBox (w,h), the rest can be seen as lengths on a (w x h) screen.
 Line length or radius unless otherwise stated.
 -}
-sizes :
-    --TODO 'Config' module?
-    { viewBox : { x : Float, y : Float }
-    , stick : Float
-    , stickRange : Float
-    , button : Float
-    , space : Float
-    }
-sizes =
-    { viewBox = { x = 2000, y = 1000 }
-    , stick = 120
-    , stickRange = 320
-    , button = 120
-    , space = 80
-    }
+viewBoxSize : { x : Float, y : Float }
+viewBoxSize =
+    { x = 2000, y = 1000 }

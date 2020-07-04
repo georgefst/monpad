@@ -25,6 +25,13 @@ unVec2 v =
     ( Vec2.getX v, Vec2.getY v )
 
 
+decodeVec2 : Json.Decode.Decoder Vec2.Vec2
+decodeVec2 =
+    Json.Decode.succeed Vec2.vec2
+        |> Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.float)
+        |> Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)
+
+
 encodeVec2 : Vec2.Vec2 -> Json.Encode.Value
 encodeVec2 v =
     case unVec2 v of
@@ -40,3 +47,12 @@ darkColor c =
 viewBox : Float -> Float -> Float -> Float -> Html.Attribute msg
 viewBox x y w h =
     Attr.attribute "viewBox" <| String.join " " <| List.map String.fromFloat [ x, y, w, h ]
+
+
+applyWhen : Bool -> (a -> a) -> a -> a
+applyWhen b f x =
+    if b then
+        f x
+
+    else
+        x

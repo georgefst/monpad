@@ -1,26 +1,27 @@
 module Auto.Button exposing (..)
 
-import Json.Encode
+import Json.Decode
+import Json.Decode.Pipeline
+import Math.Vector2
+import Util
 
 
 type Button 
-    = Blue 
-    | Yellow 
-    | Red 
-    | Green 
+    = CircleButton Float
+    | RectangleButton Math.Vector2.Vec2
 
 
-encode : Button -> Json.Encode.Value
-encode a =
-    case a of
-        Blue ->
-            Json.Encode.string "Blue"
+decode : Json.Decode.Decoder Button
+decode =
+    Json.Decode.field "tag" Json.Decode.string |>
+    Json.Decode.andThen (\a -> case a of
+        "CircleButton" ->
+            Json.Decode.succeed CircleButton |>
+            Json.Decode.Pipeline.required "contents" Json.Decode.float
         
-        Yellow ->
-            Json.Encode.string "Yellow"
+        "RectangleButton" ->
+            Json.Decode.succeed RectangleButton |>
+            Json.Decode.Pipeline.required "contents" Util.decodeVec2
         
-        Red ->
-            Json.Encode.string "Red"
-        
-        Green ->
-            Json.Encode.string "Green"
+        _ ->
+            Json.Decode.fail "No matching constructor")

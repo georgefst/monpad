@@ -3,6 +3,7 @@ module Orphans.V2 where
 
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Aeson qualified as J
+import Dhall (FromDhall)
 import Generics.SOP qualified as SOP
 import Language.Elm.Expression qualified as Expr
 import Language.Elm.Name qualified as Name
@@ -18,7 +19,10 @@ deriving instance FromJSON (V2 Double)
 -- link with Elm's 'Vec2'
 deriving instance SOP.Generic (V2 Double)
 deriving instance SOP.HasDatatypeInfo (V2 Double)
+instance HasElmDecoder J.Value (V2 Double) where
+    elmDecoder = Expr.Global $ Name.Qualified ["Util"] "decodeVec2"
 instance HasElmEncoder J.Value (V2 Double) where
     elmEncoder = Expr.Global $ Name.Qualified ["Util"] "encodeVec2"
 instance HasElmType (V2 Double) where
     elmType = Type.Global $ Name.Qualified ["Math", "Vector2"] "Vec2"
+instance FromDhall (V2 Double)

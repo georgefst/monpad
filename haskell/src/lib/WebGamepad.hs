@@ -1,6 +1,7 @@
 --TODO work out why HLS Fourmolu fails on this file
 {-# LANGUAGE UndecidableInstances #-}
-
+{-# LANGUAGE NoMonomorphismRestriction #-}
+-- {-# OPTIONS_GHC -Wunused-imports #-}
 module WebGamepad (
     server,
     ServerConfig(..),
@@ -11,7 +12,6 @@ module WebGamepad (
     argParser,
     ClientID(..),
     Update(..),
-    Button(..),
     V2(..),
     elm,
     printDhallLayoutType,
@@ -55,6 +55,7 @@ import Language.Haskell.To.Elm
       deriveElmJSONEncoder,
       deriveElmTypeDefinition,
       elmDecoderDefinition,
+      jsonDefinitions,
     )
 import Language.Haskell.To.Elm qualified as Elm
 import Linear
@@ -77,18 +78,10 @@ import Orphans.V2 ()
 newtype ClientID = ClientID Text
     deriving newtype (Eq,Ord,Show,IsString)
 
-data Button
-    = Blue
-    | Yellow
-    | Red
-    | Green
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
-    deriving (HasElmType, HasElmEncoder J.Value) via ElmType Button
-
 data Update
-    = ButtonUp Button
-    | ButtonDown Button
-    | Stick (V2 Double) -- always a vector within the unit circle
+    = ButtonUp Text
+    | ButtonDown Text
+    | StickMove Text (V2 Double) -- always a vector within the unit circle
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via ElmType Update
 
@@ -103,10 +96,7 @@ data Colour = Colour
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Colour
 
 data Layout = Layout
-    { colourBlue :: Colour
-    , colourYellow :: Colour
-    , colourRed :: Colour
-    , colourGreen :: Colour
+    { elements :: [FullElement]
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Layout
@@ -117,6 +107,38 @@ data ElmFlags = ElmFlags
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType ElmFlags
+
+--TODO change to Int so that we can do arithmetic in Dhall
+type IntDouble = Double
+
+data FullElement = FullElement
+    { element :: Element
+    , location :: V2 Double
+    , name :: Text
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType FullElement
+
+data Element
+    = StickElement Stick
+    | ButtonElement Button Colour
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Element
+
+data Stick = Stick
+    { radius :: IntDouble
+    , range :: IntDouble
+    , colour :: Colour
+    , backgroundColour :: Colour
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Stick
+
+data Button
+    = CircleButton IntDouble
+    | RectangleButton (V2 Double)
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Button
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -270,12 +292,15 @@ e.g. if we added an extra case to 'Update', it would need to be handled in vario
 elm :: FilePath -> IO ()
 elm src =
     let definitions = Elm.simplifyDefinition
-            <$> decodedTypes @Button
-            <>  decodedTypes @Update
-            <>  decodedTypes @(V2 Double)
+            <$> decodedTypes @Update
             <>  encodedTypes @ElmFlags
             <>  encodedTypes @Colour
             <>  encodedTypes @Layout
+            <>  encodedTypes @FullElement
+            <>  encodedTypes @Element
+            <>  encodedTypes @Button
+            <>  encodedTypes @Stick
+            <>  jsonDefinitions @(V2 Double)
         modules = Elm.modules definitions
         autoFull = src </> T.unpack elmAutoDir
     in do

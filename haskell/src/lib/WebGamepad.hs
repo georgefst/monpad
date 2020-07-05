@@ -175,6 +175,7 @@ defaultArgs = Args
     , wsPort = 8001
     , address = "localhost"
     , wsPingTime = 30
+    , dhallLayout = defaultDhall ()
     }
 
 --TODO better name (perhaps this should be 'ServerConfig'...)
@@ -184,6 +185,7 @@ data Args = Args
     , wsPort :: Port
     , address :: String --TODO only affects WS, not HTTP (why do we only need config for the former?)
     , wsPingTime :: Int
+    , dhallLayout :: Text
     }
     deriving Show
 
@@ -221,8 +223,14 @@ argParser = Args
         <> value wsPingTime
         <> showDefault
         <> metavar "INT" )
+    <*> strOption
+        (  long "layout-dhall"
+        <> short 'l'
+        <> metavar "EXPR"
+        <> value dhallLayout
+        <> help "Dhall expression to control layout of buttons etc." )
   where
-    Args{httpPort,wsPort,address,wsPingTime} = defaultArgs
+    Args{httpPort,wsPort,address,wsPingTime,dhallLayout} = defaultArgs
 
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s = ServerConfig
@@ -252,8 +260,8 @@ server sc = do
 
 --TODO reject when username is already in use
 httpServer :: Args -> IO ()
-httpServer args@Args{httpPort} = do
-    layout <- D.input D.auto $ defaultDhall ()
+httpServer args@Args{httpPort,dhallLayout} = do
+    layout <- D.input D.auto dhallLayout
     let handleMain username = return $ mainHtml ElmFlags{..} args
         handleLogin = return loginHtml
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain

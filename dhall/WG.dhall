@@ -14,10 +14,10 @@ let Element =
           }
       >
 
-let Layout =
-      { elements : List { element : Element, location : Vec2, name : Text }
-      , grid : Vec2
-      }
+let FullElement =
+      { element : Element, location : Vec2, name : Text, showName : Bool }
+
+let Layout = { elements : List FullElement, grid : Vec2 }
 
 let col =
       λ(r : Double) →
@@ -35,4 +35,4 @@ let cols =
       , white = col 1.0 1.0 1.0 1.0
       }
 
-in  { Colour, Vec2, Button, Element, Layout, cols }
+in  { Colour, Vec2, Button, Element, FullElement, Layout, cols }

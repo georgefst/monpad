@@ -115,6 +115,7 @@ data FullElement = FullElement
     { element :: Element
     , location :: V2 Int
     , name :: Text
+    , showName :: Bool
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType FullElement

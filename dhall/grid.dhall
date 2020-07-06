@@ -10,6 +10,7 @@ let tile =
               { button = WG.Button.Rectangle { x = 1000, y = 500 }, colour }
         , location = { x, y }
         , name
+        , showName = True
         }
 
 in    { elements =

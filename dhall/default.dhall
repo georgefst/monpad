@@ -9,6 +9,7 @@ let button =
             WG.Element.Button { button = WG.Button.Circle 120.0, colour }
         , location = { x, y }
         , name
+        , showName = False
         }
 
 in    { elements =
@@ -25,6 +26,7 @@ in    { elements =
                 }
           , location = { x = 500, y = 500 }
           , name = "Main"
+          , showName = False
           }
         ]
       , grid = { x = 2000, y = 1000 }

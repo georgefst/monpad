@@ -13,6 +13,7 @@ import Collage exposing (..)
 import Collage.Events as Collage
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svgExplicit)
+import Collage.Text as Text
 import Color exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (style)
@@ -70,65 +71,75 @@ view model =
     }
 
 
+showName : String -> Collage msg
+showName name =
+    Text.fromString name
+        |> Text.size Text.large
+        |> Text.color Color.darkRed
+        |> Text.shape Text.Italic
+        |> Collage.rendered
+
+
 viewElement : Model -> FullElement -> Collage Msg
 viewElement model element =
     shift (IntVec2.unVec element.location) <|
-        case element.element of
-            Button b ->
-                let
-                    shape =
-                        case b.button of
-                            Circle r ->
-                                circle r
+        applyWhen element.showName (impose <| showName element.name) <|
+            case element.element of
+                Button b ->
+                    let
+                        shape =
+                            case b.button of
+                                Circle r ->
+                                    circle r
 
-                            Rectangle v ->
-                                uncurry rectangle <| IntVec2.unVec v
-                in
-                shape
-                    |> styled
-                        ( uniform <|
-                            applyWhen (ListSet.member element.name model.pressed) darkColor <|
-                                Color.fromRgba b.colour
-                        , solid thick <| uniform black
-                        )
-                    |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown element.name)
-                    |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp element.name)
+                                Rectangle v ->
+                                    uncurry rectangle <| IntVec2.unVec v
+                    in
+                    shape
+                        |> styled
+                            ( uniform <|
+                                applyWhen (ListSet.member element.name model.pressed) darkColor <|
+                                    Color.fromRgba b.colour
+                            , solid thick <| uniform black
+                            )
+                        |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown element.name)
+                        |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp element.name)
 
-            Stick stick ->
-                let
-                    rBack =
-                        stick.range + stick.radius
+                Stick stick ->
+                    let
+                        rBack =
+                            stick.range + stick.radius
 
-                    getOffset event =
-                        let
-                            v0 =
-                                -- invert y coord and convert tuple to vector
-                                uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
+                        getOffset event =
+                            let
+                                v0 =
+                                    -- invert y coord and convert tuple to vector
+                                    uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
 
-                            length =
-                                min stick.range <| Vec2.length v0
-                        in
-                        Vec2.normalize v0 |> Vec2.scale (length / stick.range)
+                                length =
+                                    min stick.range <| Vec2.length v0
+                            in
+                            Vec2.normalize v0 |> Vec2.scale (length / stick.range)
 
-                    big =
-                        circle stick.range
-                            |> filled (uniform <| Color.fromRgba stick.backgroundColour)
+                        big =
+                            circle stick.range
+                                |> filled (uniform <| Color.fromRgba stick.backgroundColour)
 
-                    small =
-                        circle stick.radius |> filled (uniform <| Color.fromRgba stick.stickColour)
+                        small =
+                            circle stick.radius |> filled (uniform <| Color.fromRgba stick.stickColour)
 
-                    front =
-                        -- invisible - area in which touches are registered
-                        -- used to extrude envelope to cover everywhere 'small' might go
-                        circle rBack
-                            |> filled (uniform <| hsla 0 0 0 0)
-                            |> Collage.on "pointermove"
-                                (JD.map (Update << StickMove element.name << getOffset)
-                                    Pointer.eventDecoder
-                                )
-                            |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| vec2 0 0)
-                in
-                stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
+                        front =
+                            -- invisible - area in which touches are registered
+                            -- used to extrude envelope to cover everywhere 'small' might go
+                            circle rBack
+                                |> filled (uniform <| hsla 0 0 0 0)
+                                |> Collage.on "pointermove"
+                                    (JD.map (Update << StickMove element.name << getOffset)
+                                        Pointer.eventDecoder
+                                    )
+                                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| vec2 0 0)
+                    in
+                    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
 
 
 

@@ -15,6 +15,7 @@ import Collage.Layout exposing (..)
 import Collage.Render exposing (svgExplicit)
 import Collage.Text as Text
 import Color exposing (..)
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (style)
 import Html.Events exposing (..)
@@ -138,8 +139,12 @@ viewElement model element =
                                         Pointer.eventDecoder
                                     )
                                 |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| vec2 0 0)
+
+                        --TODO I don't really like this default - perhaps we should just fail here?
+                        pos =
+                            withDefault (vec2 0 0) <| Dict.get element.name model.stickPos
                     in
-                    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range model.stickPos), big ]
+                    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range pos), big ]
 
 
 
@@ -149,7 +154,7 @@ viewElement model element =
 type alias Model =
     { username : String
     , layout : Layout
-    , stickPos : Vec2
+    , stickPos : Dict String Vec2
     , pressed : Set String
     }
 
@@ -162,7 +167,18 @@ init : ElmFlags -> ( Model, Cmd Msg )
 init flags =
     ( { username = flags.username
       , layout = flags.layout
-      , stickPos = vec2 0 0
+      , stickPos =
+            List.foldl
+                (\e ->
+                    case e.element of
+                        Stick _ ->
+                            Dict.insert e.name <| vec2 0 0
+
+                        _ ->
+                            identity
+                )
+                Dict.empty
+                flags.layout.elements
       , pressed = Set.empty
       }
     , Cmd.none
@@ -183,7 +199,7 @@ update msg model =
                             { model | pressed = Set.insert b model.pressed }
 
                         StickMove t p ->
-                            { model | stickPos = p }
+                            { model | stickPos = Dict.insert t p model.stickPos }
             in
             ( model1
             , sendUpdate u

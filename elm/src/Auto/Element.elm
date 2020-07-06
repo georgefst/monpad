@@ -7,8 +7,8 @@ import Json.Decode.Pipeline
 
 
 type Element 
-    = Stick { radius : Float
-    , range : Float
+    = Stick { radius : Int
+    , range : Int
     , stickColour : Auto.Colour.Colour
     , backgroundColour : Auto.Colour.Colour }
     | Button { button : Auto.Button.Button, colour : Auto.Colour.Colour }
@@ -23,8 +23,8 @@ decode =
             , range = c
             , stickColour = d
             , backgroundColour = e }) |>
-            Json.Decode.Pipeline.required "radius" Json.Decode.float |>
-            Json.Decode.Pipeline.required "range" Json.Decode.float |>
+            Json.Decode.Pipeline.required "radius" Json.Decode.int |>
+            Json.Decode.Pipeline.required "range" Json.Decode.int |>
             Json.Decode.Pipeline.required "stickColour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "backgroundColour" Auto.Colour.decode)
         

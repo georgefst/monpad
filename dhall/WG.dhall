@@ -2,13 +2,13 @@ let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
 let Vec2 = { x : Natural, y : Natural }
 
-let Button = < Circle : Double | Rectangle : Vec2 >
+let Button = < Circle : Natural | Rectangle : Vec2 >
 
 let Element =
       < Button : { button : Button, colour : Colour }
       | Stick :
-          { radius : Double
-          , range : Double
+          { radius : Natural
+          , range : Natural
           , stickColour : Colour
           , backgroundColour : Colour
           }

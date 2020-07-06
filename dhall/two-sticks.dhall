@@ -5,8 +5,8 @@ let stick =
       λ(location : WG.Vec2) →
         { element =
             WG.Element.Stick
-              { radius = 120.0
-              , range = 320.0
+              { radius = 120
+              , range = 320
               , stickColour = WG.cols.white
               , backgroundColour = WG.cols.black
               }

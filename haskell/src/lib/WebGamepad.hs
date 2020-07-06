@@ -109,9 +109,6 @@ data ElmFlags = ElmFlags
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType ElmFlags
 
---TODO change to Int so that we can do arithmetic in Dhall
-type IntDouble = Double
-
 data FullElement = FullElement
     { element :: Element
     , location :: V2 Int
@@ -123,8 +120,8 @@ data FullElement = FullElement
 
 data Element
     = Stick
-        { radius :: IntDouble
-        , range :: IntDouble
+        { radius :: Int
+        , range :: Int
         , stickColour :: Colour
         , backgroundColour :: Colour
         }
@@ -133,7 +130,7 @@ data Element
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Element
 
 data Button
-    = Circle IntDouble
+    = Circle Int
     | Rectangle (V2 Int)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Button

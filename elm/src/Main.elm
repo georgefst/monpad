@@ -7,6 +7,7 @@ import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.Layout exposing (..)
 import Auto.Update exposing (..)
+import Basics exposing (..)
 import Basics.Extra exposing (..)
 import Browser exposing (..)
 import Collage exposing (..)
@@ -27,7 +28,6 @@ import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
 import Ports exposing (..)
 import Set exposing (Set)
-import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
 import Util.IntVector2 as IntVec2 exposing (IntVector2)
@@ -91,7 +91,7 @@ viewElement model element =
                         shape =
                             case b.button of
                                 Circle r ->
-                                    circle r
+                                    circle <| toFloat r
 
                                 Rectangle v ->
                                     uncurry rectangle <| IntVec2.unVec v
@@ -108,8 +108,14 @@ viewElement model element =
 
                 Stick stick ->
                     let
+                        range =
+                            toFloat stick.range
+
+                        rad =
+                            toFloat stick.radius
+
                         rBack =
-                            stick.range + stick.radius
+                            range + rad
 
                         getOffset event =
                             let
@@ -118,16 +124,16 @@ viewElement model element =
                                     uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
 
                                 length =
-                                    min stick.range <| Vec2.length v0
+                                    min range <| Vec2.length v0
                             in
-                            Vec2.normalize v0 |> Vec2.scale (length / stick.range)
+                            Vec2.normalize v0 |> Vec2.scale (length / range)
 
                         big =
-                            circle stick.range
+                            circle range
                                 |> filled (uniform <| Color.fromRgba stick.backgroundColour)
 
                         small =
-                            circle stick.radius |> filled (uniform <| Color.fromRgba stick.stickColour)
+                            circle rad |> filled (uniform <| Color.fromRgba stick.stickColour)
 
                         front =
                             -- invisible - area in which touches are registered
@@ -144,7 +150,7 @@ viewElement model element =
                         pos =
                             withDefault zeroVec2 <| Dict.get element.name model.stickPos
                     in
-                    stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range pos), big ]
+                    stack [ front, small |> shift (unVec2 <| Vec2.scale range pos), big ]
 
 
 

@@ -6,7 +6,7 @@ import Util.IntVector2
 
 
 type Button 
-    = Circle Float
+    = Circle Int
     | Rectangle Util.IntVector2.IntVector2
 
 
@@ -16,7 +16,7 @@ decode =
     Json.Decode.andThen (\a -> case a of
         "Circle" ->
             Json.Decode.succeed Circle |>
-            Json.Decode.Pipeline.required "contents" Json.Decode.float
+            Json.Decode.Pipeline.required "contents" Json.Decode.int
         
         "Rectangle" ->
             Json.Decode.succeed Rectangle |>

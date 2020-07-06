@@ -6,7 +6,7 @@ let button =
       λ(name : Text) →
       λ(colour : WG.Colour) →
         { element =
-            WG.Element.Button { button = WG.Button.Circle 120.0, colour }
+            WG.Element.Button { button = WG.Button.Circle 120, colour }
         , location = { x, y }
         , name
         , showName = False
@@ -19,8 +19,8 @@ in    { elements =
         , button 1500 750 "Yellow" WG.cols.yellow
         , { element =
               WG.Element.Stick
-                { radius = 120.0
-                , range = 320.0
+                { radius = 120
+                , range = 320
                 , stickColour = WG.cols.white
                 , backgroundColour = WG.cols.black
                 }

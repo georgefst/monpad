@@ -5,8 +5,7 @@ let button =
       λ(y : Natural) →
       λ(name : Text) →
       λ(colour : WG.Colour) →
-        { element =
-            WG.Element.Button { button = WG.Button.Circle 120, colour }
+        { element = WG.Element.Button { button = WG.Button.Circle 120, colour }
         , location = { x, y }
         , name
         , showName = False

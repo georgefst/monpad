@@ -168,17 +168,19 @@ init flags =
     ( { username = flags.username
       , layout = flags.layout
       , stickPos =
-            List.foldl
-                (\e ->
+            let
+                isStick e =
                     case e.element of
                         Stick _ ->
-                            Dict.insert e.name <| vec2 0 0
+                            True
 
                         _ ->
-                            identity
-                )
-                Dict.empty
-                flags.layout.elements
+                            False
+            in
+            Dict.fromList <|
+                List.map (flip pair (vec2 0 0) << .name) <|
+                    List.filter isStick
+                        flags.layout.elements
       , pressed = Set.empty
       }
     , Cmd.none

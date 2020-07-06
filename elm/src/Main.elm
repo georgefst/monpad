@@ -138,11 +138,11 @@ viewElement model element =
                                     (JD.map (Update << StickMove element.name << getOffset)
                                         Pointer.eventDecoder
                                     )
-                                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| vec2 0 0)
+                                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| zeroVec2)
 
                         --TODO I don't really like this default - perhaps we should just fail here?
                         pos =
-                            withDefault (vec2 0 0) <| Dict.get element.name model.stickPos
+                            withDefault zeroVec2 <| Dict.get element.name model.stickPos
                     in
                     stack [ front, small |> shift (unVec2 <| Vec2.scale stick.range pos), big ]
 
@@ -178,7 +178,7 @@ init flags =
                             False
             in
             Dict.fromList <|
-                List.map (flip pair (vec2 0 0) << .name) <|
+                List.map (flip pair zeroVec2 << .name) <|
                     List.filter isStick
                         flags.layout.elements
       , pressed = Set.empty

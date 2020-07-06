@@ -32,6 +32,11 @@ encodeVec2 v =
             Json.Encode.list identity [ Json.Encode.float x, Json.Encode.float y ]
 
 
+zeroVec2 : Vec2.Vec2
+zeroVec2 =
+    Vec2.vec2 0 0
+
+
 darkColor : Color.Color -> Color.Color
 darkColor c =
     interpolate RGB c Color.black 0.6

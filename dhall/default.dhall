@@ -1,8 +1,8 @@
 let WG = ./WG.dhall
 
 let button =
-      λ(x : Integer) →
-      λ(y : Integer) →
+      λ(x : Natural) →
+      λ(y : Natural) →
       λ(name : Text) →
       λ(colour : WG.Colour) →
         { element =
@@ -12,10 +12,10 @@ let button =
         }
 
 in    { elements =
-        [ button +250 +0 "Blue" WG.cols.blue
-        , button +500 -250 "Green" WG.cols.green
-        , button +750 +0 "Red" WG.cols.red
-        , button +500 +250 "Yellow" WG.cols.yellow
+        [ button 1250 500 "Blue" WG.cols.blue
+        , button 1500 250 "Green" WG.cols.green
+        , button 1750 500 "Red" WG.cols.red
+        , button 1500 750 "Yellow" WG.cols.yellow
         , { element =
               WG.Element.Stick
                 { radius = 120.0
@@ -23,7 +23,7 @@ in    { elements =
                 , stickColour = WG.cols.white
                 , backgroundColour = WG.cols.black
                 }
-          , location = { x = -500, y = +0 }
+          , location = { x = 500, y = 500 }
           , name = "Main"
           }
         ]

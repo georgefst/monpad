@@ -56,7 +56,7 @@ view model =
                 ( x, y ) =
                     ( viewBoxSize.x, viewBoxSize.y )
               in
-              viewBox -(x / 2) -(y / 2) x y
+              viewBox (1000 - x/2) -(500 + y/2) x y
 
             --TODO it would be preferable to apply this to the subcomponents instead,
             -- so that we could still pan and zoom in the gaps

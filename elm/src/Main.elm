@@ -28,6 +28,7 @@ import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
 import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong.ListSet as ListSet
+import Util.IntVector2 as IntVec2 exposing (IntVector2)
 import Util.Prog exposing (..)
 
 
@@ -71,7 +72,7 @@ view model =
 
 viewElement : Model -> FullElement -> Collage Msg
 viewElement model element =
-    shift (unVec2 element.location) <|
+    shift (IntVec2.unVec element.location) <|
         case element.element of
             Button b ->
                 let
@@ -81,7 +82,7 @@ viewElement model element =
                                 circle r
 
                             Rectangle v ->
-                                uncurry rectangle <| unVec2 v
+                                uncurry rectangle <| IntVec2.unVec v
                 in
                 shape
                     |> styled

@@ -1,6 +1,6 @@
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
-let Vec2 = { _1 : Double, _2 : Double }
+let Vec2 = { x : Integer, y : Integer }
 
 let Button = < Circle : Double | Rectangle : Vec2 >
 

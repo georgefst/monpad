@@ -1,24 +1,24 @@
 let WG = ./WG.dhall
 
 let tile =
-      λ(_1 : Double) →
-      λ(_2 : Double) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(name : Text) →
       λ(colour : WG.Colour) →
         { element =
             WG.Element.Button
-              { button = WG.Button.Rectangle { _1 = 1000.0, _2 = 500.0 }
+              { button = WG.Button.Rectangle { x = +1000, y = +500 }
               , colour
               }
-        , location = { _1, _2 }
+        , location = { x, y }
         , name
         }
 
 in    { elements =
-        [ tile -500.0 -250.0 "Bottom Left" WG.cols.blue
-        , tile 500.0 -250.0 "Bottom Right" WG.cols.red
-        , tile -500.0 250.0 "Top Left" WG.cols.green
-        , tile 500.0 250.0 "Top Right" WG.cols.yellow
+        [ tile -500 -250 "Bottom Left" WG.cols.blue
+        , tile +500 -250 "Bottom Right" WG.cols.red
+        , tile -500 +250 "Top Left" WG.cols.green
+        , tile +500 +250 "Top Right" WG.cols.yellow
         ]
       }
     : WG.Layout

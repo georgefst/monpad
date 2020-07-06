@@ -2,13 +2,12 @@ module Auto.Button exposing (..)
 
 import Json.Decode
 import Json.Decode.Pipeline
-import Math.Vector2
-import Util
+import Util.IntVector2
 
 
 type Button 
     = Circle Float
-    | Rectangle Math.Vector2.Vec2
+    | Rectangle Util.IntVector2.IntVector2
 
 
 decode : Json.Decode.Decoder Button
@@ -21,7 +20,7 @@ decode =
         
         "Rectangle" ->
             Json.Decode.succeed Rectangle |>
-            Json.Decode.Pipeline.required "contents" Util.decodeVec2
+            Json.Decode.Pipeline.required "contents" Util.IntVector2.decode
         
         _ ->
             Json.Decode.fail "No matching constructor")

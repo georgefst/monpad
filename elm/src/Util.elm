@@ -25,13 +25,6 @@ unVec2 v =
     ( Vec2.getX v, Vec2.getY v )
 
 
-decodeVec2 : Json.Decode.Decoder Vec2.Vec2
-decodeVec2 =
-    Json.Decode.succeed Vec2.vec2
-        |> Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.float)
-        |> Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)
-
-
 encodeVec2 : Vec2.Vec2 -> Json.Encode.Value
 encodeVec2 v =
     case unVec2 v of

@@ -3,13 +3,12 @@ module Auto.FullElement exposing (..)
 import Auto.Element
 import Json.Decode
 import Json.Decode.Pipeline
-import Math.Vector2
-import Util
+import Util.IntVector2
 
 
 type alias FullElement  =
     { element : Auto.Element.Element
-    , location : Math.Vector2.Vec2
+    , location : Util.IntVector2.IntVector2
     , name : String }
 
 
@@ -17,5 +16,5 @@ decode : Json.Decode.Decoder FullElement
 decode =
     Json.Decode.succeed FullElement |>
     Json.Decode.Pipeline.required "element" Auto.Element.decode |>
-    Json.Decode.Pipeline.required "location" Util.decodeVec2 |>
+    Json.Decode.Pipeline.required "location" Util.IntVector2.decode |>
     Json.Decode.Pipeline.required "name" Json.Decode.string

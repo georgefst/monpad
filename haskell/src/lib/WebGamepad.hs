@@ -112,7 +112,7 @@ type IntDouble = Double
 
 data FullElement = FullElement
     { element :: Element
-    , location :: V2 Double
+    , location :: V2 Int
     , name :: Text
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
@@ -131,7 +131,7 @@ data Element
 
 data Button
     = Circle IntDouble
-    | Rectangle (V2 Double)
+    | Rectangle (V2 Int)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Button
 
@@ -296,13 +296,14 @@ elm :: FilePath -> IO ()
 elm src =
     let definitions = Elm.simplifyDefinition
             <$> decodedTypes @Update
+            <>  decodedTypes @(V2 Double)
             <>  encodedTypes @ElmFlags
             <>  encodedTypes @Colour
             <>  encodedTypes @Layout
             <>  encodedTypes @FullElement
             <>  encodedTypes @Element
             <>  encodedTypes @Button
-            <>  jsonDefinitions @(V2 Double)
+            <>  encodedTypes @(V2 Int)
         modules = Elm.modules definitions
         autoFull = src </> T.unpack elmAutoDir
     in do

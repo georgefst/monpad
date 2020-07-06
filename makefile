@@ -17,11 +17,6 @@ dist/web-gamepad-test: elm dhall1 $(RSC_DIRS) $(RSC_FILES) $(HS_SRC_DIRS) $(HS_S
 	mkdir -p dist
 	cd haskell && cabal install web-gamepad-test --installdir ../dist --install-method copy --overwrite always --flags="release"
 
-dist/debug/web-gamepad-test: elm dhall1 $(RSC_DIRS) $(RSC_FILES) $(HS_SRC_DIRS) $(HS_SRC_FILES) haskell/web-gamepad.cabal
-	mkdir -p dist/debug
-	cp -r haskell/rsc dist/debug
-	cd haskell && cabal install web-gamepad-test --installdir ../dist/debug --install-method copy --overwrite always
-
 haskell/rsc/dist/elm.js: $(ELM_SRC_DIRS) $(ELM_SRC_FILES) elm/elm.json
 	cd elm && elm make src/Main.elm --optimize --output ../haskell/rsc/dist/elm.js
 
@@ -29,7 +24,6 @@ haskell/rsc/dist/default.dhall: $(DHALL_SRC_DIRS) $(DHALL_SRC_FILES)
 	$(shell echo './dhall/default.dhall' | dhall resolve > haskell/rsc/dist/default.dhall)
 
 # just aliases
-debug: dist/debug/web-gamepad-test
 elm: haskell/rsc/dist/elm.js
 dhall1: haskell/rsc/dist/default.dhall
 clean:

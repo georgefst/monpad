@@ -19,6 +19,7 @@ module WebGamepad (
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Monad
+import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Loops
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
@@ -177,7 +178,7 @@ defaultArgs = Args
     , wsPort = 8001
     , address = "localhost"
     , wsPingTime = 30
-    , dhallLayout = defaultDhall ()
+    , dhallLayout = defaultDhall
     }
 
 --TODO better name (perhaps this should be 'ServerConfig'...)
@@ -263,8 +264,9 @@ server sc = do
 --TODO reject when username is already in use
 httpServer :: Args -> IO ()
 httpServer args@Args{httpPort,dhallLayout} = do
-    layout <- D.input D.auto dhallLayout
-    let handleMain username = return $ mainHtml ElmFlags{..} args
+    let handleMain username = do
+            layout <- liftIO $ D.input D.auto dhallLayout
+            return $ mainHtml ElmFlags{..} args
         handleLogin = return loginHtml
     run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
 

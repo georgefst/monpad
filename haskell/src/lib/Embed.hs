@@ -11,11 +11,12 @@ import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import System.FilePath
 
-mainCSS, elmJS, jsJS, defaultDhall :: () -> Text
+mainCSS, elmJS, jsJS :: () -> Text
 mainCSS () = decodeUtf8 $(embedFile $ "rsc" </> "main.css")
 elmJS () = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "elm.js")
 jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
-defaultDhall () = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
+defaultDhall :: Text
+defaultDhall = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
 
 #else
 
@@ -29,24 +30,17 @@ module Embed where
 
 import Data.Text (Text)
 import Data.Text.IO qualified as T
-import System.Environment
 import System.FilePath
 import System.IO.Unsafe (unsafePerformIO)
 
-mainCSS, elmJS, jsJS, defaultDhall :: () -> Text
+mainCSS, elmJS, jsJS :: () -> Text
 {-# NOINLINE mainCSS #-}
-mainCSS () = unsafePerformIO $ readAbs $ "rsc" </> "main.css"
+mainCSS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.css"
 {-# NOINLINE elmJS #-}
-elmJS () = unsafePerformIO $ readAbs $ "rsc" </> "dist" </> "elm.js"
+elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "dist" </> "elm.js"
 {-# NOINLINE jsJS #-}
-jsJS () = unsafePerformIO $ readAbs $ "rsc" </> "main.js"
-{-# NOINLINE defaultDhall #-}
-defaultDhall () = unsafePerformIO $ readAbs $ "rsc" </> "dist" </> "default.dhall"
-
-readAbs :: FilePath -> IO Text
-readAbs path = do
-    interactive <- (== "<interactive>") <$> getProgName --TODO filthy...
-    path' <- if interactive then return $ path else (</> path) . takeDirectory <$> getExecutablePath
-    T.readFile $ path'
+jsJS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.js"
+defaultDhall :: Text
+defaultDhall = "./../dhall/default.dhall"
 
 #endif

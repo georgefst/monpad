@@ -96,6 +96,7 @@ data Colour = Colour
 
 data Layout = Layout
     { elements :: [FullElement]
+    , grid :: V2 Int
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType Layout

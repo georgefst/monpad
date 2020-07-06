@@ -27,5 +27,6 @@ in    { elements =
           , name = "Main"
           }
         ]
+      , grid = { x = 2000, y = 1000 }
       }
     : WG.Layout

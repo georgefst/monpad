@@ -15,7 +15,9 @@ let Element =
       >
 
 let Layout =
-      { elements : List { element : Element, location : Vec2, name : Text } }
+      { elements : List { element : Element, location : Vec2, name : Text }
+      , grid : Vec2
+      }
 
 let col =
       λ(r : Double) →

@@ -18,5 +18,6 @@ in    { elements =
         , tile 500 750 "Top Left" WG.cols.green
         , tile 1500 750 "Top Right" WG.cols.yellow
         ]
+      , grid = { x = 2000, y = 1000 }
       }
     : WG.Layout

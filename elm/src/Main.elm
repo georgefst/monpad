@@ -54,9 +54,9 @@ view model =
         [ svgExplicit
             [ let
                 ( x, y ) =
-                    ( viewBoxSize.x, viewBoxSize.y )
+                    IntVec2.unVec model.layout.grid
               in
-              viewBox (1000 - x/2) -(500 + y/2) x y
+              viewBox 0 -y x y
 
             --TODO it would be preferable to apply this to the subcomponents instead,
             -- so that we could still pan and zoom in the gaps
@@ -177,16 +177,3 @@ update msg model =
             ( model1
             , sendUpdate u
             )
-
-
-
---TODO make configurable?
-
-
-{-| All constants controlling the size of SVG components.
-With viewBox (w,h), the rest can be seen as lengths on a (w x h) screen.
-Line length or radius unless otherwise stated.
--}
-viewBoxSize : { x : Float, y : Float }
-viewBoxSize =
-    { x = 2000, y = 1000 }

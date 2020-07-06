@@ -25,10 +25,10 @@ import List exposing (..)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
 import Ports exposing (..)
+import Set exposing (Set)
 import String exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
-import Util.HorribleCrapThatMakesMeThinkMaybeElmIsIndeedWrong.ListSet as ListSet
 import Util.IntVector2 as IntVec2 exposing (IntVector2)
 import Util.Prog exposing (..)
 
@@ -98,7 +98,7 @@ viewElement model element =
                     shape
                         |> styled
                             ( uniform <|
-                                applyWhen (ListSet.member element.name model.pressed) darkColor <|
+                                applyWhen (Set.member element.name model.pressed) darkColor <|
                                     Color.fromRgba b.colour
                             , solid thick <| uniform black
                             )
@@ -150,7 +150,7 @@ type alias Model =
     { username : String
     , layout : Layout
     , stickPos : Vec2
-    , pressed : ListSet.Set String
+    , pressed : Set String
     }
 
 
@@ -163,7 +163,7 @@ init flags =
     ( { username = flags.username
       , layout = flags.layout
       , stickPos = vec2 0 0
-      , pressed = ListSet.empty
+      , pressed = Set.empty
       }
     , Cmd.none
     )
@@ -177,10 +177,10 @@ update msg model =
                 model1 =
                     case u of
                         ButtonUp b ->
-                            { model | pressed = ListSet.remove b model.pressed }
+                            { model | pressed = Set.remove b model.pressed }
 
                         ButtonDown b ->
-                            { model | pressed = ListSet.add b model.pressed }
+                            { model | pressed = Set.insert b model.pressed }
 
                         StickMove t p ->
                             { model | stickPos = p }

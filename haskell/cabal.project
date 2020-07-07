@@ -3,8 +3,4 @@ source-repository-package
   location: git://github.com/georgefst/evdev.git
   subdir: evdev
 
-source-repository-package
-  type: git
-  location: git://github.com/folq/haskell-to-elm.git
-
 packages: .

@@ -95,7 +95,7 @@ library
         async ^>= 2.2.2,
         elm-syntax ^>= 0.3.0,
         generics-sop ^>= 0.5.0,
-        haskell-to-elm ^>= 0.3.0,
+        haskell-to-elm ^>= 0.3.1,
         http-types ^>= 0.12.3,
         lucid ^>= 2.9.12,
         optparse-applicative ^>= 0.15.1.0,

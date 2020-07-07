@@ -129,4 +129,4 @@ executable web-gamepad-linux
         src/linux
     build-depends:
         web-gamepad,
-        evdev,
+        evdev ^>= 2.0,

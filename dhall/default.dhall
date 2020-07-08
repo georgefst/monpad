@@ -12,10 +12,10 @@ let button =
         }
 
 in    { elements =
-        [ button 1250 500 "Blue" WG.cols.blue
-        , button 1500 250 "Green" WG.cols.green
-        , button 1750 500 "Red" WG.cols.red
-        , button 1500 750 "Yellow" WG.cols.yellow
+        [ button 1250 500 "KeyB" WG.cols.blue
+        , button 1500 250 "KeyG" WG.cols.green
+        , button 1750 500 "KeyR" WG.cols.red
+        , button 1500 750 "KeyY" WG.cols.yellow
         , { element =
               WG.Element.Stick
                 { radius = 120
@@ -24,7 +24,7 @@ in    { elements =
                 , backgroundColour = WG.cols.black
                 }
           , location = { x = 500, y = 500 }
-          , name = "Main"
+          , name = "(AbsX, AbsY)"
           , showName = False
           }
         ]

@@ -41,9 +41,8 @@ import Dhall (FromDhall)
 import Dhall qualified as D
 import Dhall.Core qualified as D
 import GHC.Generics (Generic, Rep)
-import GHC.TypeLits (KnownSymbol)
 import Generics.SOP qualified as SOP
-import GHC.TypeLits (symbolVal)
+import GHC.TypeLits (KnownSymbol, symbolVal)
 import Language.Elm.Definition qualified as Elm
 import Language.Elm.Name qualified as Elm
 import Language.Elm.Pretty qualified as Elm

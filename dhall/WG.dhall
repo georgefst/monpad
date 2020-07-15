@@ -46,41 +46,58 @@ let cols =
       , white = col 1.0 1.0 1.0 1.0
       }
 
-let voidLayout
-    : ∀(a : Type) → ∀(b : Type) → Layout a b → Layout {} {}
-    = λ(a : Type) →
-      λ(b : Type) →
-      λ(e : Layout a b) →
+let mapLayout
+    : ∀(a0 : Type) →
+      ∀(b0 : Type) →
+      ∀(a1 : Type) →
+      ∀(b1 : Type) →
+      ∀(fa : a0 → a1) →
+      ∀(fb : b0 → b1) →
+      Layout a0 b0 →
+        Layout a1 b1
+    = λ(a0 : Type) →
+      λ(b0 : Type) →
+      λ(a1 : Type) →
+      λ(b1 : Type) →
+      λ(fa : a0 → a1) →
+      λ(fb : b0 → b1) →
+      λ(e : Layout a0 b0) →
           e
         ⫽ { elements =
               Prelude.List.map
-                (FullElement a b)
-                (FullElement {} {})
-                ( λ(fe : FullElement a b) →
+                (FullElement a0 b0)
+                (FullElement a1 b1)
+                ( λ(fe : FullElement a0 b0) →
                       fe
                     ⫽ { element =
                           merge
                             { Button =
-                                λ ( b
+                                λ ( button
                                   : { button : Button
                                     , colour : Colour
-                                    , buttonData : b
+                                    , buttonData : b0
                                     }
                                   ) →
-                                  (Element {} {}).Button
-                                    (b ⫽ { buttonData = {=} })
+                                  (Element a1 b1).Button
+                                    (   button
+                                      ⫽ { buttonData = fb button.buttonData }
+                                    )
                             , Stick =
-                                λ ( s
+                                λ ( stick
                                   : { radius : Natural
                                     , range : Natural
                                     , stickColour : Colour
                                     , backgroundColour : Colour
-                                    , stickDataX : a
-                                    , stickDataY : a
+                                    , stickDataX : a0
+                                    , stickDataY : a0
                                     }
                                   ) →
-                                  (Element {} {}).Stick
-                                    (s ⫽ { stickDataX = {=}, stickDataY = {=} })
+                                  (Element a1 b1).Stick
+                                    (   stick
+                                      ⫽ { stickDataX = fa stick.stickDataX
+                                        , stickDataY = fa stick.stickDataY
+                                        }
+                                    )
                             }
                             fe.element
                       }
@@ -93,9 +110,9 @@ in  λ(a : Type) →
       { Colour
       , Vec2
       , Button
+      , cols
       , Element = Element a b
       , FullElement = FullElement a b
       , Layout = Layout a b
-      , cols
-      , voidLayout = voidLayout a b
+      , mapLayout = mapLayout a b
       }

@@ -344,11 +344,6 @@ elmAutoDir = "Auto"
 
 {- Util -}
 
-printDhallLayoutType :: IO ()
-printDhallLayoutType = case D.expected (D.auto @Layout) of
-    Success e -> T.putStrLn $ D.pretty $ D.normalize e
-    Failure x -> print x
-
 symbolValT :: forall a. KnownSymbol a => Text
 symbolValT = T.pack $ symbolVal $ Proxy @a
 

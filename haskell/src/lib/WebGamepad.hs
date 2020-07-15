@@ -191,15 +191,18 @@ data Args = Args
     , wsPingTime :: Int
     , dhallLayout :: Text
     }
-    deriving Show
+    deriving (Show, Generic)
 
-getCommandLineArgs :: IO Args
-getCommandLineArgs = execParser opts
+getCommandLineArgs :: Args -> IO Args
+getCommandLineArgs def = execParser opts
   where
-    opts = info (helper <*> argParser) (fullDesc <> header "Web gamepad")
+    opts = info (helper <*> argParser def) (fullDesc <> header "Web gamepad")
 
-argParser :: Parser Args
-argParser = Args
+argParser ::
+    -- | defaults
+    Args ->
+    Parser Args
+argParser Args{httpPort, wsPort, address, wsPingTime, dhallLayout} = Args
     <$> option auto
         (  long "http-port"
         <> short 'p'
@@ -233,8 +236,6 @@ argParser = Args
         <> metavar "EXPR"
         <> value dhallLayout
         <> help "Dhall expression to control layout of buttons etc." )
-  where
-    Args{httpPort,wsPort,address,wsPingTime,dhallLayout} = defaultArgs
 
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s = ServerConfig

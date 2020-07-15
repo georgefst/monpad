@@ -17,7 +17,7 @@ import WebGamepad
 
 main :: IO ()
 main = server $ defaultConfig
-    { getArgs = getCommandLineArgs
+    { getArgs = getCommandLineArgs defaultArgs
     , onNewConnection = \(ClientID i) -> do
         fmap (,()) $ newUDevice $ encodeUtf8 i
     , onMessage = \update dev () -> case update of

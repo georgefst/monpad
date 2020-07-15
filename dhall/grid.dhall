@@ -1,12 +1,6 @@
 let Prelude = ./Prelude.dhall
 
-let WG = ./WG.dhall
-
-let Element = WG.Element {} {}
-
-let FullElement = WG.FullElement {} {}
-
-let Layout = WG.Layout {} {}
+let WG = ./WG.dhall {} {}
 
 let grid = { x = 4, y = 4 }
 
@@ -20,7 +14,7 @@ let tile =
       λ(name : Text) →
       λ(colour : WG.Colour) →
         { element =
-            Element.Button
+            WG.Element.Button
               { button = WG.Button.Rectangle rect, colour, buttonData = {=} }
         , location = { x, y }
         , name
@@ -37,7 +31,7 @@ let row =
       λ(y : Natural) →
         Prelude.List.generate
           grid.x
-          FullElement
+          WG.FullElement
           ( λ(x : Natural) →
               tile
                 (x * rect.x + halfRect.x)
@@ -48,8 +42,8 @@ let row =
 
 in    { elements =
           Prelude.List.concat
-            FullElement
-            (Prelude.List.generate grid.y (List FullElement) row)
+            WG.FullElement
+            (Prelude.List.generate grid.y (List WG.FullElement) row)
       , grid = { x = grid.x * rect.x, y = grid.y * rect.y }
       }
-    : Layout
+    : WG.Layout

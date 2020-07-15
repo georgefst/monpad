@@ -1,3 +1,5 @@
+let Prelude = ./Prelude.dhall
+
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
 let Vec2 = { x : Natural, y : Natural }
@@ -44,4 +46,56 @@ let cols =
       , white = col 1.0 1.0 1.0 1.0
       }
 
-in  { Colour, Vec2, Button, Element, FullElement, Layout, cols }
+let voidLayout
+    : ∀(a : Type) → ∀(b : Type) → Layout a b → Layout {} {}
+    = λ(a : Type) →
+      λ(b : Type) →
+      λ(e : Layout a b) →
+          e
+        ⫽ { elements =
+              Prelude.List.map
+                (FullElement a b)
+                (FullElement {} {})
+                ( λ(fe : FullElement a b) →
+                      fe
+                    ⫽ { element =
+                          merge
+                            { Button =
+                                λ ( b
+                                  : { button : Button
+                                    , colour : Colour
+                                    , buttonData : b
+                                    }
+                                  ) →
+                                  (Element {} {}).Button
+                                    (b ⫽ { buttonData = {=} })
+                            , Stick =
+                                λ ( s
+                                  : { radius : Natural
+                                    , range : Natural
+                                    , stickColour : Colour
+                                    , backgroundColour : Colour
+                                    , stickDataX : a
+                                    , stickDataY : a
+                                    }
+                                  ) →
+                                  (Element {} {}).Stick
+                                    (s ⫽ { stickDataX = {=}, stickDataY = {=} })
+                            }
+                            fe.element
+                      }
+                )
+                e.elements
+          }
+
+in  λ(a : Type) →
+    λ(b : Type) →
+      { Colour
+      , Vec2
+      , Button
+      , Element = Element a b
+      , FullElement = FullElement a b
+      , Layout = Layout a b
+      , cols
+      , voidLayout = voidLayout a b
+      }

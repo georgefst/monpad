@@ -1,14 +1,10 @@
-let WG = ./WG.dhall
-
 let Evdev = ./evdev.dhall
 
 let Axis = Evdev.AbsAxis
 
 let Key = Evdev.Key
 
-let Element = WG.Element Axis Key
-
-let Layout = WG.Layout Axis Key
+let WG = ./WG.dhall Evdev.AbsAxis Evdev.Key
 
 let button =
       λ(x : Natural) →
@@ -17,7 +13,8 @@ let button =
       λ(name : Text) →
       λ(colour : WG.Colour) →
         { element =
-            Element.Button { buttonData, colour, button = WG.Button.Circle 120 }
+            WG.Element.Button
+              { buttonData, colour, button = WG.Button.Circle 120 }
         , location = { x, y }
         , name
         , showName = False
@@ -29,7 +26,7 @@ in    { elements =
         , button 1750 500 Key.KeyR "Red" WG.cols.red
         , button 1500 750 Key.KeyY "Yellow" WG.cols.yellow
         , { element =
-              Element.Stick
+              WG.Element.Stick
                 { radius = 120
                 , range = 320
                 , stickColour = WG.cols.white
@@ -44,4 +41,4 @@ in    { elements =
         ]
       , grid = { x = 2000, y = 1000 }
       }
-    : Layout
+    : WG.Layout

@@ -146,7 +146,6 @@ viewElement model element =
                                     )
                                 |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| zeroVec2)
 
-                        --TODO I don't really like this default - perhaps we should just fail here?
                         pos =
                             withDefault zeroVec2 <| Dict.get element.name model.stickPos
                     in
@@ -173,20 +172,7 @@ init : ElmFlags -> ( Model, Cmd Msg )
 init flags =
     ( { username = flags.username
       , layout = flags.layout
-      , stickPos =
-            let
-                isStick e =
-                    case e.element of
-                        Stick _ ->
-                            True
-
-                        _ ->
-                            False
-            in
-            Dict.fromList <|
-                List.map (flip pair zeroVec2 << .name) <|
-                    List.filter isStick
-                        flags.layout.elements
+      , stickPos = Dict.empty
       , pressed = Set.empty
       }
     , Cmd.none

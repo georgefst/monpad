@@ -5,19 +5,28 @@ let Vec2 = { x : Natural, y : Natural }
 let Button = < Circle : Natural | Rectangle : Vec2 >
 
 let Element =
-      < Button : { button : Button, colour : Colour }
-      | Stick :
-          { radius : Natural
-          , range : Natural
-          , stickColour : Colour
-          , backgroundColour : Colour
-          }
-      >
+      λ(a : Type) →
+      λ(b : Type) →
+        < Button : { button : Button, colour : Colour, buttonData : b }
+        | Stick :
+            { radius : Natural
+            , range : Natural
+            , stickColour : Colour
+            , backgroundColour : Colour
+            , stickDataX : a
+            , stickDataY : a
+            }
+        >
 
 let FullElement =
-      { element : Element, location : Vec2, name : Text, showName : Bool }
+      λ(a : Type) →
+      λ(b : Type) →
+        { element : Element a b, location : Vec2, name : Text, showName : Bool }
 
-let Layout = { elements : List FullElement, grid : Vec2 }
+let Layout =
+      λ(a : Type) →
+      λ(b : Type) →
+        { elements : List (FullElement a b), grid : Vec2 }
 
 let col =
       λ(r : Double) →

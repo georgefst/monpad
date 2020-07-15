@@ -382,7 +382,7 @@ showT :: Show a => a -> Text
 showT = T.pack . show
 
 typeRepT :: forall a. Typeable a => Text
-typeRepT = T.dropWhileEnd (`elem` [' ', '*']) . showT $ typeRep @a
+typeRepT = showT $ typeRep @a
 
 -- | Like 'jsonDefinitions', but for types without decoders.
 decodedTypes :: forall t. (HasElmEncoder J.Value t) => [Elm.Definition]

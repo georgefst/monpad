@@ -1,7 +1,7 @@
 module Auto.Element exposing (..)
 
-import Auto.Button
 import Auto.Colour
+import Auto.Shape
 import Auto.Unit
 import Json.Decode
 import Json.Decode.Pipeline
@@ -14,7 +14,7 @@ type Element
     , backgroundColour : Auto.Colour.Colour
     , stickDataX : Auto.Unit.Unit
     , stickDataY : Auto.Unit.Unit }
-    | Button { button : Auto.Button.Button
+    | Button { shape : Auto.Shape.Shape
     , colour : Auto.Colour.Colour
     , buttonData : Auto.Unit.Unit }
 
@@ -38,10 +38,10 @@ decode =
             Json.Decode.Pipeline.required "stickDataY" Auto.Unit.decode)
         
         "Button" ->
-            Json.Decode.map Button (Json.Decode.succeed (\b c d -> { button = b
+            Json.Decode.map Button (Json.Decode.succeed (\b c d -> { shape = b
             , colour = c
             , buttonData = d }) |>
-            Json.Decode.Pipeline.required "button" Auto.Button.decode |>
+            Json.Decode.Pipeline.required "shape" Auto.Shape.decode |>
             Json.Decode.Pipeline.required "colour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "buttonData" Auto.Unit.decode)
         

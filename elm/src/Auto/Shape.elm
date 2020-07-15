@@ -1,16 +1,16 @@
-module Auto.Button exposing (..)
+module Auto.Shape exposing (..)
 
 import Json.Decode
 import Json.Decode.Pipeline
 import Util.IntVector2
 
 
-type Button 
+type Shape 
     = Circle Int
     | Rectangle Util.IntVector2.IntVector2
 
 
-decode : Json.Decode.Decoder Button
+decode : Json.Decode.Decoder Shape
 decode =
     Json.Decode.field "tag" Json.Decode.string |>
     Json.Decode.andThen (\a -> case a of

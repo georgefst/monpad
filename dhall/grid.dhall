@@ -15,7 +15,7 @@ let tile =
       λ(colour : WG.Colour) →
         { element =
             WG.Element.Button
-              { button = WG.Button.Rectangle rect, colour, buttonData = {=} }
+              { shape = WG.Shape.Rectangle rect, colour, buttonData = {=} }
         , location = { x, y }
         , name
         , showName = True

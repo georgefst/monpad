@@ -1,11 +1,11 @@
 module Main exposing (main)
 
-import Auto.Button exposing (..)
 import Auto.Colour exposing (..)
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.Layout exposing (..)
+import Auto.Shape exposing (..)
 import Auto.Update exposing (..)
 import Basics exposing (..)
 import Basics.Extra exposing (..)
@@ -89,7 +89,7 @@ viewElement model element =
                 Button b ->
                     let
                         shape =
-                            case b.button of
+                            case b.shape of
                                 Circle r ->
                                     circle <| toFloat r
 

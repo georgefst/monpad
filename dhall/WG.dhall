@@ -4,12 +4,12 @@ let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
 let Vec2 = { x : Natural, y : Natural }
 
-let Button = < Circle : Natural | Rectangle : Vec2 >
+let Shape = < Circle : Natural | Rectangle : Vec2 >
 
 let Element =
       λ(a : Type) →
       λ(b : Type) →
-        < Button : { button : Button, colour : Colour, buttonData : b }
+        < Button : { shape : Shape, colour : Colour, buttonData : b }
         | Stick :
             { radius : Natural
             , range : Natural
@@ -73,7 +73,7 @@ let mapLayout
                           merge
                             { Button =
                                 λ ( button
-                                  : { button : Button
+                                  : { shape : Shape
                                     , colour : Colour
                                     , buttonData : b0
                                     }
@@ -109,7 +109,7 @@ in  λ(a : Type) →
     λ(b : Type) →
       { Colour
       , Vec2
-      , Button
+      , Shape
       , cols
       , Element = Element a b
       , FullElement = FullElement a b

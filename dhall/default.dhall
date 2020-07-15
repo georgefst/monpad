@@ -14,7 +14,7 @@ let button =
       λ(colour : WG.Colour) →
         { element =
             WG.Element.Button
-              { buttonData, colour, button = WG.Button.Circle 120 }
+              { buttonData, colour, shape = WG.Shape.Circle 120 }
         , location = { x, y }
         , name
         , showName = False

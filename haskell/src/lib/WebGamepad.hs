@@ -126,18 +126,18 @@ data Element a b
         , stickDataY :: a
         }
     | Button
-        { button :: Button
+        { shape :: Shape
         , colour :: Colour
         , buttonData :: b
         }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType2 Element
 
-data Button
+data Shape
     = Circle Int
     | Rectangle (V2 Int)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Button
+    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Shape
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -308,7 +308,7 @@ elm src =
             <>  encodedTypes @(Layout Unit Unit)
             <>  encodedTypes @(FullElement Unit Unit)
             <>  encodedTypes @(Element Unit Unit)
-            <>  encodedTypes @Button
+            <>  encodedTypes @Shape
             <>  encodedTypes @(V2 Int)
             <>  jsonDefinitions @Unit
         modules = Elm.modules definitions

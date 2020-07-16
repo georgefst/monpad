@@ -151,6 +151,52 @@ viewElement model element =
                     in
                     stack [ front, small |> shift (unVec2 <| Vec2.scale range pos), big ]
 
+                Slider s ->
+                    let
+                        rangeX =
+                            toFloat s.rangeX
+
+                        rangeY =
+                            toFloat s.rangeY
+
+                        rad =
+                            toFloat s.radius
+
+                        diam =
+                            2 * rad
+
+                        frontLength =
+                            rangeX + diam
+
+                        frontWidth =
+                            rangeY + diam
+
+                        getOffset event =
+                            ((first event.pointer.offsetPos / frontLength) * 2) - 1
+
+                        slider =
+                            circle rad
+                                |> filled (uniform <| Color.fromRgba s.sliderColour)
+
+                        background =
+                            roundedRectangle rangeX rangeY (rangeY / 2)
+                                |> filled (uniform <| Color.fromRgba s.backgroundColour)
+
+                        front =
+                            -- as with Stick, represents movement area
+                            rectangle frontLength frontWidth
+                                |> filled (uniform <| hsla 0 0 0 0)
+                                |> Collage.on "pointermove"
+                                    (JD.map (Update << SliderMove element.name << getOffset)
+                                        Pointer.eventDecoder
+                                    )
+                                |> Collage.on "pointerout" (JD.succeed <| Update <| SliderMove element.name 0)
+
+                        pos =
+                            withDefault 0 <| Dict.get element.name model.sliderPos
+                    in
+                    stack [ front, slider |> shiftX (pos * rangeX / 2), background ]
+
 
 
 {- Model -}
@@ -161,6 +207,7 @@ type alias Model =
     , layout : Layout
     , stickPos : Dict String Vec2
     , pressed : Set String
+    , sliderPos : Dict String Float
     }
 
 
@@ -174,6 +221,7 @@ init flags =
       , layout = flags.layout
       , stickPos = Dict.empty
       , pressed = Set.empty
+      , sliderPos = Dict.empty
       }
     , Cmd.none
     )
@@ -194,6 +242,9 @@ update msg model =
 
                         StickMove t p ->
                             { model | stickPos = Dict.insert t p model.stickPos }
+
+                        SliderMove t p ->
+                            { model | sliderPos = Dict.insert t p model.sliderPos }
             in
             ( model1
             , sendUpdate u

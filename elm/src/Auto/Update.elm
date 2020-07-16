@@ -9,6 +9,7 @@ type Update
     = ButtonUp String
     | ButtonDown String
     | StickMove String Math.Vector2.Vec2
+    | SliderMove String Float
 
 
 encode : Update -> Json.Encode.Value
@@ -26,3 +27,8 @@ encode a =
             Json.Encode.object [ ("tag" , Json.Encode.string "StickMove")
             , ("contents" , Json.Encode.list identity [ Json.Encode.string b
             , Util.encodeVec2 c ]) ]
+        
+        SliderMove b c ->
+            Json.Encode.object [ ("tag" , Json.Encode.string "SliderMove")
+            , ("contents" , Json.Encode.list identity [ Json.Encode.string b
+            , Json.Encode.float c ]) ]

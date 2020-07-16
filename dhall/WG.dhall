@@ -18,6 +18,14 @@ let Element =
             , stickDataX : a
             , stickDataY : a
             }
+        | Slider :
+            { radius : Natural
+            , rangeX : Natural
+            , rangeY : Natural
+            , sliderColour : Colour
+            , backgroundColour : Colour
+            , sliderData : a
+            }
         >
 
 let FullElement =
@@ -97,6 +105,20 @@ let mapLayout
                                       ⫽ { stickDataX = fa stick.stickDataX
                                         , stickDataY = fa stick.stickDataY
                                         }
+                                    )
+                            , Slider =
+                                λ ( slider
+                                  : { radius : Natural
+                                    , rangeX : Natural
+                                    , rangeY : Natural
+                                    , sliderColour : Colour
+                                    , backgroundColour : Colour
+                                    , sliderData : a0
+                                    }
+                                  ) →
+                                  (Element a1 b1).Slider
+                                    (   slider
+                                      ⫽ { sliderData = fa slider.sliderData }
                                     )
                             }
                             fe.element

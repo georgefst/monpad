@@ -80,6 +80,7 @@ data Update
     = ButtonUp Text
     | ButtonDown Text
     | StickMove Text (V2 Double) -- always a vector within the unit circle
+    | SliderMove Text Double -- abs <= 1
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via ElmType Update
 
@@ -129,6 +130,14 @@ data Element a b
         { shape :: Shape
         , colour :: Colour
         , buttonData :: b
+        }
+    | Slider
+        { radius :: Int
+        , rangeX :: Int
+        , rangeY :: Int
+        , sliderColour :: Colour
+        , backgroundColour :: Colour
+        , sliderData :: a
         }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via ElmType2 Element

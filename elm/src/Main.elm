@@ -130,10 +130,10 @@ viewElement model element =
 
                         big =
                             circle range
-                                |> filled (uniform <| Color.fromRgba stick.backgroundColour)
+                                |> styled ( uniform <| Color.fromRgba stick.backgroundColour, defaultLineStyle )
 
                         small =
-                            circle rad |> filled (uniform <| Color.fromRgba stick.stickColour)
+                            circle rad |> styled ( uniform <| Color.fromRgba stick.stickColour, defaultLineStyle )
 
                         front =
                             -- invisible - area in which touches are registered
@@ -176,11 +176,11 @@ viewElement model element =
 
                         slider =
                             circle rad
-                                |> filled (uniform <| Color.fromRgba s.sliderColour)
+                                |> styled ( uniform <| Color.fromRgba s.sliderColour, defaultLineStyle )
 
                         background =
                             roundedRectangle rangeX rangeY (rangeY / 2)
-                                |> filled (uniform <| Color.fromRgba s.backgroundColour)
+                                |> styled ( uniform <| Color.fromRgba s.backgroundColour, defaultLineStyle )
 
                         front =
                             -- as with Stick, represents movement area

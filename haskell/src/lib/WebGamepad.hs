@@ -58,9 +58,11 @@ import Language.Haskell.To.Elm qualified as Elm
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
+import Network.HTTP.Types
 import Network.Socket qualified as Sock
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Handler.WebSockets
 import Network.WebSockets qualified as WS
 import Options.Applicative hiding (Success, Failure)
 import Servant hiding (layout)
@@ -171,22 +173,20 @@ loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     nameBoxId = "name"
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
-mainHtml :: ElmFlags -> String -> Port -> Html ()
-mainHtml flags address wsPort = doctypehtml_ $
+mainHtml :: ElmFlags -> Port -> Html ()
+mainHtml flags wsPort = doctypehtml_ $
     style_ (mainCSS ())
         <>
     script_ [type_ jsScript] (elmJS ())
         <>
-    script_ [type_ jsScript, makeAttribute "elmFlags" flagsEnc, makeAttribute "wsAddress" wsAddr] (jsJS ())
+    script_ [type_ jsScript, makeAttribute "elmFlags" flagsEnc, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
   where
-    wsAddr = "ws://" <> T.pack address <> ":" <> showT wsPort
     jsScript = "text/javascript"
     flagsEnc = TL.toStrict $ encodeToLazyText flags
 
 defaultArgs :: Args
 defaultArgs = Args
     { httpPort = 8000
-    , address = "localhost"
     , wsPingTime = 30
     , dhallLayout = defaultDhall
     }
@@ -195,7 +195,6 @@ defaultArgs = Args
 --TODO stronger typing for addresses etc.
 data Args = Args
     { httpPort :: Port
-    , address :: String --TODO only affects WS, not HTTP (why do we only need config for the former?)
     , wsPingTime :: Int
     , dhallLayout :: Text
     }
@@ -210,7 +209,7 @@ argParser ::
     -- | defaults
     Args ->
     Parser Args
-argParser Args{httpPort, address, wsPingTime, dhallLayout} = Args
+argParser Args{httpPort, wsPingTime, dhallLayout} = Args
     <$> option auto
         (  long "port"
         <> short 'p'
@@ -218,13 +217,6 @@ argParser Args{httpPort, address, wsPingTime, dhallLayout} = Args
         <> value httpPort
         <> showDefault
         <> help "Port for the HTTP server" )
-    <*> strOption
-        (  long "address"
-        <> short 'a'
-        <> metavar "ADDRESS"
-        <> value address
-        <> showDefault
-        <> help "Address for the websocket server" )
     <*> option auto
         (  long "ws-ping-time"
         <> help "Interval (in seconds) between pings to each websocket"
@@ -251,8 +243,8 @@ data ServerConfig e s a b = ServerConfig
 
 defaultConfig :: ServerConfig () () () ()
 defaultConfig = ServerConfig
-    { onStart = \Args{httpPort,address} -> T.putStrLn $
-        "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> symbolValT @Root
+    { onStart = \Args{httpPort} -> T.putStrLn $
+        "Server started at: localhost:" <> showT httpPort <> "/" <> symbolValT @Root
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
     , onAxis = \() _ () () -> pure ()
@@ -265,7 +257,7 @@ defaultConfig = ServerConfig
 --TODO reject when username is already in use
 server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
 server sc@ServerConfig{onStart} = do
-    args@Args{address,httpPort,dhallLayout} <- getArgs sc
+    args@Args{httpPort,dhallLayout} <- getArgs sc
     onStart args
     let handleMain username = do
             layout <- liftIO $ D.input D.auto dhallLayout
@@ -283,23 +275,25 @@ server sc@ServerConfig{onStart} = do
                     Stick{} -> []
                     Slider{} -> []
             wsPort <- liftIO $ do
-                (wsPort, sock) <- openFreePort --TODO horrible race condition
+                --TODO race condition, but I just can't seem to get 'withApplication' or similar to work
+                (wsPort, sock) <- openFreePort
                 Sock.close sock
-                void $ forkIO $ websocketServer stickmap slidermap butmap wsPort (ClientID username) args sc
-                return wsPort
-            return (mainHtml ElmFlags{layout = bimap (const Unit) (const Unit) layout, username} address wsPort)
+                let opts = setPort wsPort defaultSettings
+                void . forkIO . runSettings opts $ websocketServer stickmap slidermap butmap (ClientID username) args sc
+                pure wsPort
+            return (mainHtml ElmFlags{layout = bimap (const Unit) (const Unit) layout, username} wsPort)
         handleLogin = return loginHtml
     run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
 
---TODO use warp rather than 'WS.runServer' (see jemima)
 --TODO JSON is unnecessarily expensive - use binary once API is stable?
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
-websocketServer :: Map Text (a, a) -> Map Text a -> Map Text b -> Port -> ClientID -> Args -> ServerConfig e s a b -> IO ()
-websocketServer stickmap slidermap butmap wsPort clientId
-    Args{address,wsPingTime}
-    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} = do
-    WS.runServer address wsPort $ \pending -> do
+        -- and as it stands even 'undefined's are not reported
+websocketServer :: Map Text (a, a) -> Map Text a -> Map Text b -> ClientID -> Args -> ServerConfig e s a b -> Application
+websocketServer stickmap slidermap butmap clientId
+    Args{wsPingTime}
+    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} =
+    flip (websocketsOr WS.defaultConnectionOptions) backupApp $ \pending -> do
         conn <- WS.acceptRequest pending
         bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
@@ -313,6 +307,7 @@ websocketServer stickmap slidermap butmap wsPort clientId
                             StickMove t (V2 x y) -> let (x',y') = stickmap ! t in onAxis x' x e s >> onAxis y' y e s
                             SliderMove t x -> onAxis (slidermap ! t) x e s
                         onMessage upd e s
+  where backupApp _ respond = respond $ responseLBS status400 [] "this server only accepts WebSocket requests"
 
 
 {- Elm -}

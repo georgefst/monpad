@@ -17,12 +17,11 @@ window.screen.orientation.onchange = function () {
 
 const elmFlags = JSON.parse(document.currentScript.getAttribute("elmFlags"));
 
-const wsAddress = document.currentScript.getAttribute("wsAddress");
+const wsPort = document.currentScript.getAttribute("wsPort");
+const wsAddress = "ws://" + location.hostname + ":" + wsPort;
 
 const ws = new WebSocket(wsAddress);
 
-//TODO waiting on this before even initialising Elm ensures no race condition, but is it a bit slow?
-// also what if the websocket can't be opened? we should time out
 ws.onopen = function (event) {
     const app = Elm.Main.init({
         flags: elmFlags

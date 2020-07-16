@@ -109,6 +109,7 @@ library
         wai ^>= 3.2.2,
         wai-cors ^>= 0.2.7,
         wai-extra ^>= 3.0.29,
+        wai-websockets ^>= 3.0.1.2,
         warp ^>= 3.3.9,
         websockets ^>= 0.12.7,
     other-extensions:

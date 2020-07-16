@@ -1,3 +1,5 @@
+--TODO move to separate module
+{-# LANGUAGE TemplateHaskell #-}
 --TODO work out why HLS Fourmolu fails on this file
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -16,6 +18,7 @@ module WebGamepad (
 ) where
 
 import Control.Concurrent.Async
+import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO(liftIO))
@@ -23,11 +26,15 @@ import Control.Monad.Loops
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Bifunctor
+import Data.Bifunctor.TH
 import Data.Either.Validation
 import Data.Composition
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
 import Data.Maybe
+import Data.Map (Map, (!), (!?))
+import Data.Map qualified as Map
 import Data.Proxy
 import Data.String (IsString)
 import Data.Text (Text)
@@ -51,6 +58,7 @@ import Language.Haskell.To.Elm qualified as Elm
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
+import Network.Socket qualified as Sock
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
@@ -163,8 +171,8 @@ loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     nameBoxId = "name"
 
 --TODO investigate performance - is it expensive to reassemble the HTML for a new username?
-mainHtml :: ElmFlags -> Args -> Html ()
-mainHtml flags Args{address,wsPort} = doctypehtml_ $
+mainHtml :: ElmFlags -> String -> Port -> Html ()
+mainHtml flags address wsPort = doctypehtml_ $
     style_ (mainCSS ())
         <>
     script_ [type_ jsScript] (elmJS ())
@@ -178,7 +186,6 @@ mainHtml flags Args{address,wsPort} = doctypehtml_ $
 defaultArgs :: Args
 defaultArgs = Args
     { httpPort = 8000
-    , wsPort = 8001
     , address = "localhost"
     , wsPingTime = 30
     , dhallLayout = defaultDhall
@@ -188,7 +195,6 @@ defaultArgs = Args
 --TODO stronger typing for addresses etc.
 data Args = Args
     { httpPort :: Port
-    , wsPort :: Port
     , address :: String --TODO only affects WS, not HTTP (why do we only need config for the former?)
     , wsPingTime :: Int
     , dhallLayout :: Text
@@ -204,21 +210,14 @@ argParser ::
     -- | defaults
     Args ->
     Parser Args
-argParser Args{httpPort, wsPort, address, wsPingTime, dhallLayout} = Args
+argParser Args{httpPort, address, wsPingTime, dhallLayout} = Args
     <$> option auto
-        (  long "http-port"
+        (  long "port"
         <> short 'p'
         <> metavar "PORT"
         <> value httpPort
         <> showDefault
         <> help "Port for the HTTP server" )
-    <*> option auto
-        (  long "ws-port"
-        <> short 'w'
-        <> metavar "PORT"
-        <> value wsPort
-        <> showDefault
-        <> help "Port for the websocket server" )
     <*> strOption
         (  long "address"
         <> short 'a'
@@ -240,55 +239,80 @@ argParser Args{httpPort, wsPort, address, wsPingTime, dhallLayout} = Args
         <> help "Dhall expression to control layout of buttons etc." )
 
 -- | `e` is a fixed environment. 's' is an updateable state.
-data ServerConfig e s = ServerConfig
+data ServerConfig e s a b = ServerConfig
     { onStart :: Args -> IO ()
     , onNewConnection :: ClientID -> IO (e,s)
     , onMessage :: Update -> e -> s -> IO s
+    , onAxis :: a -> Double -> e -> s -> IO ()
+    , onButton :: b -> Bool -> e -> s -> IO ()
     , onDroppedConnection :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
     , getArgs :: IO Args
     }
 
-defaultConfig :: ServerConfig () ()
+defaultConfig :: ServerConfig () () () ()
 defaultConfig = ServerConfig
     { onStart = \Args{httpPort,address} -> T.putStrLn $
         "Server started at: " <> T.pack address <> ":" <> showT httpPort <> "/" <> symbolValT @Root
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
+    , onAxis = \() _ () () -> pure ()
+    , onButton = \() _ () () -> pure ()
     , onDroppedConnection = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
     , getArgs = return defaultArgs
     }
 
 --TODO security - currently we just trust the names
-server :: ServerConfig e s -> IO ()
-server sc = do
-    args <- getArgs sc
-    onStart sc args
-    httpServer args `race_` websocketServer args sc
-
 --TODO reject when username is already in use
-httpServer :: Args -> IO ()
-httpServer args@Args{httpPort,dhallLayout} = do
+server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
+server sc@ServerConfig{onStart} = do
+    args@Args{address,httpPort,dhallLayout} <- getArgs sc
+    onStart args
     let handleMain username = do
             layout <- liftIO $ D.input D.auto dhallLayout
-            return $ mainHtml ElmFlags{..} args
+            --TODO construct all three in one traversal
+            let stickmap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
+                    Button{} -> []
+                    Stick{stickDataX,stickDataY} -> [(name, (stickDataX,stickDataY))]
+                    Slider{} -> []
+            let slidermap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
+                    Button{} -> []
+                    Stick{} -> []
+                    Slider{sliderData} -> [(name, sliderData)]
+            let butmap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
+                    Button{buttonData} -> [(name, buttonData)]
+                    Stick{} -> []
+                    Slider{} -> []
+            wsPort <- liftIO $ do
+                (wsPort, sock) <- openFreePort --TODO horrible race condition
+                Sock.close sock
+                void $ forkIO $ websocketServer stickmap slidermap butmap wsPort (ClientID username) args sc
+                return wsPort
+            return (mainHtml ElmFlags{layout = bimap (const Unit) (const Unit) layout, username} address wsPort)
         handleLogin = return loginHtml
-    run httpPort $ serve (Proxy @API) $ maybe handleLogin handleMain
+    run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
 
 --TODO use warp rather than 'WS.runServer' (see jemima)
 --TODO JSON is unnecessarily expensive - use binary once API is stable?
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
-websocketServer :: Args -> ServerConfig e s -> IO ()
-websocketServer Args{wsPort,address,wsPingTime} ServerConfig{onNewConnection,onMessage,onDroppedConnection} =
+websocketServer :: Map Text (a, a) -> Map Text a -> Map Text b -> Port -> ClientID -> Args -> ServerConfig e s a b -> IO ()
+websocketServer stickmap slidermap butmap wsPort clientId
+    Args{address,wsPingTime}
+    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} = do
     WS.runServer address wsPort $ \pending -> do
         conn <- WS.acceptRequest pending
-        clientId <- ClientID <$> WS.receiveData conn --TODO we send this back and forth rather a lot...
         bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
-            --TODO somehow errors aren't shown - e.g. in linux exe, 'toKey = undefined' fails silently
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
                 (eitherDecode <$> WS.receiveData conn) >>= \case
                     Left err -> pPrint err >> return s --TODO handle error
-                    Right upd -> onMessage upd e s
+                    Right upd -> do
+                        --TODO don't use partial lookup
+                        case upd of
+                            ButtonUp t -> onButton (butmap ! t) False e s
+                            ButtonDown t -> onButton (butmap ! t) True e s
+                            StickMove t (V2 x y) -> let (x',y') = stickmap ! t in onAxis x' x e s >> onAxis y' y e s
+                            SliderMove t x -> onAxis (slidermap ! t) x e s
+                        onMessage upd e s
 
 
 {- Elm -}
@@ -400,3 +424,7 @@ encodedTypes = catMaybes
     [ elmDefinition @t
     , elmDecoderDefinition @J.Value @t
     ]
+
+$(deriveBifunctor ''Layout)
+$(deriveBifunctor ''FullElement)
+$(deriveBifunctor ''Element)

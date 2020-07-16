@@ -24,12 +24,9 @@ const ws = new WebSocket(wsAddress);
 //TODO waiting on this before even initialising Elm ensures no race condition, but is it a bit slow?
 // also what if the websocket can't be opened? we should time out
 ws.onopen = function (event) {
-    ws.send(elmFlags.username);
-
     const app = Elm.Main.init({
         flags: elmFlags
     });
-
     app.ports.sendUpdatePort.subscribe(function (message) {
         ws.send(JSON.stringify(message));
     });

@@ -172,7 +172,12 @@ viewElement model element =
                             rangeY + diam
 
                         getOffset event =
-                            ((first event.pointer.offsetPos / frontLength) * 2) - 1
+                            let
+                                -- value in [-1,1]
+                                normalised =
+                                    (first event.pointer.offsetPos / frontLength) * 2 - 1
+                            in
+                            limit ( -1, 1 ) <| normalised * frontLength / rangeX
 
                         slider =
                             circle rad

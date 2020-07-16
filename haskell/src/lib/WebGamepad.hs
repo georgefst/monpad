@@ -47,14 +47,6 @@ import Language.Elm.Name qualified as Elm
 import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
 import Language.Haskell.To.Elm
-    ( HasElmDecoder,
-      HasElmEncoder (..),
-      HasElmType (..),
-      deriveElmJSONEncoder,
-      deriveElmTypeDefinition,
-      elmDecoderDefinition,
-      jsonDefinitions,
-    )
 import Language.Haskell.To.Elm qualified as Elm
 import Linear
 import Lucid

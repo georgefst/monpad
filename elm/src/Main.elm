@@ -153,43 +153,42 @@ viewElement model element =
 
                 Slider s ->
                     let
-                        rangeX =
-                            toFloat s.rangeX
+                        length =
+                            toFloat s.length
 
-                        rangeY =
-                            toFloat s.rangeY
+                        width =
+                            toFloat s.width
 
                         rad =
                             toFloat s.radius
 
+                        ( getCoord, shiftSlider, ( sizeX, sizeY ) ) =
+                            if s.vertical then
+                                ( second, shiftY, ( width, length ) )
+
+                            else
+                                ( first, shiftX, ( length, width ) )
+
                         diam =
                             2 * rad
 
-                        frontLength =
-                            rangeX + diam
-
-                        frontWidth =
-                            rangeY + diam
-
                         getOffset event =
-                            let
-                                -- value in [-1,1]
-                                normalised =
-                                    (first event.pointer.offsetPos / frontLength) * 2 - 1
-                            in
-                            limit ( -1, 1 ) <| normalised * frontLength / rangeX
+                            applyWhen s.vertical negate <|
+                                limit ( 0, 1 ) ((getCoord event.pointer.offsetPos - rad) / length)
+                                    * 2
+                                    - 1
 
                         slider =
                             circle rad
                                 |> styled ( uniform <| Color.fromRgba s.sliderColour, defaultLineStyle )
 
                         background =
-                            roundedRectangle rangeX rangeY (rangeY / 2)
+                            roundedRectangle sizeX sizeY (width / 2)
                                 |> styled ( uniform <| Color.fromRgba s.backgroundColour, defaultLineStyle )
 
                         front =
                             -- as with Stick, represents movement area
-                            rectangle frontLength frontWidth
+                            rectangle (sizeX + diam) (sizeY + diam)
                                 |> filled (uniform <| hsla 0 0 0 0)
                                 |> Collage.on "pointermove"
                                     (JD.map (Update << SliderMove element.name << getOffset)
@@ -200,7 +199,7 @@ viewElement model element =
                         pos =
                             withDefault 0 <| Dict.get element.name model.sliderPos
                     in
-                    stack [ front, slider |> shiftX (pos * rangeX / 2), background ]
+                    stack [ front, slider |> shiftSlider (pos * length / 2), background ]
 
 
 

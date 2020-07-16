@@ -18,10 +18,11 @@ type Element
     , colour : Auto.Colour.Colour
     , buttonData : Auto.Unit.Unit }
     | Slider { radius : Int
-    , rangeX : Int
-    , rangeY : Int
+    , length : Int
+    , width : Int
     , sliderColour : Auto.Colour.Colour
     , backgroundColour : Auto.Colour.Colour
+    , vertical : Bool
     , sliderData : Auto.Unit.Unit }
 
 
@@ -52,17 +53,19 @@ decode =
             Json.Decode.Pipeline.required "buttonData" Auto.Unit.decode)
         
         "Slider" ->
-            Json.Decode.map Slider (Json.Decode.succeed (\b c d e f g -> { radius = b
-            , rangeX = c
-            , rangeY = d
+            Json.Decode.map Slider (Json.Decode.succeed (\b c d e f g h -> { radius = b
+            , length = c
+            , width = d
             , sliderColour = e
             , backgroundColour = f
-            , sliderData = g }) |>
+            , vertical = g
+            , sliderData = h }) |>
             Json.Decode.Pipeline.required "radius" Json.Decode.int |>
-            Json.Decode.Pipeline.required "rangeX" Json.Decode.int |>
-            Json.Decode.Pipeline.required "rangeY" Json.Decode.int |>
+            Json.Decode.Pipeline.required "length" Json.Decode.int |>
+            Json.Decode.Pipeline.required "width" Json.Decode.int |>
             Json.Decode.Pipeline.required "sliderColour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "backgroundColour" Auto.Colour.decode |>
+            Json.Decode.Pipeline.required "vertical" Json.Decode.bool |>
             Json.Decode.Pipeline.required "sliderData" Auto.Unit.decode)
         
         _ ->

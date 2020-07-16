@@ -8,10 +8,11 @@ let slider =
         { element =
             WG.Element.Slider
               { sliderData = {=}
-              , rangeX = 700
-              , rangeY = 100
+              , length = 700
+              , width = 100
               , radius = 100
               , backgroundColour = WG.cols.white
+              , vertical = True
               , sliderColour
               }
         , location = { x, y }

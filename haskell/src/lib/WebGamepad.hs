@@ -133,10 +133,11 @@ data Element a b
         }
     | Slider
         { radius :: Int
-        , rangeX :: Int
-        , rangeY :: Int
+        , length :: Int
+        , width :: Int
         , sliderColour :: Colour
         , backgroundColour :: Colour
+        , vertical :: Bool
         , sliderData :: a
         }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)

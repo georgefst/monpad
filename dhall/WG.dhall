@@ -20,10 +20,11 @@ let Element =
             }
         | Slider :
             { radius : Natural
-            , rangeX : Natural
-            , rangeY : Natural
+            , length : Natural
+            , width : Natural
             , sliderColour : Colour
             , backgroundColour : Colour
+            , vertical : Bool
             , sliderData : a
             }
         >
@@ -109,10 +110,11 @@ let mapLayout
                             , Slider =
                                 λ ( slider
                                   : { radius : Natural
-                                    , rangeX : Natural
-                                    , rangeY : Natural
+                                    , length : Natural
+                                    , width : Natural
                                     , sliderColour : Colour
                                     , backgroundColour : Colour
+                                    , vertical : Bool
                                     , sliderData : a0
                                     }
                                   ) →

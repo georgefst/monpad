@@ -114,14 +114,14 @@ viewElement model element =
                         rad =
                             toFloat stick.radius
 
-                        rBack =
+                        rFront =
                             range + rad
 
                         getOffset event =
                             let
                                 v0 =
                                     -- invert y coord and convert tuple to vector
-                                    uncurry vec2 <| mapSecond negate <| both (\t -> t - rBack) event.pointer.offsetPos
+                                    uncurry vec2 <| mapSecond negate <| both (\t -> t - rFront) event.pointer.offsetPos
 
                                 length =
                                     min range <| Vec2.length v0
@@ -138,7 +138,7 @@ viewElement model element =
                         front =
                             -- invisible - area in which touches are registered
                             -- used to extrude envelope to cover everywhere 'small' might go
-                            circle rBack
+                            circle rFront
                                 |> filled (uniform <| hsla 0 0 0 0)
                                 |> Collage.on "pointermove"
                                     (JD.map (Update << StickMove element.name << getOffset)

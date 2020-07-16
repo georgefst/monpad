@@ -30,7 +30,7 @@ in    { elements =
                 { radius = 120
                 , range = 320
                 , stickColour = WG.cols.white
-                , backgroundColour = WG.cols.black
+                , backgroundColour = WG.cols.grey
                 , stickDataX = Axis.AbsX
                 , stickDataY = Axis.AbsY
                 }

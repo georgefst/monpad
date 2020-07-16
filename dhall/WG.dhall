@@ -52,6 +52,7 @@ let cols =
       , blue = col 0.28 0.28 0.85 1.0
       , yellow = col 0.94 0.95 0.33 1.0
       , black = col 0.0 0.0 0.0 1.0
+      , grey = col 0.35 0.35 0.4 1.0
       , white = col 1.0 1.0 1.0 1.0
       }
 

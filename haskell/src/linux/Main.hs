@@ -16,18 +16,20 @@ import Evdev.Codes
 import WebGamepad
 
 main :: IO ()
-main = server defaultConfig
-    { getArgs = getCommandLineArgs defaultArgs
-    , onNewConnection = \(ClientID i) ->
-        fmap (,()) $ newUDevice $ encodeUtf8 i
-    , onMessage = \update _ () -> onMessage update () ()
-    , onAxis = \a x dev () -> writeBatch dev
-        [AbsoluteEvent a $ EventValue $ translate x]
-    , onButton = \key up dev () -> writeBatch dev
-        [KeyEvent key $ bool Released Pressed up]
-    , onDroppedConnection = \cid _ -> onDroppedConnection cid ()
-    --TODO manually delete the device rather than waiting for it to be GCed
-    }
+main = do
+    args' <- getCommandLineArgs args
+    server defaultConfig
+        { args = args'
+        , onNewConnection = \(ClientID i) ->
+            fmap (,()) $ newUDevice $ encodeUtf8 i
+        , onMessage = \update _ () -> onMessage update () ()
+        , onAxis = \a x dev () -> writeBatch dev
+            [AbsoluteEvent a $ EventValue $ translate x]
+        , onButton = \key up dev () -> writeBatch dev
+            [KeyEvent key $ bool Released Pressed up]
+        , onDroppedConnection = \cid _ -> onDroppedConnection cid ()
+        --TODO manually delete the device rather than waiting for it to be GCed
+        }
   where ServerConfig{..} = defaultConfig
 
 -- input is in [-1,1], output in [0,255]

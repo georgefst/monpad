@@ -235,33 +235,32 @@ argParser Args{httpPort, wsPingTime, dhallLayout} = Args
 
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
-    { onStart :: Args -> IO ()
+    { onStart :: IO ()
     , onNewConnection :: ClientID -> IO (e,s)
     , onMessage :: Update -> e -> s -> IO s
     , onAxis :: a -> Double -> e -> s -> IO ()
     , onButton :: b -> Bool -> e -> s -> IO ()
     , onDroppedConnection :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
-    , getArgs :: IO Args
+    , args :: Args
     }
 
 defaultConfig :: ServerConfig () () () ()
 defaultConfig = ServerConfig
-    { onStart = \Args{httpPort} -> T.putStrLn $
-        "Server started at: localhost:" <> showT httpPort <> "/" <> symbolValT @Root
+    { onStart = pure ()
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
     , onAxis = \() _ () () -> pure ()
     , onButton = \() _ () () -> pure ()
     , onDroppedConnection = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
-    , getArgs = return defaultArgs
+    , args = defaultArgs
     }
 
 --TODO security - currently we just trust the names
 --TODO reject when username is already in use
 server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
-server sc@ServerConfig{onStart} = do
-    args@Args{httpPort,dhallLayout} <- getArgs sc
-    onStart args
+server sc@ServerConfig{onStart, args} = do
+    let Args{httpPort,dhallLayout} = args
+    onStart
     let handleMain username = do
             layout <- liftIO $ D.input D.auto dhallLayout
             --TODO construct all three in one traversal
@@ -425,9 +424,9 @@ encodedTypes = catMaybes
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
-test = server defaultConfig {getArgs = getCommandLineArgs def}
+test = do
+    server defaultConfig {args = over #dhallLayout (voidLayout <>) defaultArgs}
   where
-    def = over #dhallLayout (voidLayout <>) defaultArgs
     voidLayout =
         "let E = ./../dhall/evdev.dhall \
         \let A = E.AbsAxis \

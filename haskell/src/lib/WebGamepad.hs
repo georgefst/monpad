@@ -255,6 +255,13 @@ defaultConfig = ServerConfig
     , args = defaultArgs
     }
 
+data ServerEnv a b = ServerEnv
+    { stickMap :: Map Text (a,a)
+    , sliderMap :: Map Text a
+    , buttonMap :: Map Text b
+    }
+    deriving (Show, Generic)
+
 --TODO security - currently we just trust the names
 --TODO reject when username is already in use
 server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
@@ -262,26 +269,18 @@ server sc@ServerConfig{onStart, args} = do
     let Args{httpPort,dhallLayout} = args
     onStart
     let handleMain username = do
-            layout <- liftIO $ D.input D.auto dhallLayout
-            --TODO construct all three in one traversal
-            let stickmap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
-                    Button{} -> []
-                    Stick{stickDataX,stickDataY} -> [(name, (stickDataX,stickDataY))]
-                    Slider{} -> []
-            let slidermap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
-                    Button{} -> []
-                    Stick{} -> []
-                    Slider{sliderData} -> [(name, sliderData)]
-            let butmap = Map.fromList $ flip concatMap (elements layout) $ \FullElement{element,name} -> case element of
-                    Button{buttonData} -> [(name, buttonData)]
-                    Stick{} -> []
-                    Slider{} -> []
+            layout@Layout{elements} <- liftIO $ D.input D.auto dhallLayout
+            let addToEnv FullElement{name,element} = case element of
+                    Stick{stickDataX,stickDataY} -> over #stickMap $ Map.insert name (stickDataX, stickDataY)
+                    Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
+                    Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
+                env = foldl' (flip addToEnv) (ServerEnv mempty mempty mempty) elements
             wsPort <- liftIO $ do
                 --TODO race condition, but I just can't seem to get 'withApplication' or similar to work
                 (wsPort, sock) <- openFreePort
                 Sock.close sock
                 let opts = setPort wsPort defaultSettings
-                void . forkIO . runSettings opts $ websocketServer stickmap slidermap butmap (ClientID username) args sc
+                void . forkIO . runSettings opts $ websocketServer (ClientID username) env args sc
                 pure wsPort
             return (mainHtml ElmFlags{layout = bimap (const Unit) (const Unit) layout, username} wsPort)
         handleLogin = return loginHtml
@@ -291,8 +290,9 @@ server sc@ServerConfig{onStart, args} = do
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
         -- and as it stands even 'undefined's are not reported
-websocketServer :: Map Text (a, a) -> Map Text a -> Map Text b -> ClientID -> Args -> ServerConfig e s a b -> Application
-websocketServer stickmap slidermap butmap clientId
+websocketServer :: ClientID -> ServerEnv a b -> Args -> ServerConfig e s a b -> Application
+websocketServer clientId
+     ServerEnv {stickMap, sliderMap, buttonMap}
     Args{wsPingTime}
     ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} =
     flip (websocketsOr WS.defaultConnectionOptions) backupApp $ \pending -> do
@@ -304,10 +304,10 @@ websocketServer stickmap slidermap butmap clientId
                     Right upd -> do
                         --TODO don't use partial lookup
                         case upd of
-                            ButtonUp t -> onButton (butmap ! t) False e s
-                            ButtonDown t -> onButton (butmap ! t) True e s
-                            StickMove t (V2 x y) -> let (x',y') = stickmap ! t in onAxis x' x e s >> onAxis y' y e s
-                            SliderMove t x -> onAxis (slidermap ! t) x e s
+                            ButtonUp t -> onButton (buttonMap ! t) False e s
+                            ButtonDown t -> onButton (buttonMap ! t) True e s
+                            StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x e s >> onAxis y' y e s
+                            SliderMove t x -> onAxis (sliderMap ! t) x e s
                         onMessage upd e s
   where backupApp _ respond = respond $ responseLBS status400 [] "this server only accepts WebSocket requests"
 

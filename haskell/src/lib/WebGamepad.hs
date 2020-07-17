@@ -15,6 +15,7 @@ module WebGamepad (
     Update(..),
     V2(..),
     elm,
+    test,
 ) where
 
 import Control.Concurrent.Async
@@ -30,6 +31,7 @@ import Data.Bifunctor
 import Data.Bifunctor.TH
 import Data.Either.Validation
 import Data.Composition
+import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
 import Data.Maybe
@@ -55,6 +57,7 @@ import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
 import Language.Haskell.To.Elm
 import Language.Haskell.To.Elm qualified as Elm
+import Lens.Micro
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
@@ -419,6 +422,17 @@ encodedTypes = catMaybes
     [ elmDefinition @t
     , elmDecoderDefinition @J.Value @t
     ]
+
+--TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
+test :: IO ()
+test = server defaultConfig {getArgs = getCommandLineArgs def}
+  where
+    def = over #dhallLayout (voidLayout <>) defaultArgs
+    voidLayout =
+        "let E = ./../dhall/evdev.dhall \
+        \let A = E.AbsAxis \
+        \let B = E.Key \
+        \in (./../dhall/WG.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "
 
 $(deriveBifunctor ''Layout)
 $(deriveBifunctor ''FullElement)

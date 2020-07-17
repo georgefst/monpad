@@ -1,6 +1,4 @@
-// TODO Firefox doesn't yet give permission to trigger fullscreen from an orientation change
-// https://github.com/whatwg/fullscreen/issues/34
-// though Firefox actually works kind of alright without fullscreen anyway (Chrome really doesn't)
+// use fullscreen when in landscape
 window.screen.orientation.onchange = function () {
     console.log(this.type)
     switch (this.type) {

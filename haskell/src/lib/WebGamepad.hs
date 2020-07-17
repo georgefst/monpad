@@ -292,7 +292,7 @@ server sc@ServerConfig{onStart, args} = do
         -- and as it stands even 'undefined's are not reported
 websocketServer :: ClientID -> ServerEnv a b -> Args -> ServerConfig e s a b -> Application
 websocketServer clientId
-     ServerEnv {stickMap, sliderMap, buttonMap}
+    ServerEnv {stickMap, sliderMap, buttonMap}
     Args{wsPingTime}
     ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} =
     flip (websocketsOr WS.defaultConnectionOptions) backupApp $ \pending -> do

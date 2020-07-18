@@ -76,11 +76,10 @@ library
         Embed
         Orphans.V2
     hs-source-dirs:
-        src/lib
+        src
     if flag(release)
         other-extensions:
             TemplateHaskell
-        --TODO does -O3 do anything?
         ghc-options:
             -O3
         cpp-options:
@@ -119,9 +118,13 @@ library
 executable web-gamepad
     import:
         common
-    main-is: Main.hs
+    if os(windows)
+        main-is: Windows.hs
+    if os(linux)
+        main-is: Linux.hs
+        build-depends:
+            evdev ^>= 2.0,
     hs-source-dirs:
-        src/linux
+        exe
     build-depends:
         web-gamepad,
-        evdev ^>= 2.0,

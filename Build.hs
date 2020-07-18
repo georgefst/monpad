@@ -33,11 +33,12 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
         removeFilesAfter build ["//*"]
         putInfo "Cleaning generated assets"
         removeFilesAfter rscDistDir ["//*"]
+        removeFilesAfter distDir ["//*"]
 
     wg %> \_ -> do
         need [dhall, elm]
         needDirExcept hsBuildDir hsDir
-        cmd (Cwd "haskell") "cabal install --install-method copy --flags=release --installdir" (".." </> dist)
+        cmd (Cwd "haskell") "cabal install --install-method copy --flags=release --installdir" (".." </> distDir)
 
     elm %> \_ -> do
         needDirExcept elmBuildDir elmDir
@@ -48,13 +49,13 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 {- Constants -}
 
 wg :: FilePath
-wg = dist </> "web-gamepad" <.> exe
+wg = distDir </> "web-gamepad" <.> exe
 
 build :: FilePath
 build = ".build"
 
-dist :: FilePath
-dist = "dist"
+distDir :: FilePath
+distDir = "dist"
 
 rscDir :: FilePath
 rscDir = hsDir </> "rsc"

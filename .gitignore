@@ -1,4 +1,4 @@
-build*/
+.build*/
 dist*/
 elm-stuff*/
 .ghc.environment.*

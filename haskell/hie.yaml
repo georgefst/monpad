@@ -3,8 +3,5 @@ cradle:
     - path: ./src/lib
       component: "web-gamepad"
 
-    - path: ./src/test
-      component: "web-gamepad-test"
-
     - path: ./src/linux
       component: "web-gamepad-linux"

@@ -116,16 +116,7 @@ library
         CPP
         UndecidableInstances
 
-executable web-gamepad-test
-    import:
-        common
-    main-is: Main.hs
-    hs-source-dirs:
-        src/test
-    build-depends:
-        web-gamepad
-
-executable web-gamepad-linux
+executable web-gamepad
     import:
         common
     main-is: Main.hs

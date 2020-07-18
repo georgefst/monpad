@@ -1,0 +1,5 @@
+# TODO remove this once HLS properly supports cabal scripts:
+  # https://github.com/haskell/haskell-language-server/issues/111
+cradle:
+  direct:
+    arguments: [-Wall]

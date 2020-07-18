@@ -4,23 +4,29 @@
 build-depends:
     base,
     dhall,
+    hjsmin,
     shake,
     shake-dhall,
     text,
 -}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Main (main) where
 
+import Control.Exception.Extra (Partial)
 import Data.Function (on)
 import Data.List (isPrefixOf)
 import Data.Text.IO qualified as T
+import Data.Text.Lazy.IO qualified as TL
 import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
 import Dhall.Core (pretty, throws)
 import Dhall.Import (SemanticCacheMode (UseSemanticCache), loadRelativeTo)
 import Dhall.Parser (exprFromText)
+import Language.JavaScript.Parser (parse, renderToText)
+import Language.JavaScript.Process.Minify (minifyJS)
 
 main :: IO ()
 main = shakeArgs shakeOptions {shakeFiles = build} $ do
@@ -49,7 +55,8 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 
     elm %> \_ -> do
         needDirExcept elmBuildDir elmDir
-        cmd (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
+        cmd_ (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
+        liftIO $ minifyFileJS elm
 
     dhallRule dhall (("dhall" </>) . takeFileName)
 
@@ -112,3 +119,9 @@ dhallRule p f = p %> \out -> do
             expr <- throws . exprFromText in' =<< T.readFile in'
             resolvedExpression <- loadRelativeTo (takeDirectory in') UseSemanticCache expr
             T.writeFile out $ pretty resolvedExpression
+
+-- | Minify in place. Fails if file doesn't contain valid JS.
+minifyFileJS :: Partial => FilePath -> IO ()
+minifyFileJS file = flip parse file <$> readFile file >>= \case
+    Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
+    Right ast -> TL.writeFile file $ renderToText $ minifyJS ast

@@ -15,6 +15,14 @@ flag release
     Manual: True
 
 common common
+    if flag(release)
+        ghc-options:
+            -O3
+        cpp-options:
+            -DRELEASE
+    else
+        ghc-options:
+            -O0
     ghc-options:
         -Wall
         -Wno-unused-imports
@@ -80,16 +88,9 @@ library
     if flag(release)
         other-extensions:
             TemplateHaskell
-        ghc-options:
-            -O3
-        cpp-options:
-            -DRELEASE
         build-depends:
             file-embed ^>= 0.0.11.2,
             template-haskell ^>= 2.16,
-    else
-        ghc-options:
-            -O0
     build-depends:
         aeson ^>= 1.4.7,
         bifunctors ^>= 5.5.7,

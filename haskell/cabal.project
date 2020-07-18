@@ -4,3 +4,5 @@ source-repository-package
   subdir: evdev
 
 packages: .
+
+allow-newer: servant-server:base, servant:base

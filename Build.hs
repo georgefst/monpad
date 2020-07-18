@@ -12,6 +12,8 @@ build-depends:
 
 module Main (main) where
 
+import Data.Function (on)
+import Data.List (isPrefixOf)
 import Data.Text.IO qualified as T
 import Development.Shake
 import Development.Shake.Dhall
@@ -33,14 +35,12 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
         removeFilesAfter rscDistDir ["//*"]
 
     wg %> \_ -> do
-        need [dhall, elm, hsDir </> "web-gamepad.cabal", hsDir </> "cabal.project"]
-        need =<< getDirectoryFiles "" [rscDir </> "*"]
-        need =<< getDirectoryFiles "" [hsDir <//> "*.hs"]
+        need [dhall, elm]
+        needDirExcept hsBuildDir hsDir
         cmd (Cwd "haskell") "cabal install --install-method copy --flags=release --installdir" (".." </> dist)
 
     elm %> \_ -> do
-        need [elmDir </> "elm.json"]
-        need =<< getDirectoryFiles "" [elmDir <//> "*.elm"]
+        needDirExcept elmBuildDir elmDir
         cmd (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
 
     dhallRule dhall (("dhall" </>) . takeFileName)
@@ -65,8 +65,14 @@ rscDistDir = rscDir </> "dist"
 hsDir :: FilePath
 hsDir = "haskell"
 
+hsBuildDir :: FilePath
+hsBuildDir = hsDir </> "dist-newstyle"
+
 elmDir :: FilePath
 elmDir = "elm"
+
+elmBuildDir :: FilePath
+elmBuildDir = elmDir </> "elm-stuff"
 
 dhall :: FilePath
 dhall = rscDistDir </> "default" <.> "dhall"
@@ -75,6 +81,11 @@ elm :: FilePath
 elm = rscDistDir </> "elm" <.> "js"
 
 {- Util -}
+
+-- | Need all files in 'dir' except those in 'except'
+needDirExcept :: FilePath -> FilePath -> Action ()
+needDirExcept except dir =
+    need =<< filter (not . (isPrefixOf `on` splitDirectories) except) <$> getDirectoryFiles "" [dir <//> "*"]
 
 -- | Resolve imports in given files
 dhallRule ::

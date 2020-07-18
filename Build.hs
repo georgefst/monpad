@@ -34,13 +34,13 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 
     wg %> \_ -> do
         need [dhall, elm, hsDir </> "web-gamepad.cabal", hsDir </> "cabal.project"]
-        need =<< getDirectoryFiles "" ["rscDir/*"]
-        need =<< getDirectoryFiles "" ["hsDir//*.hs"]
+        need =<< getDirectoryFiles "" [rscDir </> "*"]
+        need =<< getDirectoryFiles "" [hsDir <//> "*.hs"]
         cmd (Cwd "haskell") "cabal install --install-method copy --flags=release --installdir" (".." </> dist)
 
     elm %> \_ -> do
         need [elmDir </> "elm.json"]
-        need =<< getDirectoryFiles "" ["elmDir//*.elm"]
+        need =<< getDirectoryFiles "" [elmDir <//> "*.elm"]
         cmd (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
 
     dhallRule dhall (("dhall" </>) . takeFileName)

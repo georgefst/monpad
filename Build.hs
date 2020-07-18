@@ -28,12 +28,19 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 
     "dhall" ~> need [dhall]
     "elm" ~> need [elm]
-    "clean" ~> do
-        putInfo "Cleaning build artefacts"
-        removeFilesAfter build ["//*"]
-        putInfo "Cleaning generated assets"
-        removeFilesAfter rscDistDir ["//*"]
-        removeFilesAfter distDir ["//*"]
+    let clean = do
+            putInfo "Cleaning Shake build artefacts"
+            removeFilesAfter build ["//*"]
+            putInfo "Cleaning generated assets"
+            removeFilesAfter rscDistDir ["//*"]
+            removeFilesAfter distDir ["//*"]
+    "clean" ~> clean
+    "deep-clean" ~> do
+        putInfo "Cleaning Haskell build artefacts"
+        removeFilesAfter hsBuildDir ["//*"]
+        putInfo "Cleaning Elm artefacts"
+        removeFilesAfter elmBuildDir ["//*"]
+        clean
 
     wg %> \_ -> do
         need [dhall, elm]

@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module WebGamepad (
@@ -25,7 +24,6 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.Bifunctor.TH
 import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
@@ -65,6 +63,7 @@ import System.FilePath
 import Text.Pretty.Simple
 
 import Embed
+import Layout
 import Util
 import Util.Elm qualified as Elm
 import Orphans.V2 ()
@@ -80,70 +79,12 @@ data Update
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
--- field names chosen to match 'elm-color's 'fromRgba'
-data Colour = Colour
-    { red :: Double
-    , green :: Double
-    , blue :: Double
-    , alpha :: Double
-    }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Colour
-
-data Layout a b = Layout
-    { elements :: [FullElement a b]
-    , grid :: V2 Int
-    }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 Layout
-
 data ElmFlags = ElmFlags
     { layout :: Layout Elm.Unit Elm.Unit
     , username :: Text
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
-
-data FullElement a b = FullElement
-    { element :: Element a b
-    , location :: V2 Int
-    , name :: Text
-    , showName :: Bool
-    }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 FullElement
-
-data Element a b
-    = Stick
-        { radius :: Int
-        , range :: Int
-        , stickColour :: Colour
-        , backgroundColour :: Colour
-        , stickDataX :: a
-        , stickDataY :: a
-        }
-    | Button
-        { shape :: Shape
-        , colour :: Colour
-        , buttonData :: b
-        }
-    | Slider
-        { radius :: Int
-        , length :: Int
-        , width :: Int
-        , sliderColour :: Colour
-        , backgroundColour :: Colour
-        , vertical :: Bool
-        , sliderData :: a
-        }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 Element
-
-data Shape
-    = Circle Int
-    | Rectangle (V2 Int)
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Shape
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -334,7 +275,3 @@ test = do
         \let A = E.AbsAxis \
         \let B = E.Key \
         \in (./../dhall/WG.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "
-
-$(deriveBifunctor ''Layout)
-$(deriveBifunctor ''FullElement)
-$(deriveBifunctor ''Element)

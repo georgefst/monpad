@@ -81,6 +81,7 @@ library
         WebGamepad
     other-modules:
         Embed
+        Layout
         Orphans.V2
         Util
         Util.Elm

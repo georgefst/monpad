@@ -44,7 +44,6 @@ import Generics.SOP qualified as SOP
 import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
 import Language.Haskell.To.Elm
-import Language.Haskell.To.Elm qualified as Elm
 import Lens.Micro
 import Linear
 import Lucid
@@ -80,7 +79,7 @@ data Update
     deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 data ElmFlags = ElmFlags
-    { layout :: Layout Elm.Unit Elm.Unit
+    { layout :: Layout () ()
     , username :: Text
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
@@ -208,7 +207,7 @@ server sc@ServerConfig{onStart, args} = do
                 let opts = setPort wsPort defaultSettings
                 void . forkIO . runSettings opts $ websocketServer (ClientID username) env args sc
                 pure wsPort
-            return (mainHtml ElmFlags{layout = bimap (const Elm.Unit) (const Elm.Unit) layout, username} wsPort)
+            return (mainHtml ElmFlags{layout = biVoid layout, username} wsPort)
         handleLogin = return loginHtml
     run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
 
@@ -250,12 +249,11 @@ elm src =
             <>  Elm.decodedTypes @(V2 Double)
             <>  Elm.encodedTypes @ElmFlags
             <>  Elm.encodedTypes @Colour
-            <>  Elm.encodedTypes @(Layout Elm.Unit Elm.Unit)
-            <>  Elm.encodedTypes @(FullElement Elm.Unit Elm.Unit)
-            <>  Elm.encodedTypes @(Element Elm.Unit Elm.Unit)
+            <>  Elm.encodedTypes @(Layout () ())
+            <>  Elm.encodedTypes @(FullElement () ())
+            <>  Elm.encodedTypes @(Element () ())
             <>  Elm.encodedTypes @Shape
             <>  Elm.encodedTypes @(V2 Int)
-            <>  Elm.jsonDefinitions @Elm.Unit
         modules = Elm.modules definitions
         autoFull = src </> T.unpack Elm.autoDir
     in do

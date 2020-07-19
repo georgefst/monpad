@@ -2,9 +2,9 @@ module Auto.Element exposing (..)
 
 import Auto.Colour
 import Auto.Shape
-import Auto.Unit
 import Json.Decode
 import Json.Decode.Pipeline
+import Util
 
 
 type Element 
@@ -12,18 +12,18 @@ type Element
     , range : Int
     , stickColour : Auto.Colour.Colour
     , backgroundColour : Auto.Colour.Colour
-    , stickDataX : Auto.Unit.Unit
-    , stickDataY : Auto.Unit.Unit }
+    , stickDataX : ()
+    , stickDataY : () }
     | Button { shape : Auto.Shape.Shape
     , colour : Auto.Colour.Colour
-    , buttonData : Auto.Unit.Unit }
+    , buttonData : () }
     | Slider { radius : Int
     , length : Int
     , width : Int
     , sliderColour : Auto.Colour.Colour
     , backgroundColour : Auto.Colour.Colour
     , vertical : Bool
-    , sliderData : Auto.Unit.Unit }
+    , sliderData : () }
 
 
 decode : Json.Decode.Decoder Element
@@ -41,8 +41,8 @@ decode =
             Json.Decode.Pipeline.required "range" Json.Decode.int |>
             Json.Decode.Pipeline.required "stickColour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "backgroundColour" Auto.Colour.decode |>
-            Json.Decode.Pipeline.required "stickDataX" Auto.Unit.decode |>
-            Json.Decode.Pipeline.required "stickDataY" Auto.Unit.decode)
+            Json.Decode.Pipeline.required "stickDataX" Util.decodeUnit |>
+            Json.Decode.Pipeline.required "stickDataY" Util.decodeUnit)
         
         "Button" ->
             Json.Decode.map Button (Json.Decode.succeed (\b c d -> { shape = b
@@ -50,7 +50,7 @@ decode =
             , buttonData = d }) |>
             Json.Decode.Pipeline.required "shape" Auto.Shape.decode |>
             Json.Decode.Pipeline.required "colour" Auto.Colour.decode |>
-            Json.Decode.Pipeline.required "buttonData" Auto.Unit.decode)
+            Json.Decode.Pipeline.required "buttonData" Util.decodeUnit)
         
         "Slider" ->
             Json.Decode.map Slider (Json.Decode.succeed (\b c d e f g h -> { radius = b
@@ -66,7 +66,7 @@ decode =
             Json.Decode.Pipeline.required "sliderColour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "backgroundColour" Auto.Colour.decode |>
             Json.Decode.Pipeline.required "vertical" Json.Decode.bool |>
-            Json.Decode.Pipeline.required "sliderData" Auto.Unit.decode)
+            Json.Decode.Pipeline.required "sliderData" Util.decodeUnit)
         
         _ ->
             Json.Decode.fail "No matching constructor")

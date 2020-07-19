@@ -23,7 +23,6 @@ import Control.Monad.Loops
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
-import Data.Bifunctor
 import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.HashMap.Strict qualified as HashMap
 import Data.List

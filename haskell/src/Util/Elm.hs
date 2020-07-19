@@ -13,16 +13,13 @@ module Util.Elm (
 
 import Data.Aeson as JSON
 import Data.Maybe (catMaybes)
-import Data.Proxy (Proxy (Proxy))
-import Data.Text qualified as T
 import Data.Text (Text)
 import GHC.Generics (Generic, Rep)
-import GHC.TypeLits (KnownSymbol, symbolVal)
 import Generics.SOP qualified as SOP
 import Language.Elm.Definition
 import Language.Elm.Name
 import Language.Haskell.To.Elm as Elm
-import Type.Reflection (Typeable, typeRep)
+import Type.Reflection (Typeable)
 import Dhall (FromDhall)
 
 import Util

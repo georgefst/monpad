@@ -16,7 +16,6 @@ module WebGamepad (
     test,
 ) where
 
-import Control.Concurrent.Async
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
@@ -27,13 +26,10 @@ import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Bifunctor.TH
-import Data.Either.Validation
-import Data.Composition
 import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
-import Data.Maybe
-import Data.Map (Map, (!), (!?))
+import Data.Map (Map, (!))
 import Data.Map qualified as Map
 import Data.Proxy
 import Data.String (IsString)
@@ -45,12 +41,8 @@ import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Dhall (FromDhall)
 import Dhall qualified as D
-import Dhall.Core qualified as D
-import GHC.Generics (Generic, Rep)
+import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
-import GHC.TypeLits (KnownSymbol, symbolVal)
-import Language.Elm.Definition qualified as Elm
-import Language.Elm.Name qualified as Elm
 import Language.Elm.Pretty qualified as Elm
 import Language.Elm.Simplification qualified as Elm
 import Language.Haskell.To.Elm
@@ -71,7 +63,6 @@ import Servant.HTML.Lucid
 import System.Directory
 import System.FilePath
 import Text.Pretty.Simple
-import Type.Reflection (Typeable, typeRep)
 
 import Embed
 import Util

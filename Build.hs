@@ -4,7 +4,7 @@
 build-depends:
     base,
     dhall,
-    hjsmin,
+    language-javascript,
     shake,
     shake-dhall,
     text,

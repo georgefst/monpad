@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Util.Elm (
@@ -19,9 +18,6 @@ import GHC.Generics (Generic, Rep)
 import Language.Elm.Definition
 import Language.Elm.Name
 import Language.Haskell.To.Elm as Elm
-import qualified Language.Elm.Expression as Expr
-import qualified Language.Elm.Name as Name
-import qualified Language.Elm.Type as Type
 import Type.Reflection (Typeable)
 
 import Util
@@ -80,13 +76,6 @@ instance (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmD
     HasElmDecoder Value (Via2 a) where
         elmDecoderDefinition =
             Just $ Elm.deriveElmJSONDecoder @(a () ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "decode"
-
-elmUnit :: Qualified
-elmUnit = Name.Qualified ["Basics"] "()"
-instance HasElmDecoder JSON.Value () where
-    elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
-instance HasElmType () where
-    elmType = Type.Global elmUnit
 
 autoDir :: Text
 autoDir = "Auto"

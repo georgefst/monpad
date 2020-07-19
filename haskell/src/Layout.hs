@@ -12,6 +12,7 @@ import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmType)
 import Linear.V2 (V2)
 
+import Orphans.Tuple ()
 import Orphans.V2 ()
 import Util.Elm qualified as Elm
 

@@ -7,7 +7,6 @@ window.screen.orientation.onchange = function () {
             document.documentElement.requestFullscreen();
             break;
         default:
-            //TODO this errors if we're not fullscreen to begin with, but does that actually matter?
             document.exitFullscreen();
             break;
     };

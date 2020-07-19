@@ -54,6 +54,3 @@ applyWhen b f x =
 
     else
         x
-
-decodeUnit : Json.Decode.Decoder ()
-decodeUnit = Json.Decode.succeed ()

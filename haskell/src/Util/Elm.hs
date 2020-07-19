@@ -81,10 +81,12 @@ instance (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmD
         elmDecoderDefinition =
             Just $ Elm.deriveElmJSONDecoder @(a () ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "decode"
 
+elmUnit :: Qualified
+elmUnit = Name.Qualified ["Basics"] "()"
 instance HasElmDecoder JSON.Value () where
-    elmDecoder = Expr.Global $ Name.Qualified ["Util"] "decodeUnit"
+    elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
 instance HasElmType () where
-    elmType = Type.Global $ Name.Qualified ["Basics"] "()"
+    elmType = Type.Global elmUnit
 
 autoDir :: Text
 autoDir = "Auto"

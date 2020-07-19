@@ -74,6 +74,8 @@ import Text.Pretty.Simple
 import Type.Reflection (Typeable, typeRep)
 
 import Embed
+import Util
+import Util.Elm qualified as Elm
 import Orphans.V2 ()
 
 newtype ClientID = ClientID Text
@@ -84,8 +86,8 @@ data Update
     | ButtonDown Text
     | StickMove Text (V2 Double) -- always a vector within the unit circle
     | SliderMove Text Double -- abs <= 1
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
-    deriving (HasElmType, HasElmEncoder J.Value) via ElmType Update
+    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
+    deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
@@ -95,21 +97,21 @@ data Colour = Colour
     , alpha :: Double
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Colour
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Colour
 
 data Layout a b = Layout
     { elements :: [FullElement a b]
     , grid :: V2 Int
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType2 Layout
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 Layout
 
 data ElmFlags = ElmFlags
-    { layout :: Layout Unit Unit
+    { layout :: Layout Elm.Unit Elm.Unit
     , username :: Text
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType ElmFlags
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
 
 data FullElement a b = FullElement
     { element :: Element a b
@@ -118,7 +120,7 @@ data FullElement a b = FullElement
     , showName :: Bool
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType2 FullElement
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 FullElement
 
 data Element a b
     = Stick
@@ -144,13 +146,13 @@ data Element a b
         , sliderData :: a
         }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType2 Element
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 Element
 
 data Shape
     = Circle Int
     | Rectangle (V2 Int)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via ElmType Shape
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Shape
 
 type Root = "gamepad"
 type UsernameParam = "username"
@@ -274,7 +276,7 @@ server sc@ServerConfig{onStart, args} = do
                 let opts = setPort wsPort defaultSettings
                 void . forkIO . runSettings opts $ websocketServer (ClientID username) env args sc
                 pure wsPort
-            return (mainHtml ElmFlags{layout = bimap (const Unit) (const Unit) layout, username} wsPort)
+            return (mainHtml ElmFlags{layout = bimap (const Elm.Unit) (const Elm.Unit) layout, username} wsPort)
         handleLogin = return loginHtml
     run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
 
@@ -302,9 +304,6 @@ websocketServer clientId
                         onMessage upd e s
   where backupApp _ respond = respond $ responseLBS status400 [] "this server only accepts WebSocket requests"
 
-
-{- Elm -}
-
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.
 We could make it externally executable and fully integrate with the build process, but there wouldn't be much point
@@ -315,105 +314,24 @@ e.g. if we added an extra case to 'Update', it would need to be handled in vario
 elm :: FilePath -> IO ()
 elm src =
     let definitions = Elm.simplifyDefinition
-            <$> decodedTypes @Update
-            <>  decodedTypes @(V2 Double)
-            <>  encodedTypes @ElmFlags
-            <>  encodedTypes @Colour
-            <>  encodedTypes @(Layout Unit Unit)
-            <>  encodedTypes @(FullElement Unit Unit)
-            <>  encodedTypes @(Element Unit Unit)
-            <>  encodedTypes @Shape
-            <>  encodedTypes @(V2 Int)
-            <>  jsonDefinitions @Unit
+            <$> Elm.decodedTypes @Update
+            <>  Elm.decodedTypes @(V2 Double)
+            <>  Elm.encodedTypes @ElmFlags
+            <>  Elm.encodedTypes @Colour
+            <>  Elm.encodedTypes @(Layout Elm.Unit Elm.Unit)
+            <>  Elm.encodedTypes @(FullElement Elm.Unit Elm.Unit)
+            <>  Elm.encodedTypes @(Element Elm.Unit Elm.Unit)
+            <>  Elm.encodedTypes @Shape
+            <>  Elm.encodedTypes @(V2 Int)
+            <>  Elm.jsonDefinitions @Elm.Unit
         modules = Elm.modules definitions
-        autoFull = src </> T.unpack elmAutoDir
+        autoFull = src </> T.unpack Elm.autoDir
     in do
         createDirectoryIfMissing False autoFull
         mapM_ (removeFile . (autoFull </>)) =<< listDirectory autoFull
         forM_ (HashMap.toList modules) \(moduleName, contents) ->
             T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
                 renderStrict $ layoutPretty defaultLayoutOptions contents
-
---TODO just use '()' ?
-    -- syntactically awkward to link to Elm
-    -- also the idea was to have instances where Unit-valued fields are omitted
-        -- still unsure how best to achieve this
-data Unit = Unit
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON, FromDhall)
-    deriving (HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value) via ElmType Unit
-
--- | A type to derive via.
-newtype ElmType a = ElmType a
-instance (Generic a, J.GToJSON J.Zero (Rep a), Typeable a) => J.ToJSON (ElmType a) where
-    toJSON (ElmType a) = J.genericToJSON jsonOptions a
-instance (Generic a, J.GFromJSON J.Zero (Rep a), Typeable a) => J.FromJSON (ElmType a) where
-    parseJSON = fmap ElmType . J.genericParseJSON jsonOptions
-instance (SOP.HasDatatypeInfo a, SOP.All2 HasElmType (SOP.Code a), Typeable a) =>
-    HasElmType (ElmType a) where
-        elmDefinition =
-            Just $ deriveElmTypeDefinition @a elmOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] $ typeRepT @a
-instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmEncoder J.Value) (SOP.Code a), HasElmType (ElmType a), Typeable a) =>
-    HasElmEncoder J.Value (ElmType a) where
-        elmEncoderDefinition =
-            Just $ deriveElmJSONEncoder @a elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "encode"
-instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmDecoder J.Value) (SOP.Code a), HasElmType (ElmType a), Typeable a) =>
-    HasElmDecoder J.Value (ElmType a) where
-        elmDecoderDefinition =
-            Just $ Elm.deriveElmJSONDecoder @a elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "decode"
-
-newtype ElmType2 a = ElmType2 (a Unit Unit)
-instance (Generic (a Unit Unit), J.GToJSON J.Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => J.ToJSON (ElmType2 a) where
-    toJSON (ElmType2 a) = J.genericToJSON jsonOptions a
-instance (Generic (a Unit Unit), J.GFromJSON J.Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => J.FromJSON (ElmType2 a) where
-    parseJSON = fmap ElmType2 . J.genericParseJSON jsonOptions
-instance (SOP.HasDatatypeInfo (a Unit Unit), SOP.All2 HasElmType (SOP.Code (a Unit Unit)), Typeable a) =>
-    HasElmType (ElmType2 a) where
-        elmDefinition =
-            Just $ deriveElmTypeDefinition @(a Unit Unit) elmOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] $ typeRepT @a
-instance (SOP.HasDatatypeInfo (a Unit Unit), HasElmType (a Unit Unit), SOP.All2 (HasElmEncoder J.Value) (SOP.Code (a Unit Unit)), HasElmType (ElmType2 a), Typeable a) =>
-    HasElmEncoder J.Value (ElmType2 a) where
-        elmEncoderDefinition =
-            Just $ deriveElmJSONEncoder @(a Unit Unit) elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "encode"
-instance (SOP.HasDatatypeInfo (a Unit Unit), HasElmType (a Unit Unit), SOP.All2 (HasElmDecoder J.Value) (SOP.Code (a Unit Unit)), HasElmType (ElmType2 a), Typeable a) =>
-    HasElmDecoder J.Value (ElmType2 a) where
-        elmDecoderDefinition =
-            Just $ Elm.deriveElmJSONDecoder @(a Unit Unit) elmOptions jsonOptions $ Elm.Qualified [elmAutoDir, typeRepT @a] "decode"
-
-
-elmOptions :: Elm.Options
-elmOptions = Elm.defaultOptions
-
-jsonOptions :: J.Options
-jsonOptions = J.defaultOptions
-
-elmAutoDir :: Text
-elmAutoDir = "Auto"
-
-
-{- Util -}
-
-symbolValT :: forall a. KnownSymbol a => Text
-symbolValT = T.pack $ symbolVal $ Proxy @a
-
-showT :: Show a => a -> Text
-showT = T.pack . show
-
-typeRepT :: forall a. Typeable a => Text
-typeRepT = showT $ typeRep @a
-
--- | Like 'jsonDefinitions', but for types without decoders.
-decodedTypes :: forall t. (HasElmEncoder J.Value t) => [Elm.Definition]
-decodedTypes = catMaybes
-    [ elmDefinition @t
-    , elmEncoderDefinition @J.Value @t
-    ]
-
--- | Like 'jsonDefinitions', but for types without encoders.
-encodedTypes :: forall t. (HasElmDecoder J.Value t) => [Elm.Definition]
-encodedTypes = catMaybes
-    [ elmDefinition @t
-    , elmDecoderDefinition @J.Value @t
-    ]
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()

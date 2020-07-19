@@ -4,6 +4,7 @@ import Auto.Colour exposing (..)
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
+import Auto.IntVec2 as IntVec2 exposing (IntVec2)
 import Auto.Layout exposing (..)
 import Auto.Shape exposing (..)
 import Auto.Update exposing (..)
@@ -30,7 +31,6 @@ import Ports exposing (..)
 import Set exposing (Set)
 import Tuple exposing (..)
 import Util exposing (..)
-import Util.IntVector2 as IntVec2 exposing (IntVector2)
 import Util.Prog exposing (..)
 
 
@@ -55,8 +55,8 @@ view model =
     , body =
         [ svgExplicit
             [ let
-                ( x, y ) =
-                    IntVec2.unVec model.layout.grid
+                { x, y } =
+                    model.layout.grid
               in
               viewBox 0 -y x y
             , style "touch-action" "none"
@@ -79,7 +79,7 @@ showName name =
 
 viewElement : Model -> FullElement -> Collage Msg
 viewElement model element =
-    shift (IntVec2.unVec element.location) <|
+    shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|
             case element.element of
                 Button b ->
@@ -90,7 +90,7 @@ viewElement model element =
                                     circle <| toFloat r
 
                                 Rectangle v ->
-                                    uncurry rectangle <| IntVec2.unVec v
+                                    rectangle (Basics.toFloat v.x) (Basics.toFloat v.y)
                     in
                     shape
                         |> styled

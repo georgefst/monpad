@@ -42,9 +42,9 @@ darkColor c =
     interpolate RGB c Color.black 0.6
 
 
-viewBox : Float -> Float -> Float -> Float -> Html.Attribute msg
+viewBox : Int -> Int -> Int -> Int -> Html.Attribute msg
 viewBox x y w h =
-    Attr.attribute "viewBox" <| String.join " " <| List.map String.fromFloat [ x, y, w, h ]
+    Attr.attribute "viewBox" <| String.join " " <| List.map String.fromInt [ x, y, w, h ]
 
 
 applyWhen : Bool -> (a -> a) -> a -> a

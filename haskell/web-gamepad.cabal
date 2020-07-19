@@ -83,6 +83,8 @@ library
     other-modules:
         Embed
         Orphans.V2
+        Util
+        Util.Elm
     hs-source-dirs:
         src
     if flag(release)

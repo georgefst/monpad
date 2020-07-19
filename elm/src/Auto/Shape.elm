@@ -1,13 +1,13 @@
 module Auto.Shape exposing (..)
 
+import Auto.IntVec2
 import Json.Decode
 import Json.Decode.Pipeline
-import Util.IntVector2
 
 
 type Shape 
     = Circle Int
-    | Rectangle Util.IntVector2.IntVector2
+    | Rectangle Auto.IntVec2.IntVec2
 
 
 decode : Json.Decode.Decoder Shape
@@ -20,7 +20,7 @@ decode =
         
         "Rectangle" ->
             Json.Decode.succeed Rectangle |>
-            Json.Decode.Pipeline.required "contents" Util.IntVector2.decode
+            Json.Decode.Pipeline.required "contents" Auto.IntVec2.decode
         
         _ ->
             Json.Decode.fail "No matching constructor")

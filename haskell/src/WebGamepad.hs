@@ -1,6 +1,4 @@
---TODO move to separate module
 {-# LANGUAGE TemplateHaskell #-}
---TODO work out why HLS Fourmolu fails on this file
 {-# LANGUAGE UndecidableInstances #-}
 
 module WebGamepad (
@@ -158,7 +156,6 @@ type Root = "gamepad"
 type UsernameParam = "username"
 type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
---TODO add styling
 loginHtml :: Html ()
 loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     title_ "Gamepad: login"
@@ -175,7 +172,6 @@ loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
   where
     nameBoxId = "name"
 
---TODO investigate performance - is it expensive to reassemble the HTML for a new username?
 mainHtml :: ElmFlags -> Port -> Html ()
 mainHtml flags wsPort = doctypehtml_ $
     style_ (mainCSS ())
@@ -194,8 +190,6 @@ defaultArgs = Args
     , dhallLayout = defaultDhall
     }
 
---TODO better name (perhaps this should be 'ServerConfig'...)
---TODO stronger typing for addresses etc.
 data Args = Args
     { httpPort :: Port
     , wsPingTime :: Int
@@ -240,7 +234,7 @@ data ServerConfig e s a b = ServerConfig
     , onMessage :: Update -> e -> s -> IO s
     , onAxis :: a -> Double -> e -> s -> IO ()
     , onButton :: b -> Bool -> e -> s -> IO ()
-    , onDroppedConnection :: ClientID -> e -> IO () --TODO take s? not easy due to 'bracket' etc...
+    , onDroppedConnection :: ClientID -> e -> IO ()
     , args :: Args
     }
 
@@ -262,8 +256,6 @@ data ServerEnv a b = ServerEnv
     }
     deriving (Show, Generic)
 
---TODO security - currently we just trust the names
---TODO reject when username is already in use
 server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
 server sc@ServerConfig{onStart, args} = do
     let Args{httpPort,dhallLayout} = args
@@ -286,7 +278,6 @@ server sc@ServerConfig{onStart, args} = do
         handleLogin = return loginHtml
     run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
 
---TODO JSON is unnecessarily expensive - use binary once API is stable?
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
         -- and as it stands even 'undefined's are not reported
@@ -345,6 +336,8 @@ elm src =
 
 --TODO just use '()' ?
     -- syntactically awkward to link to Elm
+    -- also the idea was to have instances where Unit-valued fields are omitted
+        -- still unsure how best to achieve this
 data Unit = Unit
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON, FromDhall)
     deriving (HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value) via ElmType Unit

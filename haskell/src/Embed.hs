@@ -1,4 +1,3 @@
---TODO use backpack instead of CPP
 {-# LANGUAGE CPP #-}
 
 #if defined(RELEASE)

@@ -17,8 +17,6 @@ If you haven't done so before, run `cabal update` to grab the latest package ind
 
 Run `make` to create an executable in the `dist` folder. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
 
-<!-- TODO readd 'advanced' section when development workflow has ossified -->
-
 Run
 ---
 

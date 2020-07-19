@@ -28,7 +28,6 @@ main = do
         , onButton = \key up dev () -> writeBatch dev
             [KeyEvent key $ bool Released Pressed up]
         , onDroppedConnection = \cid _ -> onDroppedConnection cid ()
-        --TODO manually delete the device rather than waiting for it to be GCed
         }
   where ServerConfig{..} = defaultConfig
 

@@ -20,7 +20,6 @@ deriving instance FromJSON (V2 Int)
 
 --TODO we could presumably derive the elm encoder
     --  would require a slight module reorganization
--- link with Elm's 'Vec2'
 deriving instance SOP.Generic (V2 Double)
 deriving instance SOP.HasDatatypeInfo (V2 Double)
 instance HasElmEncoder J.Value (V2 Double) where

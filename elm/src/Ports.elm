@@ -14,4 +14,4 @@ sendUpdate =
 
 port sendUpdatePort :
     JE.Value
-    -> Cmd msg --TODO type - update only
+    -> Cmd msg

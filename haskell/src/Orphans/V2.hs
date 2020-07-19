@@ -34,7 +34,6 @@ instance HasElmDecoder J.Value (V2 Int) where
 instance HasElmType (V2 Int) where
     elmType = Type.Global $ Name.Qualified ["Util", "IntVector2"] "IntVector2"
 
-deriving instance FromDhall (V2 Double)
 data V = V
     { x :: Int
     , y :: Int

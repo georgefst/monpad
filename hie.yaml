@@ -1,5 +1,6 @@
 # TODO remove this once HLS properly supports cabal scripts:
   # https://github.com/haskell/haskell-language-server/issues/111
+# note this still requires the libraries in 'build-depends' to be installed globally
 cradle:
   direct:
     arguments: [-Wall]

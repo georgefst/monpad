@@ -3,5 +3,11 @@ cradle:
     - path: ./src
       component: lib:web-gamepad
 
-    - path: ./exe
+    - path: ./app
+      component: exe:web-gamepad
+
+    - path: ./linux
+      component: exe:web-gamepad
+
+    - path: ./windows
       component: exe:web-gamepad

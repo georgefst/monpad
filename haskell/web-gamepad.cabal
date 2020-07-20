@@ -122,13 +122,17 @@ library
 executable web-gamepad
     import:
         common
+    main-is: Main.hs
+    other-modules: MainOS
     if os(windows)
-        main-is: Windows.hs
+        hs-source-dirs:
+            windows
     if os(linux)
-        main-is: Linux.hs
+        hs-source-dirs:
+            linux
         build-depends:
             evdev ^>= 2.0,
     hs-source-dirs:
-        exe
+        app
     build-depends:
         web-gamepad,

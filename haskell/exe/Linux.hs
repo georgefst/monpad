@@ -3,12 +3,8 @@ module Main (main) where
 
 import Data.Bool (bool)
 import Data.Int (Int32)
-import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
-import Data.Text.IO qualified as T
-import Data.Text (Text)
 import Dhall (Generic, FromDhall)
-import Text.Read (readMaybe)
 
 import Evdev
 import Evdev.Codes

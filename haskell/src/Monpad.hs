@@ -15,10 +15,8 @@ module Monpad (
     test,
 ) where
 
-import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Loops
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
@@ -47,9 +45,6 @@ import Lens.Micro
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
-import Network.HTTP.Types
-import Network.Socket qualified as Sock
-import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WebSockets
 import Network.WebSockets qualified as WS
@@ -117,13 +112,13 @@ mainHtml flags wsPort = doctypehtml_ $
 
 defaultArgs :: Args
 defaultArgs = Args
-    { httpPort = 8000
+    { port = 8000
     , wsPingTime = 30
     , dhallLayout = defaultDhall
     }
 
 data Args = Args
-    { httpPort :: Port
+    { port :: Port
     , wsPingTime :: Int
     , dhallLayout :: Text
     }
@@ -138,14 +133,14 @@ argParser ::
     -- | defaults
     Args ->
     Parser Args
-argParser Args{httpPort, wsPingTime, dhallLayout} = Args
+argParser Args{port, wsPingTime, dhallLayout} = Args
     <$> option auto
         (  long "port"
         <> short 'p'
-        <> metavar "PORT"
-        <> value httpPort
+        <> metavar "INT"
+        <> value port
         <> showDefault
-        <> help "Port for the HTTP server" )
+        <> help "Port number for the server to listen on" )
     <*> option auto
         (  long "ws-ping-time"
         <> help "Interval (in seconds) between pings to each websocket"
@@ -188,38 +183,34 @@ data ServerEnv a b = ServerEnv
     }
     deriving (Show, Generic)
 
-server :: forall e s a b. (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
-server sc@ServerConfig{onStart, args} = do
-    let Args{httpPort,dhallLayout} = args
+mkServerEnv :: Foldable t => t (FullElement a b) -> ServerEnv a b
+mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
+  where
+    addToEnv FullElement{name,element} = case element of
+        Stick{stickDataX,stickDataY} -> over #stickMap $ Map.insert name (stickDataX, stickDataY)
+        Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
+        Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
+
+server :: (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
+server conf@ServerConfig{onStart, args = args@Args{port, dhallLayout}} = do
+    layout@Layout{elements} <- D.input D.auto dhallLayout
     onStart
-    let handleMain username = do
-            layout@Layout{elements} <- liftIO $ D.input D.auto dhallLayout
-            let addToEnv FullElement{name,element} = case element of
-                    Stick{stickDataX,stickDataY} -> over #stickMap $ Map.insert name (stickDataX, stickDataY)
-                    Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
-                    Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
-                env = foldl' (flip addToEnv) (ServerEnv mempty mempty mempty) elements
-            wsPort <- liftIO $ do
-                --TODO race condition, but I just can't seem to get 'withApplication' or similar to work
-                (wsPort, sock) <- openFreePort
-                Sock.close sock
-                let opts = setPort wsPort defaultSettings
-                void . forkIO . runSettings opts $ websocketServer (ClientID username) env args sc
-                pure wsPort
-            return (mainHtml ElmFlags{layout = biVoid layout, username} wsPort)
+    let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
-    run httpPort . serve (Proxy @API) $ maybe handleLogin handleMain
+        backupApp = serve (Proxy @API) $ maybe handleLogin handleMain
+    run port $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) args conf) backupApp
 
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
         -- and as it stands even 'undefined's are not reported
-websocketServer :: ClientID -> ServerEnv a b -> Args -> ServerConfig e s a b -> Application
-websocketServer clientId
+websocketServer :: ServerEnv a b -> Args -> ServerConfig e s a b -> WS.ServerApp
+websocketServer
     ServerEnv {stickMap, sliderMap, buttonMap}
     Args{wsPingTime}
-    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton} =
-    flip (websocketsOr WS.defaultConnectionOptions) backupApp $ \pending -> do
+    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton}
+    pending = do
         conn <- WS.acceptRequest pending
+        clientId <- ClientID <$> WS.receiveData conn
         bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
                 (eitherDecode <$> WS.receiveData conn) >>= \case
@@ -232,7 +223,6 @@ websocketServer clientId
                             StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x e s >> onAxis y' y e s
                             SliderMove t x -> onAxis (sliderMap ! t) x e s
                         onMessage upd e s
-  where backupApp _ respond = respond $ responseLBS status400 [] "this server only accepts WebSocket requests"
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.

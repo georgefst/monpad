@@ -22,60 +22,66 @@ import Type.Reflection (Typeable)
 
 import Util
 
+jsonOpts :: JSON.Options
+jsonOpts = JSON.defaultOptions {sumEncoding = ObjectWithSingleField}
+
+elmOpts :: Elm.Options
+elmOpts = Elm.defaultOptions
+
 -- | A type to derive via.
 newtype Via a = Via a
 instance (Generic a, GToJSON Zero (Rep a), Typeable a) => ToJSON (Via a) where
-    toJSON (Via a) = genericToJSON JSON.defaultOptions a
+    toJSON (Via a) = genericToJSON jsonOpts a
 instance (Generic a, GFromJSON Zero (Rep a), Typeable a) => FromJSON (Via a) where
-    parseJSON = fmap Via . genericParseJSON JSON.defaultOptions
+    parseJSON = fmap Via . genericParseJSON jsonOpts
 instance (SOP.HasDatatypeInfo a, SOP.All2 HasElmType (SOP.Code a), Typeable a) =>
     HasElmType (Via a) where
         elmDefinition =
-            Just $ deriveElmTypeDefinition @a Elm.defaultOptions $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
+            Just $ deriveElmTypeDefinition @a elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
 instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmEncoder Value) (SOP.Code a), HasElmType (Via a), Typeable a) =>
     HasElmEncoder Value (Via a) where
         elmEncoderDefinition =
-            Just $ deriveElmJSONEncoder @a Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "encode"
+            Just $ deriveElmJSONEncoder @a elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
 instance (SOP.HasDatatypeInfo a, HasElmType a, SOP.All2 (HasElmDecoder Value) (SOP.Code a), HasElmType (Via a), Typeable a) =>
     HasElmDecoder Value (Via a) where
         elmDecoderDefinition =
-            Just $ Elm.deriveElmJSONDecoder @a Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "decode"
+            Just $ Elm.deriveElmJSONDecoder @a elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 newtype Via1 a = Via1 (a ())
 instance (Generic (a ()), GToJSON Zero (Rep (a ())), Typeable (a ())) => ToJSON (Via1 a) where
-    toJSON (Via1 a) = genericToJSON JSON.defaultOptions a
+    toJSON (Via1 a) = genericToJSON jsonOpts a
 instance (Generic (a ()), GFromJSON Zero (Rep (a ())), Typeable (a ())) => FromJSON (Via1 a) where
-    parseJSON = fmap Via1 . genericParseJSON JSON.defaultOptions
+    parseJSON = fmap Via1 . genericParseJSON jsonOpts
 instance (SOP.HasDatatypeInfo (a ()), SOP.All2 HasElmType (SOP.Code (a ())), Typeable a) =>
     HasElmType (Via1 a) where
         elmDefinition =
-            Just $ deriveElmTypeDefinition @(a ()) Elm.defaultOptions $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
+            Just $ deriveElmTypeDefinition @(a ()) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
 instance (SOP.HasDatatypeInfo (a ()), HasElmType (a ()), SOP.All2 (HasElmEncoder Value) (SOP.Code (a ())), HasElmType (Via1 a), Typeable a) =>
     HasElmEncoder Value (Via1 a) where
         elmEncoderDefinition =
-            Just $ deriveElmJSONEncoder @(a ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "encode"
+            Just $ deriveElmJSONEncoder @(a ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
 instance (SOP.HasDatatypeInfo (a ()), HasElmType (a ()), SOP.All2 (HasElmDecoder Value) (SOP.Code (a ())), HasElmType (Via1 a), Typeable a) =>
     HasElmDecoder Value (Via1 a) where
         elmDecoderDefinition =
-            Just $ Elm.deriveElmJSONDecoder @(a ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "decode"
+            Just $ Elm.deriveElmJSONDecoder @(a ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 newtype Via2 a = Via2 (a () ())
 instance (Generic (a () ()), GToJSON Zero (Rep (a () ())), Typeable (a () ())) => ToJSON (Via2 a) where
-    toJSON (Via2 a) = genericToJSON JSON.defaultOptions a
+    toJSON (Via2 a) = genericToJSON jsonOpts a
 instance (Generic (a () ()), GFromJSON Zero (Rep (a () ())), Typeable (a () ())) => FromJSON (Via2 a) where
-    parseJSON = fmap Via2 . genericParseJSON JSON.defaultOptions
+    parseJSON = fmap Via2 . genericParseJSON jsonOpts
 instance (SOP.HasDatatypeInfo (a () ()), SOP.All2 HasElmType (SOP.Code (a () ())), Typeable a) =>
     HasElmType (Via2 a) where
         elmDefinition =
-            Just $ deriveElmTypeDefinition @(a () ()) Elm.defaultOptions $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
+            Just $ deriveElmTypeDefinition @(a () ()) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
 instance (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmEncoder Value) (SOP.Code (a () ())), HasElmType (Via2 a), Typeable a) =>
     HasElmEncoder Value (Via2 a) where
         elmEncoderDefinition =
-            Just $ deriveElmJSONEncoder @(a () ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "encode"
+            Just $ deriveElmJSONEncoder @(a () ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
 instance (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmDecoder Value) (SOP.Code (a () ())), HasElmType (Via2 a), Typeable a) =>
     HasElmDecoder Value (Via2 a) where
         elmDecoderDefinition =
-            Just $ Elm.deriveElmJSONDecoder @(a () ()) Elm.defaultOptions JSON.defaultOptions $ Qualified [autoDir, typeRepT @a] "decode"
+            Just $ Elm.deriveElmJSONDecoder @(a () ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 autoDir :: Text
 autoDir = "Auto"

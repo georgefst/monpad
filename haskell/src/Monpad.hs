@@ -53,6 +53,7 @@ import Servant hiding (layout)
 import Servant.HTML.Lucid
 import System.Directory
 import System.FilePath
+import System.IO (stderr, hPutStrLn)
 import Text.Pretty.Simple
 
 import Embed
@@ -214,7 +215,7 @@ websocketServer
         bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
                 (eitherDecode <$> WS.receiveData conn) >>= \case
-                    Left err -> pPrint err >> return s --TODO handle error
+                    Left err -> hPutStrLn stderr ("Could not decode update message from client:\n  " ++ err) >> return s
                     Right upd -> do
                         --TODO don't use partial lookup
                         case upd of

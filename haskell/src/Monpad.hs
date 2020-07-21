@@ -166,13 +166,13 @@ data ServerConfig e s a b = ServerConfig
     , args :: Args
     }
 
-defaultConfig :: ServerConfig () () () ()
+defaultConfig :: ServerConfig () () a b
 defaultConfig = ServerConfig
     { onStart = pure ()
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
-    , onAxis = \() _ () () -> pure ()
-    , onButton = \() _ () () -> pure ()
+    , onAxis = \_ _ () () -> pure ()
+    , onButton = \_ _ () () -> pure ()
     , onDroppedConnection = \(ClientID i) () () -> T.putStrLn $ "Client disconnected: " <> i
     , args = defaultArgs
     }
@@ -256,7 +256,7 @@ elm src =
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
 test = do
-    server defaultConfig {args = over #dhallLayout (voidLayout <>) defaultArgs}
+    server @() @() @() @() defaultConfig {args = over #dhallLayout (voidLayout <>) defaultArgs}
   where
     voidLayout =
         "let E = ./../dhall/evdev.dhall \

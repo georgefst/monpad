@@ -162,7 +162,7 @@ data ServerConfig e s a b = ServerConfig
     , onMessage :: Update -> e -> s -> IO s
     , onAxis :: a -> Double -> e -> s -> IO ()
     , onButton :: b -> Bool -> e -> s -> IO ()
-    , onDroppedConnection :: ClientID -> e -> IO ()
+    , onDroppedConnection :: ClientID -> e -> s -> IO ()
     , args :: Args
     }
 
@@ -173,7 +173,7 @@ defaultConfig = ServerConfig
     , onMessage = \m () () -> pPrint m
     , onAxis = \() _ () () -> pure ()
     , onButton = \() _ () () -> pure ()
-    , onDroppedConnection = \(ClientID i) () -> T.putStrLn $ "Client disconnected: " <> i
+    , onDroppedConnection = \(ClientID i) () () -> T.putStrLn $ "Client disconnected: " <> i
     , args = defaultArgs
     }
 
@@ -212,7 +212,7 @@ websocketServer
     pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn
-        bracket (onNewConnection clientId) (onDroppedConnection clientId . fst) $ \(e,s0) ->
+        bracket (onNewConnection clientId) (uncurry $ onDroppedConnection clientId) $ \(e,s0) ->
             WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
                 (eitherDecode <$> WS.receiveData conn) >>= \case
                     Left err -> hPutStrLn stderr ("Could not decode update message from client:\n  " ++ err) >> return s

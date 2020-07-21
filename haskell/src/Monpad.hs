@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module WebGamepad (
+module Monpad (
     server,
     ServerConfig(..),
     defaultConfig,
@@ -84,13 +84,13 @@ data ElmFlags = ElmFlags
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
 
-type Root = "gamepad"
+type Root = "monpad"
 type UsernameParam = "username"
 type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
 loginHtml :: Html ()
 loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
-    title_ "Gamepad: login"
+    title_ "monpad: login"
         <>
     style_ (mainCSS ())
         <>
@@ -132,7 +132,7 @@ data Args = Args
 getCommandLineArgs :: Args -> IO Args
 getCommandLineArgs def = execParser opts
   where
-    opts = info (helper <*> argParser def) (fullDesc <> header "Web gamepad")
+    opts = info (helper <*> argParser def) (fullDesc <> header "monpad")
 
 argParser ::
     -- | defaults

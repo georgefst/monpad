@@ -51,7 +51,7 @@ main =
 
 view : Model -> Document Msg
 view model =
-    { title = "Gamepad"
+    { title = "monpad"
     , body =
         [ svgExplicit
             [ let

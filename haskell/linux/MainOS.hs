@@ -9,7 +9,7 @@ import Dhall (Generic, FromDhall)
 import Evdev
 import Evdev.Codes
 
-import WebGamepad
+import Monpad
 
 main :: IO ()
 main = do

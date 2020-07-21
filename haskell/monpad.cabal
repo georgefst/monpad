@@ -78,7 +78,7 @@ library
     import:
         common
     exposed-modules:
-        WebGamepad
+        Monpad
     other-modules:
         Embed
         Layout

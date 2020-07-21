@@ -1,13 +1,13 @@
 cradle:
   cabal:
     - path: ./src
-      component: lib:web-gamepad
+      component: lib:monpad
 
     - path: ./app
-      component: exe:web-gamepad
+      component: exe:monpad
 
     - path: ./linux
-      component: exe:web-gamepad
+      component: exe:monpad
 
     - path: ./windows
-      component: exe:web-gamepad
+      component: exe:monpad

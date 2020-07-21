@@ -64,7 +64,7 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 {- Constants -}
 
 wg :: FilePath
-wg = distDir </> "web-gamepad" <.> exe
+wg = distDir </> "monpad" <.> exe
 
 build :: FilePath
 build = ".build"

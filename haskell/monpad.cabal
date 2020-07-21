@@ -1,5 +1,5 @@
 cabal-version:       3.0
-name:                web-gamepad
+name:                monpad
 version:             0.1.0.0
 license:             BSD-3-Clause
 author:              George Thomas
@@ -119,7 +119,7 @@ library
         CPP
         UndecidableInstances
 
-executable web-gamepad
+executable monpad
     import:
         common
     main-is: Main.hs
@@ -135,4 +135,4 @@ executable web-gamepad
     hs-source-dirs:
         app
     build-depends:
-        web-gamepad,
+        monpad,

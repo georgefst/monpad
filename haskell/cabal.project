@@ -1,8 +1,11 @@
+--TODO use Hackage when uinput support is in
 source-repository-package
   type: git
   location: git://github.com/georgefst/evdev.git
   subdir: evdev
 
+--TODO use Hackage when haddock errors resolved:
+  -- https://github.com/haskell/c2hs/pull/256
 source-repository-package
   type: git
   location: git://github.com/georgefst/c2hs.git

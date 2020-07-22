@@ -2,7 +2,7 @@ let Evdev = ./evdev.dhall
 
 let Key = Evdev.Key
 
-let WG = ./WG.dhall Evdev.AbsAxis Evdev.Key
+let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
 
 let button =
       λ(x : Natural) →
@@ -10,10 +10,10 @@ let button =
       λ(buttonData : Key) →
       λ(name : Text) →
         { element =
-            WG.Element.Button
+            monpad.Element.Button
               { buttonData
-              , colour = WG.cols.white
-              , shape = WG.Shape.Rectangle { x = 200, y = 200 }
+              , colour = monpad.cols.white
+              , shape = monpad.Shape.Rectangle { x = 200, y = 200 }
               }
         , location = { x, y }
         , name
@@ -34,4 +34,4 @@ in    { elements =
         ]
       , grid = { x = 800, y = 800 }
       }
-    : WG.Layout
+    : monpad.Layout

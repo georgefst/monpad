@@ -1,6 +1,6 @@
 let Prelude = ./Prelude.dhall
 
-let WG = ./WG.dhall {} {}
+let monpad = ./monpad.dhall {} {}
 
 let grid = { x = 4, y = 4 }
 
@@ -12,26 +12,26 @@ let tile =
       λ(x : Natural) →
       λ(y : Natural) →
       λ(name : Text) →
-      λ(colour : WG.Colour) →
+      λ(colour : monpad.Colour) →
         { element =
-            WG.Element.Button
-              { shape = WG.Shape.Rectangle rect, colour, buttonData = {=} }
+            monpad.Element.Button
+              { shape = monpad.Shape.Rectangle rect, colour, buttonData = {=} }
         , location = { x, y }
         , name
         , showName = True
         }
 
 let colour =
-      λ(v : WG.Vec2) →
+      λ(v : monpad.Vec2) →
         if    Natural/even v.x != Natural/even v.y
-        then  WG.cols.black
-        else  WG.cols.white
+        then  monpad.cols.black
+        else  monpad.cols.white
 
 let row =
       λ(y : Natural) →
         Prelude.List.generate
           grid.x
-          WG.FullElement
+          monpad.FullElement
           ( λ(x : Natural) →
               tile
                 (x * rect.x + halfRect.x)
@@ -42,8 +42,8 @@ let row =
 
 in    { elements =
           Prelude.List.concat
-            WG.FullElement
-            (Prelude.List.generate grid.y (List WG.FullElement) row)
+            monpad.FullElement
+            (Prelude.List.generate grid.y (List monpad.FullElement) row)
       , grid = { x = grid.x * rect.x, y = grid.y * rect.y }
       }
-    : WG.Layout
+    : monpad.Layout

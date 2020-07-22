@@ -257,4 +257,4 @@ test = do
         "let E = ./../dhall/evdev.dhall \
         \let A = E.AbsAxis \
         \let B = E.Key \
-        \in (./../dhall/WG.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "
+        \in (./../dhall/monpad.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "

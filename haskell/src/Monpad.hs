@@ -201,9 +201,6 @@ server conf@ServerConfig{onStart, args = Args{port, dhallLayout}} = do
         backupApp = serve (Proxy @API) $ maybe handleLogin handleMain
     run port $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) backupApp
 
---TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
-    -- we may actually wish to respond to different errors differently
-        -- and as it stands even 'undefined's are not reported
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer
     ServerEnv {stickMap, sliderMap, buttonMap}
@@ -216,7 +213,6 @@ websocketServer
                 (eitherDecode <$> WS.receiveData conn) >>= \case
                     Left err -> hPutStrLn stderr ("Could not decode update message from client:\n  " ++ err) >> return s
                     Right upd -> do
-                        --TODO don't use partial lookup
                         case upd of
                             ButtonUp t -> onButton (buttonMap ! t) False e s
                             ButtonDown t -> onButton (buttonMap ! t) True e s

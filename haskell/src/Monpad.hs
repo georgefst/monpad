@@ -193,22 +193,21 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
 
 server :: (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
-server conf@ServerConfig{onStart, args = args@Args{port, dhallLayout}} = do
+server conf@ServerConfig{onStart, args = Args{port, dhallLayout}} = do
     layout@Layout{elements} <- D.input D.auto dhallLayout
     onStart
     let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
         backupApp = serve (Proxy @API) $ maybe handleLogin handleMain
-    run port $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) args conf) backupApp
+    run port $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) backupApp
 
 --TODO under normal circumstances, connections will end with a 'WS.ConnectionException'
     -- we may actually wish to respond to different errors differently
         -- and as it stands even 'undefined's are not reported
-websocketServer :: ServerEnv a b -> Args -> ServerConfig e s a b -> WS.ServerApp
+websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer
     ServerEnv {stickMap, sliderMap, buttonMap}
-    Args{wsPingTime}
-    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton}
+    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton,args=Args{wsPingTime}}
     pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn

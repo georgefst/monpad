@@ -31,7 +31,7 @@ import Language.JavaScript.Process.Minify (minifyJS)
 
 main :: IO ()
 main = shakeArgs shakeOptions {shakeFiles = build} $ do
-    want [wg]
+    want [monpad]
 
     "dhall" ~> need [dhall]
     "elm" ~> need [elm]
@@ -49,7 +49,7 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
         removeFilesAfter elmBuildDir ["//*"]
         clean
 
-    wg %> \_ -> do
+    monpad %> \_ -> do
         need [dhall, elm]
         needDirExcept hsBuildDir hsDir
         cmd (Cwd "haskell") "cabal install --install-method copy --flags=release --installdir" (".." </> distDir)
@@ -63,8 +63,8 @@ main = shakeArgs shakeOptions {shakeFiles = build} $ do
 
 {- Constants -}
 
-wg :: FilePath
-wg = distDir </> "monpad" <.> exe
+monpad :: FilePath
+monpad = distDir </> "monpad" <.> exe
 
 build :: FilePath
 build = ".build"

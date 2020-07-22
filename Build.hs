@@ -3,8 +3,8 @@
 {- cabal:
 build-depends:
     base,
-    extra,
     dhall,
+    extra,
     language-javascript,
     shake,
     shake-dhall,

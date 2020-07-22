@@ -1,6 +1,10 @@
 # TODO remove this once HLS properly supports cabal scripts:
   # https://github.com/haskell/haskell-language-server/issues/111
-# note this still requires the libraries in 'build-depends' to be installed globally
+# until then, we must install the libs from build-depends, e.g:
+  # cabal install --lib dhall extra language-javascript shake shake-dhall text --package-env=.'
+    # and, in VScode at least, copy the env file up to the root of the project folder
+      # perhaps HLS should set $PWD differently
+    # this wouldn't be necessary if 'cabal run --write-ghc-environment-files=always' actually wrote the files
 cradle:
   direct:
     arguments: [-Wall]

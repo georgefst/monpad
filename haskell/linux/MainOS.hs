@@ -16,9 +16,10 @@ main = do
     args' <- getCommandLineArgs args
     server defaultConfig
         { args = args'
-        , onNewConnection = \(ClientID i) ->
+        , onNewConnection = \c@(ClientID i) -> do
+            _ <- onNewConnection c
             fmap (,()) $ newUDevice $ encodeUtf8 i
-        , onMessage = \update _ () -> onMessage update () ()
+        , onMessage = \update _ -> onMessage update ()
         , onAxis = \a x dev () -> writeBatch dev
             [AbsoluteEvent a $ EventValue $ translate x]
         , onButton = \key up dev () -> writeBatch dev

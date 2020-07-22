@@ -168,7 +168,7 @@ data ServerConfig e s a b = ServerConfig
 
 defaultConfig :: ServerConfig () () a b
 defaultConfig = ServerConfig
-    { onStart = pure ()
+    { onStart = putStrLn "Monpad server started"
     , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
     , onMessage = \m () () -> pPrint m
     , onAxis = \_ _ () () -> pure ()

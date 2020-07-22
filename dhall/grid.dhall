@@ -1,6 +1,8 @@
 let Prelude = ./Prelude.dhall
 
-let monpad = ./monpad.dhall {} {}
+let Evdev = ./evdev.dhall
+
+let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
 
 let grid = { x = 4, y = 4 }
 
@@ -15,7 +17,10 @@ let tile =
       λ(colour : monpad.Colour) →
         { element =
             monpad.Element.Button
-              { shape = monpad.Shape.Rectangle rect, colour, buttonData = {=} }
+              { shape = monpad.Shape.Rectangle rect
+              , colour
+              , buttonData = Evdev.Key.BtnMisc
+              }
         , location = { x, y }
         , name
         , showName = True

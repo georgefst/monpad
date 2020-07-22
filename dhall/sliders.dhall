@@ -1,13 +1,18 @@
-let monpad = ./monpad.dhall {} {}
+let Evdev = ./evdev.dhall
+
+let Axis = Evdev.AbsAxis
+
+let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
 
 let slider =
       λ(x : Natural) →
       λ(y : Natural) →
       λ(name : Text) →
       λ(sliderColour : monpad.Colour) →
+      λ(sliderData : Axis) →
         { element =
             monpad.Element.Slider
-              { sliderData = {=}
+              { sliderData
               , length = 700
               , width = 100
               , radius = 100
@@ -21,8 +26,8 @@ let slider =
         }
 
 in    { elements =
-        [ slider 500 500 "Left" monpad.cols.green
-        , slider 1500 500 "Right" monpad.cols.red
+        [ slider 500 500 "Left" monpad.cols.green Axis.AbsX
+        , slider 1500 500 "Right" monpad.cols.red Axis.AbsX
         ]
       , grid = { x = 2000, y = 1000 }
       }

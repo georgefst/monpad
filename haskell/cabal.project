@@ -3,21 +3,25 @@ source-repository-package
   type: git
   location: git://github.com/georgefst/evdev.git
   subdir: evdev
+  tag: 04a4de11eeec73633753e2a3e0f8805dfee42235
 
 --TODO use Hackage when haddock errors resolved:
   -- https://github.com/haskell/c2hs/pull/256
 source-repository-package
   type: git
   location: git://github.com/georgefst/c2hs.git
+  tag: e457b27727f17599cb61d646039019ca24acbbef
 
 --TODO use Hackage when GHC 8.10 support is in
 source-repository-package
   type: git
   location: git://github.com/haskell-servant/servant.git
   subdir: servant
+  tag: 1f1f7f309ae2f192e37167751962b4398fe3d354
 source-repository-package
   type: git
   location: git://github.com/haskell-servant/servant.git
   subdir: servant-server
+  tag: 1f1f7f309ae2f192e37167751962b4398fe3d354
 
 packages: .

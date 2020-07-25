@@ -19,6 +19,10 @@ const wsAddress = "ws://" + location.hostname + ":" + wsPort;
 
 const ws = new WebSocket(wsAddress);
 
+window.onbeforeunload = function () {
+    ws.close()
+}
+
 ws.onopen = function (event) {
     ws.send(elmFlags.username);
     const app = Elm.Main.init({

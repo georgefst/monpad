@@ -65,6 +65,7 @@ import Orphans.V2 ()
 newtype ClientID = ClientID Text
     deriving newtype (Eq,Ord,Show,IsString)
 
+-- | A message sent by a client.
 data Update
     = ButtonUp Text
     | ButtonDown Text
@@ -73,6 +74,7 @@ data Update
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
+-- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
     { layout :: Layout () ()
     , username :: Text
@@ -118,6 +120,7 @@ defaultArgs = Args
     , dhallLayout = defaultDhall
     }
 
+-- | Command line arguments.
 data Args = Args
     { port :: Port
     , wsPingTime :: Int
@@ -177,6 +180,7 @@ defaultConfig = ServerConfig
     , args = defaultArgs
     }
 
+-- | Maps of element names to axes and buttons.
 data ServerEnv a b = ServerEnv
     { stickMap :: Map Text (a,a)
     , sliderMap :: Map Text a

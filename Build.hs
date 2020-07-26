@@ -2,13 +2,13 @@
 
 {- cabal:
 build-depends:
-    base,
-    dhall,
-    extra,
-    language-javascript,
-    shake,
-    shake-dhall,
-    text,
+    base >= 4.14,
+    dhall ^>= 1.33.1,
+    extra ^>= 1.7.4,
+    language-javascript ^>= 0.7.1.0,
+    shake ^>= 0.19.1,
+    shake-dhall ^>= 0.1.0.0,
+    text ^>= 1.2.3.2,
 -}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}

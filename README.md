@@ -1,7 +1,7 @@
 
 # Monpad
 
-Monpad allows you to use touchscreen devices remotely as inputs to your computer, via a web interface. While initially designed to emulate gamepads, it is highly customisable - for example, you could use it to set up your phone as a wireless keyboard or mouse.
+Monpad allows you to use touchscreen devices remotely as inputs to your computer, via a web interface. While initially designed to emulate gamepads, it is highly customisable - for example, you could use it to set up your phone as a wireless keyboard or mouse, or a buzzer for quizzes.
 
 While touchscreen controls are probably too fiddly for particularly serious/complex games, Monpad is ideal for 'party' games, where relatively few buttons/joysticks are required, and the player limit is often much higher than the number of physical controllers one is likely to own.
 

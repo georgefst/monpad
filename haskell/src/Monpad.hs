@@ -203,7 +203,19 @@ server conf@ServerConfig{onStart, args = Args{port, dhallLayout}} = do
     let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
         backupApp = serve (Proxy @API) $ maybe handleLogin handleMain
-    run port $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) backupApp
+    runSettings (setPort port defaultSettings') $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) backupApp
+  where
+    --TODO upstream to `wai-websockets`
+    -- This is identical in implementation to 'defaultSettings', except for the marked line.
+    -- Seeing as "The goal is to hide exceptions which occur under the normal course of the web server running",
+    -- and "1000 indicates a normal closure", this seems like it shouldn't be shown.
+    defaultSettings' = setOnException defaultOnException' defaultSettings
+      where
+        defaultOnException' _ e = when (defaultShouldDisplayException' e)
+            $ hPutStrLn stderr $ show e
+        defaultShouldDisplayException' e
+            | Just (WS.CloseRequest 1000 "") <- fromException e = False -- here is the difference
+            | otherwise = defaultShouldDisplayException e
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer

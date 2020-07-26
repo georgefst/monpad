@@ -6,28 +6,33 @@ let Vec2 = { x : Natural, y : Natural }
 
 let Shape = < Circle : Natural | Rectangle : Vec2 >
 
+let Button = λ(b : Type) → { shape : Shape, colour : Colour, buttonData : b }
+
+let Stick =
+      λ(a : Type) →
+        { radius : Natural
+        , range : Natural
+        , stickColour : Colour
+        , backgroundColour : Colour
+        , stickDataX : a
+        , stickDataY : a
+        }
+
+let Slider =
+      λ(a : Type) →
+        { radius : Natural
+        , length : Natural
+        , width : Natural
+        , sliderColour : Colour
+        , backgroundColour : Colour
+        , vertical : Bool
+        , sliderData : a
+        }
+
 let Element =
       λ(a : Type) →
       λ(b : Type) →
-        < Button : { shape : Shape, colour : Colour, buttonData : b }
-        | Stick :
-            { radius : Natural
-            , range : Natural
-            , stickColour : Colour
-            , backgroundColour : Colour
-            , stickDataX : a
-            , stickDataY : a
-            }
-        | Slider :
-            { radius : Natural
-            , length : Natural
-            , width : Natural
-            , sliderColour : Colour
-            , backgroundColour : Colour
-            , vertical : Bool
-            , sliderData : a
-            }
-        >
+        < Button : Button b | Stick : Stick a | Slider : Slider a >
 
 let FullElement =
       λ(a : Type) →
@@ -82,26 +87,13 @@ let mapLayout
                     ⫽ { element =
                           merge
                             { Button =
-                                λ ( button
-                                  : { shape : Shape
-                                    , colour : Colour
-                                    , buttonData : b0
-                                    }
-                                  ) →
+                                λ(button : Button b0) →
                                   (Element a1 b1).Button
                                     (   button
                                       ⫽ { buttonData = fb button.buttonData }
                                     )
                             , Stick =
-                                λ ( stick
-                                  : { radius : Natural
-                                    , range : Natural
-                                    , stickColour : Colour
-                                    , backgroundColour : Colour
-                                    , stickDataX : a0
-                                    , stickDataY : a0
-                                    }
-                                  ) →
+                                λ(stick : Stick a0) →
                                   (Element a1 b1).Stick
                                     (   stick
                                       ⫽ { stickDataX = fa stick.stickDataX
@@ -109,16 +101,7 @@ let mapLayout
                                         }
                                     )
                             , Slider =
-                                λ ( slider
-                                  : { radius : Natural
-                                    , length : Natural
-                                    , width : Natural
-                                    , sliderColour : Colour
-                                    , backgroundColour : Colour
-                                    , vertical : Bool
-                                    , sliderData : a0
-                                    }
-                                  ) →
+                                λ(slider : Slider a0) →
                                   (Element a1 b1).Slider
                                     (   slider
                                       ⫽ { sliderData = fa slider.sliderData }

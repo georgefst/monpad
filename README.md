@@ -5,6 +5,8 @@ Monpad allows you to use touchscreen devices remotely as inputs to your computer
 
 While touchscreen controls are probably too fiddly for particularly serious/complex games, Monpad is ideal for 'party' games, where relatively few buttons/joysticks are required, and the player limit is often much higher than the number of physical controllers one is likely to own.
 
+Some example configurations:
+
 ![](screenshots/default.png)
 ![](screenshots/numpad.png)
 ![](screenshots/sliders.png)

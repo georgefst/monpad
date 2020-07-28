@@ -2,8 +2,9 @@
 
 module Monpad (
     server,
+    Monpad,
+    runMonpad,
     ServerConfig(..),
-    defaultConfig,
     Args(..),
     defaultArgs,
     getCommandLineArgs,
@@ -17,17 +18,19 @@ module Monpad (
 
 import Control.Exception
 import Control.Monad
-import Control.Monad.Loops
+import Control.Monad.Reader
+import Control.Monad.State
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Bifunctor
 import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.HashMap.Strict qualified as HashMap
 import Data.List
 import Data.Map (Map, (!))
 import Data.Map qualified as Map
 import Data.Proxy
-import Data.String (IsString)
+import Data.Semigroup.Monad
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
@@ -53,7 +56,6 @@ import Servant hiding (layout)
 import Servant.HTML.Lucid
 import System.Directory
 import System.FilePath
-import System.IO (stderr, hPutStrLn)
 import Text.Pretty.Simple
 
 import Embed
@@ -63,7 +65,7 @@ import Util.Elm qualified as Elm
 import Orphans.V2 ()
 
 newtype ClientID = ClientID Text
-    deriving newtype (Eq,Ord,Show,IsString)
+    deriving (Eq,Ord,Show)
 
 -- | A message sent by a client.
 data Update
@@ -116,14 +118,12 @@ mainHtml flags wsPort = doctypehtml_ $
 defaultArgs :: Args
 defaultArgs = Args
     { port = 8000
-    , wsPingTime = 30
     , dhallLayout = defaultDhall
     }
 
 -- | Command line arguments.
 data Args = Args
     { port :: Port
-    , wsPingTime :: Int
     , dhallLayout :: Text
     }
     deriving (Show, Generic)
@@ -137,7 +137,7 @@ argParser ::
     -- | defaults
     Args ->
     Parser Args
-argParser Args{port, wsPingTime, dhallLayout} = Args
+argParser Args{port, dhallLayout} = Args
     <$> option auto
         (  long "port"
         <> short 'p'
@@ -145,12 +145,6 @@ argParser Args{port, wsPingTime, dhallLayout} = Args
         <> value port
         <> showDefault
         <> help "Port number for the server to listen on" )
-    <*> option auto
-        (  long "ws-ping-time"
-        <> help "Interval (in seconds) between pings to each websocket"
-        <> value wsPingTime
-        <> showDefault
-        <> metavar "INT" )
     <*> strOption
         (  long "layout-dhall"
         <> short 'l'
@@ -158,26 +152,24 @@ argParser Args{port, wsPingTime, dhallLayout} = Args
         <> value dhallLayout
         <> help "Dhall expression to control layout of buttons etc." )
 
+-- | The Monpad monad
+newtype Monpad e s a = Monpad { unMonpad :: StateT s (ReaderT (e, ClientID) IO) a }
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState s)
+deriving via Action (Monpad e s) instance (Semigroup (Monpad e s ()))
+deriving via Action (Monpad e s) instance (Monoid (Monpad e s ()))
+runMonpad :: ClientID -> e -> s -> Monpad e s a -> IO a
+runMonpad c e s mon = runReaderT (evalStateT (unMonpad mon) s) (e, c)
+data MonpadException = WSException WS.ConnectionException | DecodeError String
+    deriving (Eq, Show)
+
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: IO ()
     , onNewConnection :: ClientID -> IO (e,s)
-    , onMessage :: Update -> e -> s -> IO s
-    , onAxis :: a -> Double -> e -> s -> IO ()
-    , onButton :: b -> Bool -> e -> s -> IO ()
-    , onDroppedConnection :: ClientID -> e -> s -> IO ()
-    , args :: Args
-    }
-
-defaultConfig :: ServerConfig () () a b
-defaultConfig = ServerConfig
-    { onStart = putStrLn "Monpad server started"
-    , onNewConnection = \(ClientID i) -> fmap ((),) $ T.putStrLn $ "New client: " <> i
-    , onMessage = \m () () -> pPrint m
-    , onAxis = \_ _ () () -> pure ()
-    , onButton = \_ _ () () -> pure ()
-    , onDroppedConnection = \(ClientID i) () () -> T.putStrLn $ "Client disconnected: " <> i
-    , args = defaultArgs
+    , onMessage :: Update -> Monpad e s ()
+    , onAxis :: a -> Double -> Monpad e s ()
+    , onButton :: b -> Bool -> Monpad e s ()
+    , onDroppedConnection :: MonpadException -> Monpad e s ()
     }
 
 -- | Maps of element names to axes and buttons.
@@ -196,45 +188,37 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
         Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
 
-server :: (FromDhall a, FromDhall b) => ServerConfig e s a b -> IO ()
-server conf@ServerConfig{onStart, args = Args{port, dhallLayout}} = do
+server :: (FromDhall a, FromDhall b) => Args -> ServerConfig e s a b -> IO ()
+server Args{port, dhallLayout} conf = do
     layout@Layout{elements} <- D.input D.auto dhallLayout
-    onStart
+    onStart conf
     let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
         httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
-    runSettings (setPort port defaultSettings') $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) httpServer
-  where
-    --TODO upstream to `wai-websockets`
-    -- This is identical in implementation to 'defaultSettings', except for the marked line.
-    -- Seeing as "The goal is to hide exceptions which occur under the normal course of the web server running",
-    -- and "1000 indicates a normal closure", this seems like it shouldn't be shown.
-    defaultSettings' = setOnException defaultOnException' defaultSettings
-      where
-        defaultOnException' _ e = when (defaultShouldDisplayException' e)
-            $ hPutStrLn stderr $ show e
-        defaultShouldDisplayException' e
-            | Just (WS.CloseRequest 1000 "") <- fromException e = False -- here is the difference
-            | otherwise = defaultShouldDisplayException e
+        wsOpts = WS.defaultConnectionOptions
+    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv elements) conf) httpServer
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer
-    ServerEnv {stickMap, sliderMap, buttonMap}
-    ServerConfig{onNewConnection,onMessage,onDroppedConnection,onAxis,onButton,args=Args{wsPingTime}}
+    ServerEnv{stickMap, sliderMap, buttonMap}
+    ServerConfig{onNewConnection, onMessage, onDroppedConnection, onAxis, onButton}
     pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn
-        bracket (onNewConnection clientId) (uncurry $ onDroppedConnection clientId) $ \(e,s0) ->
-            WS.withPingThread conn wsPingTime (return ()) $ flip iterateM_ s0 $ \s ->
-                (eitherDecode <$> WS.receiveData conn) >>= \case
-                    Left err -> hPutStrLn stderr ("Could not decode update message from client:\n  " ++ err) >> return s
-                    Right upd -> do
-                        case upd of
-                            ButtonUp t -> onButton (buttonMap ! t) False e s
-                            ButtonDown t -> onButton (buttonMap ! t) True e s
-                            StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x e s >> onAxis y' y e s
-                            SliderMove t x -> onAxis (sliderMap ! t) x e s
-                        onMessage upd e s
+        (e,s0) <- onNewConnection clientId
+        WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 $
+            onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+  where
+    getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
+        Left err -> Left $ WSException err
+        Right b -> first DecodeError $ eitherDecode b
+    update u = do
+        onMessage u
+        case u of
+            ButtonUp t -> onButton (buttonMap ! t) False
+            ButtonDown t -> onButton (buttonMap ! t) True
+            StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x >> onAxis y' y
+            SliderMove t x -> onAxis (sliderMap ! t) x
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.
@@ -266,9 +250,17 @@ elm src =
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
-test = do
-    server @() @() @() @() defaultConfig {args = over #dhallLayout (voidLayout <>) defaultArgs}
+test = server args config
   where
+    args = over #dhallLayout (voidLayout <>) defaultArgs
+    config = ServerConfig
+        { onStart = putStrLn "started"
+        , onNewConnection = \c -> putStrLn "connected:" >> pPrint c >> mempty
+        , onMessage = pPrint
+        , onAxis = mempty
+        , onButton = mempty
+        , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
+        } :: ServerConfig () () () ()
     voidLayout =
         "let E = ./../dhall/evdev.dhall \
         \let A = E.AbsAxis \

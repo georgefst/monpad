@@ -18,3 +18,9 @@ typeRepT = showT $ typeRep @a
 
 biVoid :: Bifunctor p => p a b -> p () ()
 biVoid = bimap (const ()) (const ())
+
+untilLeft :: Monad m => m (Either e a) -> m e
+untilLeft x = x >>= either pure (const $ untilLeft x)
+
+mapRightM :: Monad m => (a -> m b) -> Either e a -> m (Either e b)
+mapRightM f = either (return . Left) (fmap Right . f)

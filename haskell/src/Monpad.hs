@@ -159,7 +159,7 @@ deriving via Action (Monpad e s) instance (Semigroup (Monpad e s ()))
 deriving via Action (Monpad e s) instance (Monoid (Monpad e s ()))
 runMonpad :: ClientID -> e -> s -> Monpad e s a -> IO a
 runMonpad c e s mon = runReaderT (evalStateT (unMonpad mon) s) (e, c)
-data MonpadException = WSException WS.ConnectionException | DecodeError String
+data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
 -- | `e` is a fixed environment. 's' is an updateable state.
@@ -210,8 +210,8 @@ websocketServer
             onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
   where
     getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
-        Left err -> Left $ WSException err
-        Right b -> first DecodeError $ eitherDecode b
+        Left err -> Left $ WebSocketException err
+        Right b -> first UpdateDecodeException $ eitherDecode b
     update u = do
         onMessage u
         case u of

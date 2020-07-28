@@ -202,8 +202,8 @@ server conf@ServerConfig{onStart, args = Args{port, dhallLayout}} = do
     onStart
     let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
-        backupApp = serve (Proxy @API) $ maybe handleLogin handleMain
-    runSettings (setPort port defaultSettings') $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) backupApp
+        httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
+    runSettings (setPort port defaultSettings') $ websocketsOr WS.defaultConnectionOptions (websocketServer (mkServerEnv elements) conf) httpServer
   where
     --TODO upstream to `wai-websockets`
     -- This is identical in implementation to 'defaultSettings', except for the marked line.

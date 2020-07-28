@@ -54,6 +54,7 @@ common common
         DeriveGeneric
         DerivingStrategies
         DerivingVia
+        EmptyCase
         FlexibleContexts
         FlexibleInstances
         GeneralizedNewtypeDeriving

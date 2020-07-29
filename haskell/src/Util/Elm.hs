@@ -23,7 +23,7 @@ import Type.Reflection (Typeable)
 import Util
 
 jsonOpts :: JSON.Options
-jsonOpts = JSON.defaultOptions {sumEncoding = ObjectWithSingleField}
+jsonOpts = JSON.defaultOptions --TODO {sumEncoding = ObjectWithSingleField} -- not yet in haskell-to-elm
 
 elmOpts :: Elm.Options
 elmOpts = Elm.defaultOptions

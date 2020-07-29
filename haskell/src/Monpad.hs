@@ -17,7 +17,6 @@ module Monpad (
 ) where
 
 import Control.Exception
-import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
@@ -25,25 +24,18 @@ import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Generics.Labels () --TODO shouldn't really use this in library code
-import Data.HashMap.Strict qualified as HashMap
 import Data.List
 import Data.Map (Map, (!))
 import Data.Map qualified as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
-import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
-import Data.Text.IO qualified as T
-import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
-import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Dhall (FromDhall)
 import Dhall qualified as D
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
-import Language.Elm.Pretty qualified as Elm
-import Language.Elm.Simplification qualified as Elm
-import Language.Haskell.To.Elm
+import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
 import Linear
 import Lucid
@@ -54,7 +46,6 @@ import Network.WebSockets qualified as WS
 import Options.Applicative hiding (Success, Failure)
 import Servant hiding (layout)
 import Servant.HTML.Lucid
-import System.Directory
 import System.FilePath
 import Text.Pretty.Simple
 
@@ -227,26 +218,17 @@ since the kinds of changes we're likely to make which would require re-running t
 are likely to require manual changes to Elm code anyway.
 e.g. if we added an extra case to 'Update', it would need to be handled in various Elm functions.
 -}
-elm :: FilePath -> IO ()
-elm src =
-    let definitions = Elm.simplifyDefinition
-            <$> Elm.decodedTypes @Update
-            <>  Elm.decodedTypes @(V2 Double)
-            <>  Elm.encodedTypes @ElmFlags
-            <>  Elm.encodedTypes @Colour
-            <>  Elm.encodedTypes @(Layout () ())
-            <>  Elm.encodedTypes @(FullElement () ())
-            <>  Elm.encodedTypes @(Element () ())
-            <>  Elm.encodedTypes @Shape
-            <>  Elm.encodedTypes @(V2 Int)
-        modules = Elm.modules definitions
-        autoFull = src </> T.unpack Elm.autoDir
-    in do
-        createDirectoryIfMissing False autoFull
-        mapM_ (removeFile . (autoFull </>)) =<< listDirectory autoFull
-        forM_ (HashMap.toList modules) \(moduleName, contents) ->
-            T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
-                renderStrict $ layoutPretty defaultLayoutOptions contents
+elm :: IO ()
+elm = Elm.writeDefs (".." </> "elm" </> "src")
+    $   Elm.decodedTypes @Update
+    <>  Elm.decodedTypes @(V2 Double)
+    <>  Elm.encodedTypes @ElmFlags
+    <>  Elm.encodedTypes @Colour
+    <>  Elm.encodedTypes @(Layout () ())
+    <>  Elm.encodedTypes @(FullElement () ())
+    <>  Elm.encodedTypes @(Element () ())
+    <>  Elm.encodedTypes @Shape
+    <>  Elm.encodedTypes @(V2 Int)
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()

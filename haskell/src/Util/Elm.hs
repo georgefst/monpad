@@ -1,6 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Util.Elm (
+    writeDefs,
     Via,
     Via1,
     Via2,
@@ -20,7 +21,29 @@ import Language.Elm.Name
 import Language.Haskell.To.Elm as Elm
 import Type.Reflection (Typeable)
 
+import Control.Monad (forM_)
+import Data.HashMap.Strict qualified as HashMap
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
+import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
+import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
+import Language.Elm.Pretty qualified as Pretty
+import Language.Elm.Simplification (simplifyDefinition)
+import System.Directory (createDirectoryIfMissing, removeFile)
+import System.FilePath (joinPath, (<.>), (</>))
+
 import Util
+
+writeDefs :: FilePath -> [Definition] -> IO ()
+writeDefs src defs =
+    let modules = Pretty.modules $ map simplifyDefinition defs
+        autoFull = src </> T.unpack autoDir
+    in do
+        createDirectoryIfMissing False autoFull
+        mapM_ removeFile =<< listDirectory' autoFull
+        forM_ (HashMap.toList modules) \(moduleName, contents) ->
+            T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
+                renderStrict $ layoutPretty defaultLayoutOptions contents
 
 jsonOpts :: JSON.Options
 jsonOpts = JSON.defaultOptions --TODO {sumEncoding = ObjectWithSingleField} -- not yet in haskell-to-elm

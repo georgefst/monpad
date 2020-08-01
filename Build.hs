@@ -12,6 +12,7 @@ build-depends:
 -}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Main (main) where
 

@@ -31,7 +31,7 @@ import Language.JavaScript.Parser (parse, renderToText)
 import Language.JavaScript.Process.Minify (minifyJS)
 
 main :: IO ()
-main = shakeArgs shakeOptions {shakeFiles = build} $ do
+main = shakeArgs shakeOptions $ do
     want [monpad]
 
     "dhall" ~> need [dhall]

@@ -116,8 +116,7 @@ viewElement model element =
                         getOffset event =
                             let
                                 v0 =
-                                    -- invert y coord and convert tuple to vector
-                                    uncurry vec2 <| mapSecond negate <| both (\t -> t - rFront) event.pointer.offsetPos
+                                    uncurry vec2 <| both (\t -> t - rFront) event.pointer.offsetPos
 
                                 length =
                                     min range <| Vec2.length v0
@@ -145,7 +144,7 @@ viewElement model element =
                         pos =
                             withDefault zeroVec2 <| Dict.get element.name model.stickPos
                     in
-                    stack [ front, small |> shift (unVec2 <| Vec2.scale range pos), big ]
+                    stack [ front, small |> shift (mapSecond negate <| unVec2 <| Vec2.scale range pos), big ]
 
                 Slider s ->
                     let

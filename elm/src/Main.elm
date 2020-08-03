@@ -131,14 +131,17 @@ viewElement model element =
                             circle rad |> styled ( uniform <| Color.fromRgba stick.stickColour, defaultLineStyle )
 
                         front =
+                            let
+                                decode =
+                                    JD.map (Update << StickMove element.name << getOffset)
+                                        Pointer.eventDecoder
+                            in
                             -- invisible - area in which touches are registered
                             -- used to extrude envelope to cover everywhere 'small' might go
                             circle rFront
                                 |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove"
-                                    (JD.map (Update << StickMove element.name << getOffset)
-                                        Pointer.eventDecoder
-                                    )
+                                |> Collage.on "pointermove" decode
+                                |> Collage.on "pointerdown" decode
                                 |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| zeroVec2)
 
                         pos =
@@ -182,13 +185,16 @@ viewElement model element =
                                 |> styled ( uniform <| Color.fromRgba s.backgroundColour, defaultLineStyle )
 
                         front =
+                            let
+                                decode =
+                                    JD.map (Update << SliderMove element.name << getOffset)
+                                        Pointer.eventDecoder
+                            in
                             -- as with Stick, represents movement area
                             rectangle (sizeX + diam) (sizeY + diam)
                                 |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove"
-                                    (JD.map (Update << SliderMove element.name << getOffset)
-                                        Pointer.eventDecoder
-                                    )
+                                |> Collage.on "pointermove" decode
+                                |> Collage.on "pointerdown" decode
                                 |> Collage.on "pointerout" (JD.succeed <| Update <| SliderMove element.name 0)
 
                         pos =

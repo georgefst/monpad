@@ -21,10 +21,10 @@ let button =
         }
 
 in    { elements =
-        [ button 1250 500 Key.KeyB "Blue" monpad.cols.blue
-        , button 1500 250 Key.KeyG "Green" monpad.cols.green
-        , button 1750 500 Key.KeyR "Red" monpad.cols.red
-        , button 1500 750 Key.KeyY "Yellow" monpad.cols.yellow
+        [ button 1250 500 Key.BtnWest "Blue" monpad.cols.blue
+        , button 1500 250 Key.BtnSouth "Green" monpad.cols.green
+        , button 1750 500 Key.BtnEast "Red" monpad.cols.red
+        , button 1500 750 Key.BtnNorth "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Stick
                 { radius = 120

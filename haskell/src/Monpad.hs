@@ -183,11 +183,12 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
 server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
 server port layout conf = do
     onStart conf
-    let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
-        handleLogin = return loginHtml
-        httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
-        wsOpts = WS.defaultConnectionOptions
     run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) httpServer
+  where
+    handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
+    handleLogin = return loginHtml
+    httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
+    wsOpts = WS.defaultConnectionOptions
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer

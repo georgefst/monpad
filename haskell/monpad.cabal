@@ -130,6 +130,8 @@ executable monpad
     if os(linux)
         hs-source-dirs:
             linux
+        other-modules:
+            Orphans.Evdev
         build-depends:
             evdev ^>= 2.0,
     hs-source-dirs:

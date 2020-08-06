@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 module MainOS (main) where
 
 import Control.Monad.IO.Class (liftIO)
@@ -6,7 +5,6 @@ import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Int (Int32)
 import Data.Text.IO qualified as T
-import Dhall (FromDhall, Generic)
 import Numeric (readHex)
 import Text.Pretty.Simple (pPrint)
 
@@ -14,6 +12,7 @@ import Evdev
 import Evdev.Codes
 
 import Monpad
+import Orphans.Evdev ()
 
 main :: IO ()
 main = do
@@ -59,8 +58,3 @@ monpadId = fst $ head $ readHex "504d"
 -- input is in [-1,1], output in [0,255]
 translate :: Double -> Int32
 translate x = round $ (x + 1) * 255 / 2
-
-deriving instance Generic Key
-deriving instance FromDhall Key
-deriving instance Generic AbsoluteAxis
-deriving instance FromDhall AbsoluteAxis

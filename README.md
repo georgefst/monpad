@@ -42,7 +42,18 @@ The controller layout and button/axis mapping can be fully customised using [Dha
 
 # Compatibility / Troubleshooting
 
-You will need permissions to write to `/dev/uinput`.
+## uinput
+
+You will need permissions to write to `/dev/uinput`. This can usually be achieved by creating a group specially for `uinput` permissions:
+```bash
+sudo groupadd uinput
+sudo usermod -a -G uinput $USER
+echo 'KERNEL=="uinput", GROUP="uinput", MODE:="0660", OPTIONS+="static_node=uinput"' | sudo tee -a /etc/udev/rules.d/99-uinput.rules > /dev/null
+```
+
+Alternatively, you can just run `monpad` as root.
+
+## SDL
 
 The server creates an `evdev` device, via `uinput`, but this in itself is not enough to be picked up by many games. For broad compatibility, you will need to set the `SDL_GAMECONTROLLERCONFIG` environment variable. There are various ways to manage this, such as:
 
@@ -56,6 +67,8 @@ The server creates an `evdev` device, via `uinput`, but this in itself is not en
     ```
 
 This should register the gamepad correctly with SDL, Unity, Unreal, Steam etc. Note that the value given above is specific to Monpad's default layout. If using a custom layout, it is recommended that you download the [SDL2 Gamepad Tool](https://generalarcade.com/gamepadtool/), and paste the result of clicking `Copy Mapping String`.
+
+## Browsers
 
 Due to the use of some bleeding-edge Web APIs, at time of writing, the client only really works satisfactorily on Firefox Beta for Android:
 - The *pointer events* API is unreliable in Chrome (offsets are reported wrong), and in beta in Firefox.

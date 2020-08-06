@@ -5,9 +5,9 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Int (Int32)
-import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Dhall (FromDhall, Generic)
+import Numeric (readHex)
 import Text.Pretty.Simple (pPrint)
 
 import Evdev
@@ -17,12 +17,27 @@ import Monpad
 
 main :: IO ()
 main = do
-    args <- getCommandLineArgs defaultArgs
-    server args ServerConfig
+    Args{dhallLayout,port} <- getCommandLineArgs defaultArgs
+    layout <- layoutFromDhall dhallLayout
+    let (as,bs) = allAxesAndButs layout
+    server port layout ServerConfig
         { onStart = T.putStrLn "Monpad server started"
         , onNewConnection = \(ClientID i) -> do
             T.putStrLn $ "New client: " <> i
-            fmap (,()) $ newUDevice $ encodeUtf8 i
+            fmap (,()) $ newUDevice $ (defaultNewUDevice "Monpad")
+                { keys = bs
+                , absAxes = zip as $ repeat AbsInfo
+                    { absValue = 127
+                    , absMinimum = 0
+                    , absMaximum = 255
+                    , absFuzz = 0
+                    , absFlat = 0
+                    , absResolution = 0
+                    }
+                , miscs = [MscScan]
+                , idVendor = Just monpadId
+                , idProduct = Just monpadId
+                }
         , onMessage = \m -> do
             c <- asks snd
             pPrint (c,m)
@@ -36,6 +51,10 @@ main = do
             (ClientID i) <- asks snd
             liftIO $ T.putStrLn $ "Client disconnected: " <> i
         }
+
+-- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")
+monpadId :: Int
+monpadId = fst $ head $ readHex "504d"
 
 -- input is in [-1,1], output in [0,255]
 translate :: Double -> Int32

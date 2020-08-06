@@ -14,6 +14,9 @@ module Monpad (
     V2(..),
     elm,
     test,
+    Layout,
+    layoutFromDhall,
+    allAxesAndButs,
 ) where
 
 import Control.Exception
@@ -31,8 +34,6 @@ import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
-import Dhall (FromDhall)
-import Dhall qualified as D
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
@@ -72,7 +73,7 @@ data ElmFlags = ElmFlags
     { layout :: Layout () ()
     , username :: Text
     }
-    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (Show, Generic, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
 
 type Root = "monpad"
@@ -179,15 +180,14 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
         Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
 
-server :: (FromDhall a, FromDhall b) => Args -> ServerConfig e s a b -> IO ()
-server Args{port, dhallLayout} conf = do
-    layout@Layout{elements} <- D.input D.auto dhallLayout
+server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
+server port layout conf = do
     onStart conf
     let handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
         handleLogin = return loginHtml
         httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
         wsOpts = WS.defaultConnectionOptions
-    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv elements) conf) httpServer
+    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) httpServer
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer
@@ -232,9 +232,11 @@ elm = Elm.writeDefs (".." </> "elm" </> "src")
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
-test = server args config
+test = do
+    layout <- layoutFromDhall $ voidLayout <> dhallLayout
+    server port layout config
   where
-    args = over #dhallLayout (voidLayout <>) defaultArgs
+    Args{port,dhallLayout} = defaultArgs
     config = ServerConfig
         { onStart = putStrLn "started"
         , onNewConnection = \c -> putStrLn "connected:" >> pPrint c >> mempty

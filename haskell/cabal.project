@@ -3,7 +3,7 @@ source-repository-package
   type: git
   location: git://github.com/georgefst/evdev.git
   subdir: evdev
-  tag: 04a4de11eeec73633753e2a3e0f8805dfee42235
+  tag: 497396a312d9ace6e36b60816e5400feee796943
 
 --TODO use Hackage when haddock errors resolved:
   -- https://github.com/haskell/c2hs/pull/256

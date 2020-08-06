@@ -4,17 +4,27 @@ module Layout where
 
 import Data.Aeson.Types qualified as JSON
 import Data.Aeson.Types (ToJSON)
-import Data.Text (Text)
 import Data.Bifunctor.TH (deriveBifunctor)
-import Dhall (FromDhall)
+import Data.Either (partitionEithers)
+import Data.Text (Text)
+import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmType)
 import Linear.V2 (V2)
-
 import Orphans.Tuple ()
 import Orphans.V2 ()
 import Util.Elm qualified as Elm
+
+allAxesAndButs :: Layout a b -> ([a], [b])
+allAxesAndButs Layout {elements} = partitionEithers $
+    map element elements >>= \case
+        Stick {stickDataX, stickDataY} -> map Left [stickDataX, stickDataY]
+        Button {buttonData} -> [Right buttonData]
+        Slider {sliderData} -> [Left sliderData]
+
+layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
+layoutFromDhall = input auto
 
 data Layout a b = Layout
     { elements :: [FullElement a b],

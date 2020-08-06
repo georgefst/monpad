@@ -5,10 +5,6 @@ module Monpad (
     Monpad,
     runMonpad,
     ServerConfig(..),
-    Args(..),
-    defaultArgs,
-    getCommandLineArgs,
-    argParser,
     ClientID(..),
     Update(..),
     V2(..),
@@ -17,6 +13,7 @@ module Monpad (
     Layout,
     layoutFromDhall,
     allAxesAndButs,
+    argParser,
 ) where
 
 import Control.Exception
@@ -44,7 +41,7 @@ import Lucid.Base (makeAttribute)
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WebSockets
 import Network.WebSockets qualified as WS
-import Options.Applicative hiding (Success, Failure)
+import Options.Applicative
 import Servant hiding (layout)
 import Servant.HTML.Lucid
 import System.FilePath
@@ -80,6 +77,24 @@ type Root = "monpad"
 type UsernameParam = "username"
 type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
+-- | We don't provide a proper type for args, since backends will want to define their own.
+-- This function just contains the likely common ground.
+argParser :: Parser (Port, Text)
+argParser = (,)
+    <$> option auto
+        (  long "port"
+        <> short 'p'
+        <> metavar "INT"
+        <> value 8000
+        <> showDefault
+        <> help "Port number for the server to listen on" )
+    <*> strOption
+        (  long "layout-dhall"
+        <> short 'l'
+        <> metavar "EXPR"
+        <> value defaultDhall
+        <> help "Dhall expression to control layout of buttons etc." )
+
 loginHtml :: Html ()
 loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
     title_ "monpad: login"
@@ -106,43 +121,6 @@ mainHtml flags wsPort = doctypehtml_ $
   where
     jsScript = "text/javascript"
     flagsEnc = TL.toStrict $ encodeToLazyText flags
-
-defaultArgs :: Args
-defaultArgs = Args
-    { port = 8000
-    , dhallLayout = defaultDhall
-    }
-
--- | Command line arguments.
-data Args = Args
-    { port :: Port
-    , dhallLayout :: Text
-    }
-    deriving (Show, Generic)
-
-getCommandLineArgs :: Args -> IO Args
-getCommandLineArgs def = execParser opts
-  where
-    opts = info (helper <*> argParser def) (fullDesc <> header "monpad")
-
-argParser ::
-    -- | defaults
-    Args ->
-    Parser Args
-argParser Args{port, dhallLayout} = Args
-    <$> option auto
-        (  long "port"
-        <> short 'p'
-        <> metavar "INT"
-        <> value port
-        <> showDefault
-        <> help "Port number for the server to listen on" )
-    <*> strOption
-        (  long "layout-dhall"
-        <> short 'l'
-        <> metavar "EXPR"
-        <> value dhallLayout
-        <> help "Dhall expression to control layout of buttons etc." )
 
 -- | The Monpad monad
 newtype Monpad e s a = Monpad { unMonpad :: StateT s (ReaderT (e, ClientID) IO) a }
@@ -234,10 +212,9 @@ elm = Elm.writeDefs (".." </> "elm" </> "src")
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
 test = do
-    layout <- layoutFromDhall $ voidLayout <> dhallLayout
-    server port layout config
+    layout <- layoutFromDhall $ voidLayout <> defaultDhall
+    server 8000 layout config
   where
-    Args{port,dhallLayout} = defaultArgs
     config = ServerConfig
         { onStart = putStrLn "started"
         , onNewConnection = \c -> putStrLn "connected:" >> pPrint c >> mempty

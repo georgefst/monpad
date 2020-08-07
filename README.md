@@ -78,6 +78,10 @@ Due to the use of some bleeding-edge Web APIs, at time of writing, the client on
 
 There is currently no Windows support, but [it's very much on the roadmap](https://github.com/georgefst/monpad/issues/5).
 
+## Issues
+
+- It is best to wait around a second after the webpage finishes loading, before interacting with the controller. This is likely due to a bug in `libevdev`, or its Haskell bindings. See [here](https://github.com/georgefst/monpad/issues/2).
+
 # Contributing
 
 Get involved! I'm particularly looking for someone who's keen on adding Windows support, since I don't currently have a Windows PC to test on.

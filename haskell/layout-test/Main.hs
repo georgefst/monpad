@@ -29,7 +29,7 @@ main =
                         ( (isCreation `disj` isModification)
                               `conj` EventPredicate ((== fullPath) . eventPath)
                         )
-            [] -> error "no argument given - provide a file to watch"
+            [] -> T.putStrLn "No argument given - provide a file to watch!"
 
 drawLayout :: FilePath -> IO ()
 drawLayout file = do

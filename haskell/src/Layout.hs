@@ -22,7 +22,7 @@ allAxesAndButs :: Layout a b -> ([a], [b])
 allAxesAndButs layout =
     partitionEithers $
         map element layout.elements >>= \case
-            Stick  s -> map Left [s.stickDataX, s.stickDataY]
+            Stick s -> map Left [s.stickDataX, s.stickDataY]
             Button b -> [Right b.buttonData]
             Slider s -> [Left s.sliderData]
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Monpad (
     server,
@@ -151,10 +152,10 @@ data ServerEnv a b = ServerEnv
 mkServerEnv :: Foldable t => t (FullElement a b) -> ServerEnv a b
 mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
   where
-    addToEnv FullElement{name,element} = case element of
-        Stick{stickDataX,stickDataY} -> over #stickMap $ Map.insert name (stickDataX, stickDataY)
-        Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
-        Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
+    addToEnv e = case e.element of
+        StickElement s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
+        SliderElement s -> over #sliderMap $ Map.insert e.name s.sliderData
+        ButtonElement b -> over #buttonMap $ Map.insert e.name b.buttonData
 
 server :: Port -> ServerConfig e s a b -> IO ()
 server port conf = do

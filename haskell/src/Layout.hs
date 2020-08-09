@@ -1,9 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Layout where
 
-import Data.Aeson.Types qualified as JSON
 import Data.Aeson.Types (ToJSON)
+import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor.TH (deriveBifunctor)
 import Data.Either (partitionEithers)
 import Data.Text (Text)
@@ -15,13 +16,15 @@ import Linear.V2 (V2)
 import Orphans.Tuple ()
 import Orphans.V2 ()
 import Util.Elm qualified as Elm
+import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])
-allAxesAndButs Layout {elements} = partitionEithers $
-    map element elements >>= \case
-        Stick {stickDataX, stickDataY} -> map Left [stickDataX, stickDataY]
-        Button {buttonData} -> [Right buttonData]
-        Slider {sliderData} -> [Left sliderData]
+allAxesAndButs Layout {elements} =
+    partitionEithers $
+        map element elements >>= \case
+            StickElement  s -> map Left [s.stickDataX, s.stickDataY]
+            ButtonElement b -> [Right b.buttonData]
+            SliderElement s -> [Left s.sliderData]
 
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
@@ -43,30 +46,42 @@ data FullElement a b = FullElement
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement
 
 data Element a b
-    = Stick
-          { radius :: Int,
-            range :: Int,
-            stickColour :: Colour,
-            backgroundColour :: Colour,
-            stickDataX :: a,
-            stickDataY :: a
-          }
-    | Button
-          { shape :: Shape,
-            colour :: Colour,
-            buttonData :: b
-          }
-    | Slider
-          { radius :: Int,
-            length :: Int,
-            width :: Int,
-            sliderColour :: Colour,
-            backgroundColour :: Colour,
-            vertical :: Bool,
-            sliderData :: a
-          }
+    = StickElement (Stick a)
+    | ButtonElement (Button b)
+    | SliderElement (Slider a)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
+
+data Stick a = Stick
+    { radius :: Int,
+      range :: Int,
+      stickColour :: Colour,
+      backgroundColour :: Colour,
+      stickDataX :: a,
+      stickDataY :: a
+    }
+    deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick
+
+data Button b = Button
+    { shape :: Shape,
+      colour :: Colour,
+      buttonData :: b
+    }
+    deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button
+
+data Slider a = Slider
+    { radius :: Int,
+      length :: Int,
+      width :: Int,
+      sliderColour :: Colour,
+      backgroundColour :: Colour,
+      vertical :: Bool,
+      sliderData :: a
+    }
+    deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider
 
 data Shape
     = Circle Int

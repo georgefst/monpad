@@ -1,5 +1,4 @@
---TODO RecordDotSyntax/lenses
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Main (main) where
 
@@ -9,7 +8,7 @@ import Dhall.Core
 import Dhall.Import
 import Dhall.Parser
 import Diagrams.Backend.SVG
-import Diagrams.Prelude hiding (radius)
+import Diagrams.Prelude
 import Layout
 import Streamly.FSNotify
 import Streamly.Prelude qualified as SP
@@ -34,11 +33,11 @@ main =
 
 drawLayout :: FilePath -> IO ()
 drawLayout file = do
-    Layout {..} <- layoutFromDhall @() @() =<< dhallResolve file
-    let (ss :: SizeSpec V2 Double) = mkSizeSpec $ Just . fi <$> grid
+    layout <- layoutFromDhall @() @() =<< dhallResolve file
+    let (ss :: SizeSpec V2 Double) = mkSizeSpec $ Just . fi <$> layout.grid
         opts = (SVGOptions ss Nothing "" [] True)
         file' = file -<.> "svg"
-    renderSVG' file' opts $ foldMap draw elements
+    renderSVG' file' opts $ foldMap draw layout.elements
 
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =
@@ -51,20 +50,20 @@ class Draw a where
     draw :: a -> Diagram B
 
 instance Draw (FullElement a b) where
-    draw (FullElement {..}) = draw element & translate (fi <$> location)
+    draw e = draw e.element & translate (fi <$> e.location)
 
 instance Draw (Element a b) where
     draw = \case
-        Stick {..} ->
+        StickElement s ->
             mconcat
-                [ circle (fi radius) & fc' stickColour
-                , circle (fi range) & fc' backgroundColour
+                [ circle (fi s.radius) & fc' s.stickColour
+                , circle (fi s.range) & fc' s.backgroundColour
                 ]
-        Button {..} -> draw shape & fc' colour
-        Slider {..} ->
+        ButtonElement b -> draw b.shape & fc' b.colour
+        SliderElement s ->
             mconcat
-                [ circle (fi radius) & fc' sliderColour
-                , rect (fi length) (fi width) & fc' backgroundColour & applyWhen vertical (rotateBy 0.25)
+                [ circle (fi s.radius) & fc' s.sliderColour
+                , rect (fi s.length) (fi s.width) & fc' s.backgroundColour & applyWhen s.vertical (rotateBy 0.25)
                 ]
 
 instance Draw Shape where

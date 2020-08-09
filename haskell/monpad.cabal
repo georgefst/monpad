@@ -43,6 +43,8 @@ common common
         mtl ^>= 2.2.2,
         optparse-applicative ^>= 0.15.1.0,
         pretty-simple ^>= 3.2.2,
+        record-dot-preprocessor ^>= 0.2.5,
+        record-hasfield ^>= 1.0,
         text ^>= 1.2.3,
         transformers ^>= 0.5.6,
         unordered-containers ^>= 0.2.10,
@@ -52,6 +54,7 @@ common common
         BlockArguments
         DataKinds
         DeriveAnyClass
+        DeriveFunctor
         DeriveGeneric
         DerivingStrategies
         DerivingVia

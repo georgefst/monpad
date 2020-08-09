@@ -19,9 +19,9 @@ import Util.Elm qualified as Elm
 import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])
-allAxesAndButs Layout {elements} =
+allAxesAndButs layout =
     partitionEithers $
-        map element elements >>= \case
+        map element layout.elements >>= \case
             StickElement  s -> map Left [s.stickDataX, s.stickDataY]
             ButtonElement b -> [Right b.buttonData]
             SliderElement s -> [Left s.sliderData]

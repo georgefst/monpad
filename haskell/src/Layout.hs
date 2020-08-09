@@ -22,9 +22,9 @@ allAxesAndButs :: Layout a b -> ([a], [b])
 allAxesAndButs layout =
     partitionEithers $
         map element layout.elements >>= \case
-            StickElement  s -> map Left [s.stickDataX, s.stickDataY]
-            ButtonElement b -> [Right b.buttonData]
-            SliderElement s -> [Left s.sliderData]
+            Stick  s -> map Left [s.stickDataX, s.stickDataY]
+            Button b -> [Right b.buttonData]
+            Slider s -> [Left s.sliderData]
 
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
@@ -46,13 +46,13 @@ data FullElement a b = FullElement
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement
 
 data Element a b
-    = StickElement (Stick a)
-    | ButtonElement (Button b)
-    | SliderElement (Slider a)
+    = Stick (Stick a)
+    | Button (Button b)
+    | Slider (Slider a)
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
 
-data Stick a = Stick
+data Stick a = Stick'
     { radius :: Int,
       range :: Int,
       stickColour :: Colour,
@@ -63,7 +63,7 @@ data Stick a = Stick
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick
 
-data Button b = Button
+data Button b = Button'
     { shape :: Shape,
       colour :: Colour,
       buttonData :: b
@@ -71,7 +71,7 @@ data Button b = Button
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button
 
-data Slider a = Slider
+data Slider a = Slider'
     { radius :: Int,
       length :: Int,
       width :: Int,

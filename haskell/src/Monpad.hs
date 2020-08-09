@@ -153,9 +153,9 @@ mkServerEnv :: Foldable t => t (FullElement a b) -> ServerEnv a b
 mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
   where
     addToEnv e = case e.element of
-        StickElement s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
-        SliderElement s -> over #sliderMap $ Map.insert e.name s.sliderData
-        ButtonElement b -> over #buttonMap $ Map.insert e.name b.buttonData
+        Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
+        Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
+        Button b -> over #buttonMap $ Map.insert e.name b.buttonData
 
 server :: Port -> ServerConfig e s a b -> IO ()
 server port conf = do
@@ -204,6 +204,9 @@ elm = Elm.writeDefs (".." </> "elm" </> "src")
     <>  Elm.encodedTypes @(Layout () ())
     <>  Elm.encodedTypes @(FullElement () ())
     <>  Elm.encodedTypes @(Element () ())
+    <>  Elm.encodedTypes @(Stick ())
+    <>  Elm.encodedTypes @(Slider ())
+    <>  Elm.encodedTypes @(Button ())
     <>  Elm.encodedTypes @Shape
     <>  Elm.encodedTypes @(V2 Int)
 

@@ -53,13 +53,13 @@ instance Draw (FullElement a b) where
 
 instance Draw (Element a b) where
     draw = \case
-        StickElement s ->
+        Stick s ->
             mconcat
                 [ circle (fi s.radius) & fc' s.stickColour
                 , circle (fi s.range) & fc' s.backgroundColour
                 ]
-        ButtonElement b -> draw b.shape & fc' b.colour
-        SliderElement s ->
+        Button b -> draw b.shape & fc' b.colour
+        Slider s ->
             mconcat
                 [ circle (fi s.radius) & fc' s.sliderColour
                 , rect (fi s.length) (fi s.width) & fc' s.backgroundColour & applyWhen s.vertical (rotateBy 0.25)

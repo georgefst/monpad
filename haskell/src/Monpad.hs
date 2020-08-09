@@ -30,7 +30,6 @@ import Data.Map qualified as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
-import Data.Text.Lazy qualified as TL
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
@@ -111,16 +110,15 @@ loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
   where
     nameBoxId = "name"
 
-mainHtml :: ElmFlags -> Port -> Html ()
-mainHtml flags wsPort = doctypehtml_ $
+mainHtml :: Port -> Text -> Html ()
+mainHtml wsPort username = doctypehtml_ $
     style_ (mainCSS ())
         <>
     script_ [type_ jsScript] (elmJS ())
         <>
-    script_ [type_ jsScript, makeAttribute "elmFlags" flagsEnc, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
+    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
   where
     jsScript = "text/javascript"
-    flagsEnc = TL.toStrict $ encodeToLazyText flags
 
 -- | The Monpad monad
 newtype Monpad e s a = Monpad { unMonpad :: StateT s (ReaderT (e, ClientID) IO) a }
@@ -135,7 +133,7 @@ data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeE
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: IO ()
-    , onNewConnection :: ClientID -> IO (e,s)
+    , onNewConnection :: ClientID -> IO (Layout a b, e, s)
     , onMessage :: Update -> Monpad e s ()
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
@@ -158,37 +156,36 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Slider{sliderData} -> over #sliderMap $ Map.insert name sliderData
         Button{buttonData} -> over #buttonMap $ Map.insert name buttonData
 
-server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
-server port layout conf = do
+server :: Port -> ServerConfig e s a b -> IO ()
+server port conf = do
     onStart conf
-    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) httpServer
+    run port $ websocketsOr wsOpts (websocketServer conf) httpServer
   where
-    handleMain username = return $ mainHtml ElmFlags{layout = biVoid layout, username} port
-    handleLogin = return loginHtml
-    httpServer = serve (Proxy @API) $ maybe handleLogin handleMain
+    httpServer = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml port)
     wsOpts = WS.defaultConnectionOptions
 
-websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
+websocketServer :: ServerConfig e s a b -> WS.ServerApp
 websocketServer
-    ServerEnv{stickMap, sliderMap, buttonMap}
     ServerConfig{onNewConnection, onMessage, onDroppedConnection, onAxis, onButton}
     pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn
-        (e,s0) <- onNewConnection clientId
+        (layout, e, s0) <- onNewConnection clientId
+        WS.sendTextData conn $ encodeToLazyText $ biVoid layout
+        let ServerEnv{stickMap, sliderMap, buttonMap} = mkServerEnv $ elements layout
+            update u = do
+                onMessage u
+                case u of
+                    ButtonUp t -> onButton (buttonMap ! t) False
+                    ButtonDown t -> onButton (buttonMap ! t) True
+                    StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x >> onAxis y' y
+                    SliderMove t x -> onAxis (sliderMap ! t) x
         WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 $
             onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
   where
     getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
         Left err -> Left $ WebSocketException err
         Right b -> first UpdateDecodeException $ eitherDecode b
-    update u = do
-        onMessage u
-        case u of
-            ButtonUp t -> onButton (buttonMap ! t) False
-            ButtonDown t -> onButton (buttonMap ! t) True
-            StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x >> onAxis y' y
-            SliderMove t x -> onAxis (sliderMap ! t) x
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.
@@ -211,18 +208,20 @@ elm = Elm.writeDefs (".." </> "elm" </> "src")
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
-test = do
-    layout <- layoutFromDhall $ voidLayout <> defaultDhall
-    server 8000 layout config
+test = server 8000 config
   where
     config = ServerConfig
         { onStart = putStrLn "started"
-        , onNewConnection = \c -> putStrLn "connected:" >> pPrint c >> mempty
+        , onNewConnection = \c -> do
+            putStrLn "connected:"
+            pPrint c
+            layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
+            pure (layout,(),())
         , onMessage = pPrint
         , onAxis = mempty
         , onButton = mempty
         , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
-        } :: ServerConfig () () () ()
+        }
     voidLayout =
         "let E = ./../dhall/evdev.dhall \
         \let A = E.AbsAxis \

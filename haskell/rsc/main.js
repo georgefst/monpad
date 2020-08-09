@@ -12,7 +12,7 @@ window.screen.orientation.onchange = function () {
     };
 }
 
-const elmFlags = JSON.parse(document.currentScript.getAttribute("elmFlags"));
+const username = document.currentScript.getAttribute("username");
 
 const wsPort = document.currentScript.getAttribute("wsPort");
 const wsAddress = "ws://" + location.hostname + ":" + wsPort;
@@ -24,11 +24,14 @@ window.onbeforeunload = function () {
 }
 
 ws.onopen = function (event) {
-    ws.send(elmFlags.username);
-    const app = Elm.Main.init({
-        flags: elmFlags
-    });
-    app.ports.sendUpdatePort.subscribe(function (message) {
-        ws.send(JSON.stringify(message));
-    });
+    ws.send(username);
+    ws.onmessage = function (message) {
+        const layout = JSON.parse(message.data);
+        const app = Elm.Main.init({
+            flags: { username, layout }
+        });
+        app.ports.sendUpdatePort.subscribe(function (message) {
+            ws.send(JSON.stringify(message));
+        });
+    }
 };

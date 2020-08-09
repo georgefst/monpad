@@ -81,9 +81,9 @@ library
         common
     exposed-modules:
         Monpad
+        Layout
     other-modules:
         Embed
-        Layout
         Orphans.Tuple
         Orphans.V2
         Util
@@ -138,3 +138,17 @@ executable monpad
         app
     build-depends:
         monpad,
+
+executable monpad-layout-test
+    import:
+        common
+    main-is: Main.hs
+    hs-source-dirs:
+        layout-test
+    build-depends:
+        monpad,
+        diagrams-core ^>= 1.4.2,
+        diagrams-lib ^>= 1.4.3,
+        diagrams-svg ^>= 1.4.3,
+        streamly ^>= 0.7.2,
+        streamly-fsnotify ^>= 1.1.1.0,

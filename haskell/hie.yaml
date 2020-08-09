@@ -11,3 +11,6 @@ cradle:
 
     - path: ./windows
       component: exe:monpad
+
+    - path: ./layout-test
+      component: exe:monpad-layout-test

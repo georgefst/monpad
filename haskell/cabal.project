@@ -24,4 +24,13 @@ source-repository-package
   subdir: servant-server
   tag: 1f1f7f309ae2f192e37167751962b4398fe3d354
 
+allow-newer:
+  active:base
+  diagrams-core:base
+  diagrams-lib:base
+  diagrams-svg:base
+  dual-tree:base
+  monoid-extras:base
+  svg-builder:base
+
 packages: .

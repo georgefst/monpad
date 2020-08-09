@@ -34,9 +34,9 @@ main =
 drawLayout :: FilePath -> IO ()
 drawLayout file = do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
-    let ss = mkSizeSpec $ Just . fi <$> layout.grid
-        file' = file -<.> "svg"
-    renderSVG file' ss $ foldMap draw layout.elements
+    let ss = mkSizeSpec $ Just <$> v
+        v = fi <$> layout.grid
+    renderSVG (file -<.> "svg") ss $ (rect' v & translate (v / 2)) <> foldMap draw layout.elements
 
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =
@@ -81,3 +81,6 @@ fi = fromIntegral
 
 applyWhen :: Bool -> (a -> a) -> a -> a
 applyWhen b f = if b then f else id
+
+rect' :: V2 Double -> Diagram B
+rect' (V2 x y) = rect x y

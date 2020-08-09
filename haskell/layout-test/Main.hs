@@ -64,7 +64,9 @@ instance Draw (Element a b) where
         Slider s ->
             mconcat
                 [ circle (fi s.radius) & fc' s.sliderColour
-                , rect (fi s.length) (fi s.width) & fc' s.backgroundColour & applyWhen s.vertical (rotateBy 0.25)
+                , roundedRect (fi s.length) (fi s.width) (fi s.width / 2)
+                      & applyWhen s.vertical (rotateBy 0.25)
+                      & fc' s.backgroundColour
                 ]
 
 instance Draw Shape where

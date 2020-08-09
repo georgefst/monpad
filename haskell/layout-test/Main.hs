@@ -37,7 +37,8 @@ drawLayout file = do
     let v@(V2 x y) = fi <$> layout.grid
         ss = mkSizeSpec $ Just <$> v
     renderSVG (file -<.> "svg") ss $
-        foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
+        lw 3 $
+            foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
 
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =

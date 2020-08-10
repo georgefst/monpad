@@ -113,20 +113,22 @@ dhallRule ::
     -- | Compute output file name from input
     (FilePath -> FilePath) ->
     Rules ()
-dhallRule p f = p %> \out -> do
-    let in' = f out
-    needDhall [in']
-    putInfo $ "Resolving imports in: " <> out
-    liftIO $ dhallResolve in' out
-    where
-        dhallResolve :: FilePath -> FilePath -> IO ()
-        dhallResolve in' out = do
-            expr <- throws . exprFromText in' =<< T.readFile in'
-            resolvedExpression <- loadRelativeTo (takeDirectory in') UseSemanticCache expr
-            T.writeFile out $ pretty resolvedExpression
+dhallRule p f =
+    p %> \out -> do
+        let in' = f out
+        needDhall [in']
+        putInfo $ "Resolving imports in: " <> out
+        liftIO $ dhallResolve in' out
+  where
+    dhallResolve :: FilePath -> FilePath -> IO ()
+    dhallResolve in' out = do
+        expr <- throws . exprFromText in' =<< T.readFile in'
+        resolvedExpression <- loadRelativeTo (takeDirectory in') UseSemanticCache expr
+        T.writeFile out $ pretty resolvedExpression
 
 -- | Minify in place. Fails if file doesn't contain valid JS.
 minifyFileJS :: Partial => FilePath -> IO ()
-minifyFileJS file = flip parse file <$> readFile file >>= \case
-    Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
-    Right ast -> TL.writeFile file $ renderToText $ minifyJS ast
+minifyFileJS file =
+    flip parse file <$> readFile file >>= \case
+        Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
+        Right ast -> TL.writeFile file $ renderToText $ minifyJS ast

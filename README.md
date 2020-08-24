@@ -90,4 +90,4 @@ Note that a basic version of the server (which doesn't create `uinput` devices) 
 
 # Acknowledgements
 
-Many thanks to everyone (particularly `xboxdrv` maintainer @Grumbel) who helped me with understanding the the mechanisms by which games recognise controllers and receive input on Linux. I never would have pieced that all together myself.
+Many thanks to everyone (particularly `xboxdrv` maintainer @Grumbel) who helped me with understanding the mechanisms by which games recognise controllers and receive input on Linux. I never would have pieced that all together myself.

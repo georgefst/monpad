@@ -55,7 +55,7 @@ main = shakeArgs shakeOptions $ do
         needDirExcept hsBuildDir hsDir
         cmd
             (Cwd "haskell")
-            "cabal install --install-method copy --overwrite-policy=always --flags=release --installdir"
+            "cabal install --install-method copy --overwrite-policy always --flags=release --installdir"
             (".." </> distDir)
 
     elm %> \_ -> do

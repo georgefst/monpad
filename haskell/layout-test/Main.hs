@@ -32,6 +32,9 @@ main =
                         )
             [] -> T.putStrLn "No argument given - provide a file to watch!"
 
+--TODO 'threadDelay' saves us from often seeing an empty file (on Linux at least)
+    -- the real issue is that we get too many inotify events, when all we care about is CLOSE_WRITE
+    -- but because 'fsnotify' is cross-platform, there may be no good way to filter
 drawLayout :: FilePath -> IO ()
 drawLayout file = do
     layout <- layoutFromDhall @() @() =<< dhallResolve file

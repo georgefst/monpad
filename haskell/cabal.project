@@ -9,8 +9,8 @@ source-repository-package
   -- https://github.com/haskell/c2hs/pull/256
 source-repository-package
   type: git
-  location: git://github.com/georgefst/c2hs.git
-  tag: e457b27727f17599cb61d646039019ca24acbbef
+  location: git://github.com/haskell/c2hs.git
+  tag: 20d3c8dedde83af91c4ac06486bf346316e07285
 
 allow-newer:
   active:base

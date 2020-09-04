@@ -26,6 +26,8 @@ common common
     ghc-options:
         -Wall
         -threaded
+    build-tool-depends:
+        record-dot-preprocessor:record-dot-preprocessor
     build-depends:
         base ^>= 4.14,
         bytestring ^>= 0.10.8,

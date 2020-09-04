@@ -4,7 +4,7 @@ let Axis = Evdev.AbsAxis
 
 let Key = Evdev.Key
 
-let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
+let monpad = ./monpad.dhall Axis Key
 
 let button =
       λ(x : Natural) →

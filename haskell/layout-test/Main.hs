@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import Control.Concurrent (threadDelay)
 import Data.Text.IO qualified as T
 import Dhall
 import Dhall.Core
@@ -34,6 +35,7 @@ main =
 drawLayout :: FilePath -> IO ()
 drawLayout file = do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
+    threadDelay 10000
     let v@(V2 x y) = fi <$> layout.grid
         ss = mkSizeSpec $ Just <$> v
         out = file -<.> "svg"

@@ -44,6 +44,9 @@ drawLayout file = do
             foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
     putStrLn $ "Successfully rendered to: " <> out
 
+--TODO using 'pretty' means we're repeating work
+    -- perhaps 'layoutFromDhall' should take an 'Expr Src Void'
+    -- (and be total, while we're at it?)
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =
     pure . pretty

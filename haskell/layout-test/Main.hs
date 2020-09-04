@@ -3,11 +3,14 @@
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
+import Control.Exception (handle)
 import Data.Text.IO qualified as T
+import Data.Void
 import Dhall
 import Dhall.Core
 import Dhall.Import
 import Dhall.Parser
+import Dhall.TypeCheck
 import Diagrams.Backend.SVG
 import Diagrams.Prelude
 import Layout
@@ -36,7 +39,7 @@ main =
     -- the real issue is that we get too many inotify events, when all we care about is CLOSE_WRITE
     -- but because 'fsnotify' is cross-platform, there may be no good way to filter
 drawLayout :: FilePath -> IO ()
-drawLayout file = do
+drawLayout file = printDhallErrors do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
     threadDelay 10000
     let v@(V2 x y) = fi <$> layout.grid
@@ -46,6 +49,14 @@ drawLayout file = do
         lw 3 $
             foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
     putStrLn $ "Successfully rendered to: " <> out
+
+--TODO this may well be incomplete
+    -- anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
+printDhallErrors :: IO () -> IO ()
+printDhallErrors =
+    handle @ParseError print
+        . handle @(SourcedException MissingImports) print
+        . handle @(TypeError Src Void) print
 
 --TODO using 'pretty' means we're repeating work
     -- perhaps 'layoutFromDhall' should take an 'Expr Src Void'

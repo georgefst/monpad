@@ -36,9 +36,11 @@ drawLayout file = do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
     let v@(V2 x y) = fi <$> layout.grid
         ss = mkSizeSpec $ Just <$> v
-    renderSVG (file -<.> "svg") ss $
+        out = file -<.> "svg"
+    renderSVG out ss $
         lw 3 $
             foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
+    putStrLn $ "Successfully rendered to: " <> out
 
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =

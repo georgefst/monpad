@@ -1,22 +1,23 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- | Instances for working with Elm and Dhall.
--- Note that we perform some unsafe numeric conversions, e.g.3 'Natural' to 'Int'.
+{- | Instances for working with Elm and Dhall.
+Note that we perform some unsafe numeric conversions, e.g. 'Natural' to 'Int'.
+-}
 module Orphans.V2 () where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Aeson qualified as J
 import Dhall (FromDhall (autoWith))
-import Generics.SOP qualified as SOP
 import GHC.Generics (Generic)
+import Generics.SOP qualified as SOP
 import Language.Elm.Expression qualified as Expr
 import Language.Elm.Name qualified as Name
 import Language.Elm.Type qualified as Type
 import Language.Haskell.To.Elm (
     HasElmDecoder (elmDecoderDefinition),
     HasElmEncoder (elmEncoder),
-    HasElmType (elmType, elmDefinition),
-    )
+    HasElmType (elmDefinition, elmType),
+ )
 import Linear.V2 (V2 (V2))
 import Numeric.Natural (Natural)
 import Util.Elm qualified as Elm

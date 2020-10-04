@@ -30,17 +30,17 @@ layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
 
 data Layout a b = Layout
-    { elements :: [FullElement a b],
-      grid :: V2 Int
+    { elements :: [FullElement a b]
+    , grid :: V2 Int
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout
 
 data FullElement a b = FullElement
-    { element :: Element a b,
-      location :: V2 Int,
-      name :: Text,
-      showName :: Bool
+    { element :: Element a b
+    , location :: V2 Int
+    , name :: Text
+    , showName :: Bool
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement
@@ -53,32 +53,32 @@ data Element a b
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
 
 data Stick a = Stick'
-    { radius :: Int,
-      range :: Int,
-      stickColour :: Colour,
-      backgroundColour :: Colour,
-      stickDataX :: a,
-      stickDataY :: a
+    { radius :: Int
+    , range :: Int
+    , stickColour :: Colour
+    , backgroundColour :: Colour
+    , stickDataX :: a
+    , stickDataY :: a
     }
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick
 
 data Button b = Button'
-    { shape :: Shape,
-      colour :: Colour,
-      buttonData :: b
+    { shape :: Shape
+    , colour :: Colour
+    , buttonData :: b
     }
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button
 
 data Slider a = Slider'
-    { radius :: Int,
-      length :: Int,
-      width :: Int,
-      sliderColour :: Colour,
-      backgroundColour :: Colour,
-      vertical :: Bool,
-      sliderData :: a
+    { radius :: Int
+    , length :: Int
+    , width :: Int
+    , sliderColour :: Colour
+    , backgroundColour :: Colour
+    , vertical :: Bool
+    , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider
@@ -91,10 +91,10 @@ data Shape
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
-    { red :: Double,
-      green :: Double,
-      blue :: Double,
-      alpha :: Double
+    { red :: Double
+    , green :: Double
+    , blue :: Double
+    , alpha :: Double
     }
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via Colour

@@ -26,18 +26,16 @@ main =
         >>= \case
             path : _ -> do
                 fullPath <- canonicalizePath path
+                let p = (isCreation `disj` isModification) `conj` EventPredicate ((== fullPath) . eventPath)
                 drawLayout fullPath
                 SP.mapM_ (drawLayout . eventPath) . snd
-                    =<< watchDirectory
-                        (takeDirectory fullPath)
-                        ( (isCreation `disj` isModification)
-                              `conj` EventPredicate ((== fullPath) . eventPath)
-                        )
+                    =<< watchDirectory (takeDirectory fullPath) p
             [] -> T.putStrLn "No argument given - provide a file to watch!"
 
---TODO 'threadDelay' saves us from often seeing an empty file (on Linux at least)
-    -- the real issue is that we get too many inotify events, when all we care about is CLOSE_WRITE
-    -- but because 'fsnotify' is cross-platform, there may be no good way to filter
+{-TODO 'threadDelay' saves us from often seeing an empty file (on Linux at least)
+    the real issue is that we get too many inotify events, when all we care about is CLOSE_WRITE
+    but because 'fsnotify' is cross-platform, there may be no good way to filter
+-}
 drawLayout :: FilePath -> IO ()
 drawLayout file = printDhallErrors do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
@@ -50,17 +48,19 @@ drawLayout file = printDhallErrors do
             foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
     putStrLn $ "Successfully rendered to: " <> out
 
---TODO this may well be incomplete
-    -- anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
+{-TODO this may well be incomplete
+    anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
+-}
 printDhallErrors :: IO () -> IO ()
 printDhallErrors =
     handle @ParseError print
         . handle @(SourcedException MissingImports) print
         . handle @(TypeError Src Void) print
 
---TODO using 'pretty' means we're repeating work
-    -- perhaps 'layoutFromDhall' should take an 'Expr Src Void'
-    -- (and be total, while we're at it?)
+{-TODO using 'pretty' means we're repeating work
+    perhaps 'layoutFromDhall' should take an 'Expr Src Void'
+    (and be total, while we're at it?)
+-}
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =
     pure . pretty
@@ -86,8 +86,8 @@ instance Draw (Element a b) where
             mconcat
                 [ circle (fi s.radius) & fc' s.sliderColour
                 , roundedRect (fi s.length) (fi s.width) (fi s.width / 2)
-                      & applyWhen s.vertical (rotateBy 0.25)
-                      & fc' s.backgroundColour
+                    & applyWhen s.vertical (rotateBy 0.25)
+                    & fc' s.backgroundColour
                 ]
 
 instance Draw Shape where

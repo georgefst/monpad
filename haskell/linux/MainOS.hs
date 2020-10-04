@@ -17,13 +17,13 @@ import Orphans.Evdev ()
 
 main :: IO ()
 main = do
-    (port,dhallLayout) <- execParser $ info (helper <*> argParser) (fullDesc <> header "monpad")
+    (port, dhallLayout) <- execParser $ info (helper <*> argParser) (fullDesc <> header "monpad")
     server port ServerConfig
         { onStart = T.putStrLn "Monpad server started"
         , onNewConnection = \(ClientID i) -> do
             T.putStrLn $ "New client: " <> i
             layout <- layoutFromDhall dhallLayout
-            let (as,bs) = allAxesAndButs layout
+            let (as, bs) = allAxesAndButs layout
             dev <- newUDevice $ (defaultNewUDevice "Monpad")
                 { keys = bs
                 , absAxes = zip as $ repeat AbsInfo
@@ -41,7 +41,7 @@ main = do
             return (layout, dev, ())
         , onMessage = \m -> do
             c <- asks snd
-            pPrint (c,m)
+            pPrint (c, m)
         , onAxis = \a x -> do
             dev <- asks fst
             liftIO $ writeBatch dev [AbsoluteEvent a $ EventValue $ translate x]

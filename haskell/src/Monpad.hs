@@ -5,10 +5,10 @@ module Monpad (
     server,
     Monpad,
     runMonpad,
-    ServerConfig(..),
-    ClientID(..),
-    Update(..),
-    V2(..),
+    ServerConfig (..),
+    ClientID (..),
+    Update (..),
+    V2 (..),
     elm,
     test,
     Layout,
@@ -24,7 +24,6 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.Generics.Labels () --TODO shouldn't really use this in library code
 import Data.List
 import Data.Map (Map, (!))
 import Data.Map qualified as Map
@@ -47,14 +46,17 @@ import Servant.HTML.Lucid
 import System.FilePath
 import Text.Pretty.Simple
 
+--TODO shouldn't really use this in library code
+import Data.Generics.Labels ()
+
 import Embed
 import Layout
+import Orphans.V2 ()
 import Util
 import Util.Elm qualified as Elm
-import Orphans.V2 ()
 
 newtype ClientID = ClientID Text
-    deriving (Eq,Ord,Show)
+    deriving (Eq, Ord, Show)
 
 -- | A message sent by a client.
 data Update
@@ -77,52 +79,50 @@ type Root = "monpad"
 type UsernameParam = "username"
 type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
--- | We don't provide a proper type for args, since backends will want to define their own.
--- This function just contains the likely common ground.
+{- | We don't provide a proper type for args, since backends will want to define their own.
+This function just contains the likely common ground.
+-}
 argParser :: Parser (Port, Text)
 argParser = (,)
-    <$> option auto
-        (  long "port"
-        <> short 'p'
-        <> metavar "INT"
-        <> value 8000
-        <> showDefault
-        <> help "Port number for the server to listen on" )
-    <*> strOption
-        (  long "layout-dhall"
-        <> short 'l'
-        <> metavar "EXPR"
-        <> value defaultDhall
-        <> help "Dhall expression to control layout of buttons etc." )
+    <$> (option auto . mconcat)
+        [ long "port"
+        , short 'p'
+        , metavar "INT"
+        , value 8000
+        , showDefault
+        , help "Port number for the server to listen on"
+        ]
+    <*> (strOption . mconcat)
+        [ long "layout-dhall"
+        , short 'l'
+        , metavar "EXPR"
+        , value defaultDhall
+        , help "Dhall expression to control layout of buttons etc."
+        ]
 
 loginHtml :: Html ()
-loginHtml = doctypehtml_ $ form_ [action_ $ symbolValT @Root] $
-    title_ "monpad: login"
-        <>
-    style_ (mainCSS ())
-        <>
-    label_ [for_ nameBoxId] "Username:"
-        <>
-    br_ []
-        <>
-    input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
-        <>
-    input_ [type_ "submit", value_ "Go!"]
+loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
+    [ title_ "monpad: login"
+    , style_ (mainCSS ())
+    , label_ [for_ nameBoxId] "Username:"
+    , br_ []
+    , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
+    , input_ [type_ "submit", value_ "Go!"]
+    ]
   where
     nameBoxId = "name"
 
 mainHtml :: Port -> Text -> Html ()
-mainHtml wsPort username = doctypehtml_ $
-    style_ (mainCSS ())
-        <>
-    script_ [type_ jsScript] (elmJS ())
-        <>
-    script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
+mainHtml wsPort username = doctypehtml_ $ mconcat
+    [ style_ (mainCSS ())
+    , script_ [type_ jsScript] (elmJS ())
+    , script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
+    ]
   where
     jsScript = "text/javascript"
 
 -- | The Monpad monad
-newtype Monpad e s a = Monpad { unMonpad :: StateT s (ReaderT (e, ClientID) IO) a }
+newtype Monpad e s a = Monpad {unMonpad :: StateT s (ReaderT (e, ClientID) IO) a}
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState s)
 deriving via Action (Monpad e s) instance (Semigroup (Monpad e s ()))
 deriving via Action (Monpad e s) instance (Monoid (Monpad e s ()))
@@ -143,7 +143,7 @@ data ServerConfig e s a b = ServerConfig
 
 -- | Maps of element names to axes and buttons.
 data ServerEnv a b = ServerEnv
-    { stickMap :: Map Text (a,a)
+    { stickMap :: Map Text (a, a)
     , sliderMap :: Map Text a
     , buttonMap :: Map Text b
     }
@@ -179,14 +179,15 @@ websocketServer
                 case u of
                     ButtonUp t -> onButton (buttonMap ! t) False
                     ButtonDown t -> onButton (buttonMap ! t) True
-                    StickMove t (V2 x y) -> let (x',y') = stickMap ! t in onAxis x' x >> onAxis y' y
+                    StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
-        WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 $
-            onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
-  where
-    getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
-        Left err -> Left $ WebSocketException err
-        Right b -> first UpdateDecodeException $ eitherDecode b
+        WS.withPingThread conn 30 mempty
+            . runMonpad clientId e s0
+            $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+      where
+        getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
+            Left err -> Left $ WebSocketException err
+            Right b -> first UpdateDecodeException $ eitherDecode b
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.
@@ -196,19 +197,20 @@ are likely to require manual changes to Elm code anyway.
 e.g. if we added an extra case to 'Update', it would need to be handled in various Elm functions.
 -}
 elm :: IO ()
-elm = Elm.writeDefs (".." </> "elm" </> "src")
-    $   Elm.decodedTypes @Update
-    <>  Elm.decodedTypes @(V2 Double)
-    <>  Elm.encodedTypes @ElmFlags
-    <>  Elm.encodedTypes @Colour
-    <>  Elm.encodedTypes @(Layout () ())
-    <>  Elm.encodedTypes @(FullElement () ())
-    <>  Elm.encodedTypes @(Element () ())
-    <>  Elm.encodedTypes @(Stick ())
-    <>  Elm.encodedTypes @(Slider ())
-    <>  Elm.encodedTypes @(Button ())
-    <>  Elm.encodedTypes @Shape
-    <>  Elm.encodedTypes @(V2 Int)
+elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
+    [ Elm.decodedTypes @Update
+    , Elm.decodedTypes @(V2 Double)
+    , Elm.encodedTypes @ElmFlags
+    , Elm.encodedTypes @Colour
+    , Elm.encodedTypes @(Layout () ())
+    , Elm.encodedTypes @(FullElement () ())
+    , Elm.encodedTypes @(Element () ())
+    , Elm.encodedTypes @(Stick ())
+    , Elm.encodedTypes @(Slider ())
+    , Elm.encodedTypes @(Button ())
+    , Elm.encodedTypes @Shape
+    , Elm.encodedTypes @(V2 Int)
+    ]
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
@@ -220,7 +222,7 @@ test = server 8000 config
             putStrLn "connected:"
             pPrint c
             layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
-            pure (layout,(),())
+            pure (layout, (), ())
         , onMessage = pPrint
         , onAxis = mempty
         , onButton = mempty

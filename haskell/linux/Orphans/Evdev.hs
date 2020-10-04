@@ -3,7 +3,7 @@
 module Orphans.Evdev where
 
 import Dhall (FromDhall)
-import Evdev.Codes (AbsoluteAxis(..), Key(..))
+import Evdev.Codes (AbsoluteAxis (..), Key (..))
 import GHC.Generics (Generic)
 
 deriving instance Generic Key

@@ -83,47 +83,53 @@ type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 This function just contains the likely common ground.
 -}
 argParser :: Parser (Port, Text)
-argParser = (,)
-    <$> (option auto . mconcat)
-        [ long "port"
-        , short 'p'
-        , metavar "INT"
-        , value 8000
-        , showDefault
-        , help "Port number for the server to listen on"
-        ]
-    <*> (strOption . mconcat)
-        [ long "layout-dhall"
-        , short 'l'
-        , metavar "EXPR"
-        , value defaultDhall
-        , help "Dhall expression to control layout of buttons etc."
-        ]
+argParser =
+    (,)
+        <$> (option auto . mconcat)
+            [ long "port"
+            , short 'p'
+            , metavar "INT"
+            , value 8000
+            , showDefault
+            , help "Port number for the server to listen on"
+            ]
+        <*> (strOption . mconcat)
+            [ long "layout-dhall"
+            , short 'l'
+            , metavar "EXPR"
+            , value defaultDhall
+            , help "Dhall expression to control layout of buttons etc."
+            ]
 
 loginHtml :: Html ()
-loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
-    [ title_ "monpad: login"
-    , style_ (mainCSS ())
-    , label_ [for_ nameBoxId] "Username:"
-    , br_ []
-    , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
-    , input_ [type_ "submit", value_ "Go!"]
-    ]
+loginHtml =
+    doctypehtml_ . form_ [action_ $ symbolValT @Root] $
+        mconcat
+            [ title_ "monpad: login"
+            , style_ (mainCSS ())
+            , label_ [for_ nameBoxId] "Username:"
+            , br_ []
+            , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
+            , input_ [type_ "submit", value_ "Go!"]
+            ]
   where
     nameBoxId = "name"
 
 mainHtml :: Port -> Text -> Html ()
-mainHtml wsPort username = doctypehtml_ $ mconcat
-    [ style_ (mainCSS ())
-    , script_ [type_ jsScript] (elmJS ())
-    , script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
-    ]
+mainHtml wsPort username =
+    doctypehtml_ $
+        mconcat
+            [ style_ (mainCSS ())
+            , script_ [type_ jsScript] (elmJS ())
+            , script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
+            ]
   where
     jsScript = "text/javascript"
 
 -- | The Monpad monad
 newtype Monpad e s a = Monpad {unMonpad :: StateT s (ReaderT (e, ClientID) IO) a}
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState s)
+
 deriving via Action (Monpad e s) instance (Semigroup (Monpad e s ()))
 deriving via Action (Monpad e s) instance (Monoid (Monpad e s ()))
 runMonpad :: ClientID -> e -> s -> Monpad e s a -> IO a
@@ -185,9 +191,11 @@ websocketServer
             . runMonpad clientId e s0
             $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
       where
-        getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
-            Left err -> Left $ WebSocketException err
-            Right b -> first UpdateDecodeException $ eitherDecode b
+        getUpdate conn =
+            liftIO $
+                try (WS.receiveData conn) <&> \case
+                    Left err -> Left $ WebSocketException err
+                    Right b -> first UpdateDecodeException $ eitherDecode b
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.
@@ -197,37 +205,40 @@ are likely to require manual changes to Elm code anyway.
 e.g. if we added an extra case to 'Update', it would need to be handled in various Elm functions.
 -}
 elm :: IO ()
-elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
-    [ Elm.decodedTypes @Update
-    , Elm.decodedTypes @(V2 Double)
-    , Elm.encodedTypes @ElmFlags
-    , Elm.encodedTypes @Colour
-    , Elm.encodedTypes @(Layout () ())
-    , Elm.encodedTypes @(FullElement () ())
-    , Elm.encodedTypes @(Element () ())
-    , Elm.encodedTypes @(Stick ())
-    , Elm.encodedTypes @(Slider ())
-    , Elm.encodedTypes @(Button ())
-    , Elm.encodedTypes @Shape
-    , Elm.encodedTypes @(V2 Int)
-    ]
+elm =
+    Elm.writeDefs (".." </> "elm" </> "src") $
+        mconcat
+            [ Elm.decodedTypes @Update
+            , Elm.decodedTypes @(V2 Double)
+            , Elm.encodedTypes @ElmFlags
+            , Elm.encodedTypes @Colour
+            , Elm.encodedTypes @(Layout () ())
+            , Elm.encodedTypes @(FullElement () ())
+            , Elm.encodedTypes @(Element () ())
+            , Elm.encodedTypes @(Stick ())
+            , Elm.encodedTypes @(Slider ())
+            , Elm.encodedTypes @(Button ())
+            , Elm.encodedTypes @Shape
+            , Elm.encodedTypes @(V2 Int)
+            ]
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
 test = server 8000 config
   where
-    config = ServerConfig
-        { onStart = putStrLn "started"
-        , onNewConnection = \c -> do
-            putStrLn "connected:"
-            pPrint c
-            layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
-            pure (layout, (), ())
-        , onMessage = pPrint
-        , onAxis = mempty
-        , onButton = mempty
-        , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
-        }
+    config =
+        ServerConfig
+            { onStart = putStrLn "started"
+            , onNewConnection = \c -> do
+                putStrLn "connected:"
+                pPrint c
+                layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
+                pure (layout, (), ())
+            , onMessage = pPrint
+            , onAxis = mempty
+            , onButton = mempty
+            , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
+            }
     voidLayout =
         "let E = ./../dhall/evdev.dhall \
         \let A = E.AbsAxis \

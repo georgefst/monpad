@@ -53,6 +53,7 @@ elmOpts = Elm.defaultOptions
 
 -- | A type to derive via.
 newtype Via a = Via a
+
 instance (Generic a, GToJSON Zero (Rep a), Typeable a) => ToJSON (Via a) where
     toJSON (Via a) = genericToJSON jsonOpts a
 instance (Generic a, GFromJSON Zero (Rep a), Typeable a) => FromJSON (Via a) where

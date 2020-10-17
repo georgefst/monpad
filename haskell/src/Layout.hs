@@ -19,12 +19,10 @@ import Util.Elm qualified as Elm
 import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])
-allAxesAndButs layout =
-    partitionEithers $
-        map element layout.elements >>= \case
-            Stick s -> map Left [s.stickDataX, s.stickDataY]
-            Button b -> [Right b.buttonData]
-            Slider s -> [Left s.sliderData]
+allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
+    Stick s -> map Left [s.stickDataX, s.stickDataY]
+    Button b -> [Right b.buttonData]
+    Slider s -> [Left s.sliderData]
 
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto

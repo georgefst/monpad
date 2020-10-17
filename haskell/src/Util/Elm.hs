@@ -130,16 +130,14 @@ autoDir = "Auto"
 
 -- | Like 'jsonDefinitions', but for types without decoders.
 decodedTypes :: forall t. HasElmEncoder Value t => [Definition]
-decodedTypes =
-    catMaybes
-        [ elmDefinition @t
-        , elmEncoderDefinition @Value @t
-        ]
+decodedTypes = catMaybes
+    [ elmDefinition @t
+    , elmEncoderDefinition @Value @t
+    ]
 
 -- | Like 'jsonDefinitions', but for types without encoders.
 encodedTypes :: forall t. HasElmDecoder Value t => [Definition]
-encodedTypes =
-    catMaybes
-        [ elmDefinition @t
-        , elmDecoderDefinition @Value @t
-        ]
+encodedTypes = catMaybes
+    [ elmDefinition @t
+    , elmDecoderDefinition @Value @t
+    ]

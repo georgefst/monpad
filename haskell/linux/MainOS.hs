@@ -24,7 +24,7 @@ main = do
             T.putStrLn $ "New client: " <> i
             layout <- layoutFromDhall dhallLayout
             let (as, bs) = allAxesAndButs layout
-            dev <- newUDevice $ (defaultNewUDevice "Monpad")
+            dev <- newUDevice (defaultNewUDevice "Monpad")
                 { keys = bs
                 , absAxes = zip as $ repeat AbsInfo
                     { absValue = 127

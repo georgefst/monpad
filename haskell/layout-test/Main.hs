@@ -21,16 +21,14 @@ import System.Environment (getArgs)
 import System.FilePath hiding (hasExtension)
 
 main :: IO ()
-main =
-    getArgs
-        >>= \case
-            path : _ -> do
-                fullPath <- canonicalizePath path
-                let p = (isCreation `disj` isModification) `conj` EventPredicate ((== fullPath) . eventPath)
-                drawLayout fullPath
-                SP.mapM_ (drawLayout . eventPath) . snd
-                    =<< watchDirectory (takeDirectory fullPath) p
-            [] -> T.putStrLn "No argument given - provide a file to watch!"
+main = getArgs >>= \case
+    path : _ -> do
+        fullPath <- canonicalizePath path
+        let p = (isCreation `disj` isModification) `conj` EventPredicate ((== fullPath) . eventPath)
+        drawLayout fullPath
+        SP.mapM_ (drawLayout . eventPath) . snd
+            =<< watchDirectory (takeDirectory fullPath) p
+    [] -> T.putStrLn "No argument given - provide a file to watch!"
 
 {-TODO 'threadDelay' saves us from often seeing an empty file (on Linux at least)
     the real issue is that we get too many inotify events, when all we care about is CLOSE_WRITE
@@ -76,19 +74,17 @@ instance Draw (FullElement a b) where
 
 instance Draw (Element a b) where
     draw = \case
-        Stick s ->
-            mconcat
-                [ circle (fi s.radius) & fc' s.stickColour
-                , circle (fi s.range) & fc' s.backgroundColour
-                ]
+        Stick s -> mconcat
+            [ circle (fi s.radius) & fc' s.stickColour
+            , circle (fi s.range) & fc' s.backgroundColour
+            ]
         Button b -> draw b.shape & fc' b.colour
-        Slider s ->
-            mconcat
-                [ circle (fi s.radius) & fc' s.sliderColour
-                , roundedRect (fi s.length) (fi s.width) (fi s.width / 2)
-                    & applyWhen s.vertical (rotateBy 0.25)
-                    & fc' s.backgroundColour
-                ]
+        Slider s -> mconcat
+            [ circle (fi s.radius) & fc' s.sliderColour
+            , roundedRect (fi s.length) (fi s.width) (fi s.width / 2)
+                & applyWhen s.vertical (rotateBy 0.25)
+                & fc' s.backgroundColour
+            ]
 
 instance Draw Shape where
     draw = \case

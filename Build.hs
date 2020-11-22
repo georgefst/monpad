@@ -62,6 +62,7 @@ main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
             (Cwd hsDir)
             "cabal build exe:monpad --flags=release"
         getDirectoryFiles hsBuildDir ["//monpad"] >>= \case
+            [] -> error "No matches"
             [f] -> copyFileChanged (hsBuildDir </> f) monpad
             fs -> error $ "Multiple matches: " <> intercalate ", " fs
 

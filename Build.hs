@@ -105,7 +105,7 @@ elm = rscDistDir </> "elm" <.> "js"
 -- | Need all files in 'dir' except those in 'except'
 needDirExcept :: FilePath -> FilePath -> Action ()
 needDirExcept except dir =
-    need =<< filter (not . (isPrefixOf `on` splitDirectories) except) <$> getDirectoryFiles "" [dir <//> "*"]
+    need . filter (not . (isPrefixOf `on` splitDirectories) except) =<< getDirectoryFiles "" [dir <//> "*"]
 
 -- | Resolve imports in given files
 dhallRule ::
@@ -129,6 +129,6 @@ dhallRule p f =
 -- | Minify in place. Fails if file doesn't contain valid JS.
 minifyFileJS :: Partial => FilePath -> IO ()
 minifyFileJS file =
-    flip parse file <$> readFile file >>= \case
+    (flip parse file <$> readFile file) >>= \case
         Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
         Right ast -> TL.writeFile file $ renderToText $ minifyJS ast

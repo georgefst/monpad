@@ -17,19 +17,21 @@ build-depends:
 
 module Main (main) where
 
-import Control.Exception.Extra (Partial)
-import Data.Function (on)
-import Data.List (intercalate, isPrefixOf)
+import Control.Exception.Extra
+import Data.Function
+import Data.List
+
 import Data.Text.IO qualified as T
 import Data.Text.Lazy.IO qualified as TL
+import Dhall.Core qualified as Dhall
+import Dhall.Import qualified as Dhall
+import Dhall.Parser qualified as Dhall
+import Language.JavaScript.Parser qualified as JS
+import Language.JavaScript.Process.Minify qualified as JS
+
 import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
-import Dhall.Core (pretty, throws)
-import Dhall.Import (SemanticCacheMode (UseSemanticCache), loadRelativeTo)
-import Dhall.Parser (exprFromText)
-import Language.JavaScript.Parser (parse, renderToText)
-import Language.JavaScript.Process.Minify (minifyJS)
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
@@ -125,13 +127,13 @@ dhallRule p f =
   where
     dhallResolve :: FilePath -> FilePath -> IO ()
     dhallResolve in' out = do
-        expr <- throws . exprFromText in' =<< T.readFile in'
-        resolvedExpression <- loadRelativeTo (takeDirectory in') UseSemanticCache expr
-        T.writeFile out $ pretty resolvedExpression
+        expr <- Dhall.throws . Dhall.exprFromText in' =<< T.readFile in'
+        resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
+        T.writeFile out $ Dhall.pretty resolvedExpression
 
 -- | Minify in place. Fails if file doesn't contain valid JS.
 minifyFileJS :: Partial => FilePath -> IO ()
 minifyFileJS file =
-    (flip parse file <$> readFile file) >>= \case
+    (flip JS.parse file <$> readFile file) >>= \case
         Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
-        Right ast -> TL.writeFile file $ renderToText $ minifyJS ast
+        Right ast -> TL.writeFile file $ JS.renderToText $ JS.minifyJS ast

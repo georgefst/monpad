@@ -35,8 +35,12 @@ import Development.Shake.Dhall
 import Development.Shake.FilePath
 
 main :: IO ()
-main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
-    liftIO $ setLocaleEncoding utf8
+main = do
+    setLocaleEncoding utf8
+    shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} rules
+
+rules :: Rules ()
+rules = do
     want [monpad]
 
     "dhall" ~> need [dhall]

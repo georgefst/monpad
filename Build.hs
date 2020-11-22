@@ -53,10 +53,7 @@ main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
     monpad %> \_ -> do
         need [dhall, elm]
         needDirExcept hsBuildDir hsDir
-        cmd
-            (Cwd "haskell")
-            "cabal install --install-method copy --overwrite-policy always --flags=release --installdir"
-            (".." </> distDir)
+            (Cwd hsDir)
 
     elm %> \_ -> do
         needDirExcept elmBuildDir elmDir

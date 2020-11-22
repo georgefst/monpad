@@ -26,6 +26,7 @@ import Data.Text.Lazy.IO qualified as TL
 import Dhall.Core qualified as Dhall
 import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Language.JavaScript.Parser qualified as JS
 import Language.JavaScript.Process.Minify qualified as JS
 
@@ -35,6 +36,7 @@ import Development.Shake.FilePath
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
+    liftIO $ setLocaleEncoding utf8
     want [monpad]
 
     "dhall" ~> need [dhall]

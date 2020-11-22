@@ -3,9 +3,10 @@
 {- cabal:
 build-depends:
     base >= 4.14,
-    dhall ^>= 1.33.1,
+    dhall ^>= 1.36,
     extra ^>= 1.7.4,
     language-javascript ^>= 0.7.1.0,
+    pretty-simple ^>= 4.0,
     shake ^>= 0.19.1,
     shake-dhall ^>= 0.1.0.0,
     text ^>= 1.2.3.2,

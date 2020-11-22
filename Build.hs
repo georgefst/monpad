@@ -19,7 +19,7 @@ module Main (main) where
 
 import Control.Exception.Extra (Partial)
 import Data.Function (on)
-import Data.List (isPrefixOf)
+import Data.List (intercalate, isPrefixOf)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy.IO qualified as TL
 import Development.Shake
@@ -54,7 +54,12 @@ main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
     monpad %> \_ -> do
         need [dhall, elm]
         needDirExcept hsBuildDir hsDir
+        cmd_
             (Cwd hsDir)
+            "cabal build exe:monpad --flags=release"
+        getDirectoryFiles hsBuildDir ["//monpad"] >>= \case
+            [f] -> copyFileChanged (hsBuildDir </> f) monpad
+            fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     elm %> \_ -> do
         needDirExcept elmBuildDir elmDir

@@ -38,7 +38,7 @@ main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
     "elm" ~> need [elm]
     let clean = do
             putInfo "Cleaning Shake build artefacts"
-            removeFilesAfter build ["//*"]
+            removeFilesAfter shakeDir ["//*"]
             putInfo "Cleaning generated assets"
             removeFilesAfter rscDistDir ["//*"]
             removeFilesAfter distDir ["//*"]
@@ -70,8 +70,8 @@ main = shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} $ do
 monpad :: FilePath
 monpad = distDir </> "monpad" <.> exe
 
-build :: FilePath
-build = ".build"
+shakeDir :: FilePath
+shakeDir = ".shake"
 
 distDir :: FilePath
 distDir = "dist"

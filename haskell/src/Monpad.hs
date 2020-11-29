@@ -31,6 +31,7 @@ import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import GHC.IO.Encoding (utf8, setLocaleEncoding)
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
@@ -214,7 +215,9 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
 
 --TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
-test = server 8000 config
+test = do
+    setLocaleEncoding utf8
+    server 8000 config
   where
     config = ServerConfig
         { onStart = putStrLn "started"

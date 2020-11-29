@@ -65,9 +65,9 @@ rules = do
         cmd_
             (Cwd hsDir)
             "cabal build exe:monpad --flags=release"
-        getDirectoryFiles hsBuildDir ["//monpad", "//monpad.exe"] >>= \case
+        getDirectoryFiles "" [hsBuildDir <//> monpadExe] >>= \case
             [] -> error "No matches"
-            [f] -> copyFileChanged (hsBuildDir </> f) monpad
+            [f] -> copyFileChanged f monpad
             fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     elm %> \_ -> do
@@ -79,8 +79,9 @@ rules = do
 
 {- Constants -}
 
-monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
-monpad = distDir </> "monpad" <.> exe
+monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
+monpadExe = "monpad" <.> exe
+monpad = distDir </> monpadExe
 shakeDir = ".shake"
 distDir = "dist"
 rscDir = hsDir </> "rsc"

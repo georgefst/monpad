@@ -79,37 +79,17 @@ rules = do
 
 {- Constants -}
 
-monpad :: FilePath
+monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
 monpad = distDir </> "monpad" <.> exe
-
-shakeDir :: FilePath
 shakeDir = ".shake"
-
-distDir :: FilePath
 distDir = "dist"
-
-rscDir :: FilePath
 rscDir = hsDir </> "rsc"
-
-rscDistDir :: FilePath
 rscDistDir = rscDir </> "dist"
-
-hsDir :: FilePath
 hsDir = "haskell"
-
-hsBuildDir :: FilePath
 hsBuildDir = hsDir </> "dist-newstyle"
-
-elmDir :: FilePath
 elmDir = "elm"
-
-elmBuildDir :: FilePath
 elmBuildDir = elmDir </> "elm-stuff"
-
-dhall :: FilePath
 dhall = rscDistDir </> "default" <.> "dhall"
-
-elm :: FilePath
 elm = rscDistDir </> "elm" <.> "js"
 
 {- Util -}

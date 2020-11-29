@@ -10,15 +10,8 @@ import Monpad
 
 main :: IO ()
 main = do
-    layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
+    layout <- layoutFromDhall @() @() defaultDhall
     server 8000 $ conf layout --TODO take port as CLI arg
-  where
-    --TODO copied from 'Monpad.test' - put this in a file
-    voidLayout =
-        "let E = ./../dhall/evdev.dhall \
-        \let A = E.AbsAxis \
-        \let B = E.Key \
-        \in (./../dhall/monpad.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "
 
 conf :: Layout () () -> ServerConfig () () () ()
 conf layout =

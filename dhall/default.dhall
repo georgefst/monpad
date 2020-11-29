@@ -1,8 +1,6 @@
-let Evdev = ./evdev.dhall
+let Axis = {}
 
-let Axis = Evdev.AbsAxis
-
-let Key = Evdev.Key
+let Key = {}
 
 let monpad = ./monpad.dhall Axis Key
 
@@ -21,13 +19,13 @@ let button =
         }
 
 in    { elements =
-        [ button 1250 500 Key.BtnWest "Blue" monpad.cols.blue
-        , button 1500 250 Key.BtnSouth "Green" monpad.cols.green
-        , button 1750 500 Key.BtnEast "Red" monpad.cols.red
-        , button 1500 750 Key.BtnNorth "Yellow" monpad.cols.yellow
+        [ button 1250 500 {=} "Blue" monpad.cols.blue
+        , button 1500 250 {=} "Green" monpad.cols.green
+        , button 1750 500 {=} "Red" monpad.cols.red
+        , button 1500 750 {=} "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Button
-                { buttonData = Key.BtnMode
+                { buttonData = {=}
                 , colour = monpad.cols.white
                 , shape = monpad.Shape.Circle 80
                 }
@@ -41,8 +39,8 @@ in    { elements =
                 , range = 320
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
-                , stickDataX = Axis.AbsX
-                , stickDataY = Axis.AbsY
+                , stickDataX = {=}
+                , stickDataY = {=}
                 }
           , location = { x = 500, y = 500 }
           , name = "Stick"

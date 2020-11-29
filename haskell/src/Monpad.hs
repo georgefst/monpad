@@ -15,6 +15,7 @@ module Monpad (
     layoutFromDhall,
     allAxesAndButs,
     argParser,
+    defaultDhall,
 ) where
 
 import Control.Exception
@@ -57,7 +58,8 @@ import Util
 import Util.Elm qualified as Elm
 
 newtype ClientID = ClientID Text
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+    deriving newtype ToJSON
 
 -- | A message sent by a client.
 data Update
@@ -65,7 +67,7 @@ data Update
     | ButtonDown Text
     | StickMove Text (V2 Double) -- always a vector within the unit circle
     | SliderMove Text Double -- abs <= 1
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
+    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON, ToJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 -- | The arguments with which the frontend is initialised.
@@ -139,7 +141,7 @@ data ServerConfig e s a b = ServerConfig
     , onMessage :: Update -> Monpad e s ()
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
-    , onDroppedConnection :: MonpadException -> Monpad e s ()
+    , onDroppedConnection :: ClientID -> MonpadException -> Monpad e s ()
     }
 
 -- | Maps of element names to axes and buttons.
@@ -184,7 +186,7 @@ websocketServer
                     SliderMove t x -> onAxis (sliderMap ! t) x
         WS.withPingThread conn 30 mempty
             . runMonpad clientId e s0
-            $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+            $ onDroppedConnection clientId =<< untilLeft (mapRightM update =<< getUpdate conn)
       where
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err
@@ -229,7 +231,7 @@ test = do
         , onMessage = pPrint
         , onAxis = mempty
         , onButton = mempty
-        , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
+        , onDroppedConnection = \c _ -> liftIO $ putStrLn "disconnected:" >> pPrint c
         }
     voidLayout =
         "let E = ./../dhall/evdev.dhall \

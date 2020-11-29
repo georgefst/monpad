@@ -59,15 +59,15 @@ rules = do
         removeFilesAfter elmBuildDir ["//*"]
         clean
 
-    monpad %> \_ -> do
+    (distDir </> "*") %> \f -> do
         need [dhall, elm]
         needDirExcept hsBuildDir hsDir
         cmd_
             (Cwd hsDir)
-            "cabal build exe:monpad --flags=release"
-        getDirectoryFiles "" [hsBuildDir <//> monpadExe] >>= \case
+            ("cabal build --flags=release exe:" <> takeBaseName f)
+        getDirectoryFiles "" [hsBuildDir <//> takeFileName f] >>= \case
             [] -> error "No matches"
-            [f] -> copyFileChanged f monpad
+            [f'] -> copyFileChanged f' f
             fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     elm %> \_ -> do

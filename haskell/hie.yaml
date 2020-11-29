@@ -12,5 +12,8 @@ cradle:
     - path: ./windows
       component: exe:monpad
 
+    - path: ./json-stdout
+      component: exe:monpad-json-stdout
+
     - path: ./layout-test
       component: exe:monpad-layout-test

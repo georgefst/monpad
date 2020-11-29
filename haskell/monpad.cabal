@@ -30,6 +30,7 @@ common common
         record-dot-preprocessor:record-dot-preprocessor
     build-depends:
         base ^>= 4.14,
+        aeson ^>= 1.4.7,
         bytestring ^>= 0.10.8,
         composition ^>= 1.0.2.1,
         containers ^>= 0.6.2.1,
@@ -102,7 +103,6 @@ library
             file-embed ^>= 0.0.11.2,
             template-haskell ^>= 2.16,
     build-depends:
-        aeson ^>= 1.4.7,
         bifunctors ^>= 5.5.7,
         async ^>= 2.2.2,
         elm-syntax ^>= 0.3.0,
@@ -141,6 +141,13 @@ executable monpad
             evdev ^>= 2.0,
     hs-source-dirs:
         app
+    build-depends:
+        monpad,
+
+executable monpad-json-stdout
+    import: common
+    main-is: Main.hs
+    hs-source-dirs: json-stdout
     build-depends:
         monpad,
 

@@ -48,7 +48,7 @@ main = do
         , onButton = \key up -> do
             dev <- asks fst
             liftIO $ writeBatch dev [KeyEvent key $ bool Released Pressed up]
-        , onDroppedConnection = \_ -> do
+        , onDroppedConnection = \_ _ -> do
             (ClientID i) <- asks snd
             liftIO $ T.putStrLn $ "Client disconnected: " <> i
         }

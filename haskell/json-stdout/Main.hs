@@ -8,6 +8,12 @@ import GHC.Generics
 import Layout
 import Monpad
 
+{- TODO
+use a more compact encoding - https://hackage.haskell.org/package/aeson-1.5.4.1/docs/Data-Aeson.html#t:SumEncoding
+also, avoid decoding JSON from the frontend, only to re-encode it here
+ideally don't use JSON at all - protobuf?
+-}
+
 main :: IO ()
 main = do
     layout <- layoutFromDhall @() @() defaultDhall

@@ -11,6 +11,7 @@ module Monpad (
     V2 (..),
     elm,
     test,
+    testExt,
     Layout,
     layoutFromDhall,
     allAxesAndButs,
@@ -246,3 +247,5 @@ test = do
         , onButton = mempty
         , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
         }
+testExt :: IO ()
+testExt = serverExtWs 8000 8001 =<< layoutFromDhall @() @() ("./../dhall/voidLayout.dhall " <> defaultDhall)

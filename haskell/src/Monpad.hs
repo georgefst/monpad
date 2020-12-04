@@ -229,7 +229,6 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
     , Elm.encodedTypes @(V2 Int)
     ]
 
---TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
 test :: IO ()
 test = do
     setLocaleEncoding utf8

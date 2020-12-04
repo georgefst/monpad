@@ -45,19 +45,21 @@ rules = do
 
     "dhall" ~> need [dhall]
     "elm" ~> need [elm]
-    let clean = do
+
+    let rmr dir = liftIO $ removeFiles dir ["//*"]
+        clean = do
             putInfo "Cleaning Shake build artefacts"
-            removeFilesAfter shakeDir ["//*"]
+            rmr shakeDir
             putInfo "Cleaning generated assets"
-            removeFilesAfter rscDistDir ["//*"]
-            removeFilesAfter distDir ["//*"]
+            rmr rscDistDir
+            rmr distDir
     "clean" ~> clean
     "deep-clean" ~> do
-        putInfo "Cleaning Haskell build artefacts"
-        removeFilesAfter hsBuildDir ["//*"]
-        putInfo "Cleaning Elm artefacts"
-        removeFilesAfter elmBuildDir ["//*"]
         clean
+        putInfo "Cleaning Haskell build artefacts"
+        rmr hsBuildDir
+        putInfo "Cleaning Elm artefacts"
+        rmr elmBuildDir
 
     monpad %> \_ -> do
         need [dhall, elm]

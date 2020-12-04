@@ -167,14 +167,12 @@ server port conf = do
     wsOpts = WS.defaultConnectionOptions
 
 websocketServer :: ServerConfig e s a b -> WS.ServerApp
-websocketServer
-    ServerConfig{onNewConnection, onMessage, onDroppedConnection, onAxis, onButton}
-    pending = do
+websocketServer ServerConfig{..} pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn
         (layout, e, s0) <- onNewConnection clientId
         WS.sendTextData conn $ encodeToLazyText $ biVoid layout
-        let ServerEnv{stickMap, sliderMap, buttonMap} = mkServerEnv $ elements layout
+        let ServerEnv{..} = mkServerEnv $ elements layout
             update u = do
                 onMessage u
                 case u of

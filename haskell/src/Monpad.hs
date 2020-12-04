@@ -175,23 +175,23 @@ server port layout conf = do
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer ServerEnv{..} ServerConfig{..} pending = do
-        conn <- WS.acceptRequest pending
-        clientId <- ClientID <$> WS.receiveData conn
-        (e, s0) <- onNewConnection clientId
-        let update u = do
-                onMessage u
-                case u of
-                    ButtonUp t -> onButton (buttonMap ! t) False
-                    ButtonDown t -> onButton (buttonMap ! t) True
-                    StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
-                    SliderMove t x -> onAxis (sliderMap ! t) x
-        WS.withPingThread conn 30 mempty
-            . runMonpad clientId e s0
-            $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
-      where
-        getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
-            Left err -> Left $ WebSocketException err
-            Right b -> first UpdateDecodeException $ eitherDecode b
+    conn <- WS.acceptRequest pending
+    clientId <- ClientID <$> WS.receiveData conn
+    (e, s0) <- onNewConnection clientId
+    let update u = do
+            onMessage u
+            case u of
+                ButtonUp t -> onButton (buttonMap ! t) False
+                ButtonDown t -> onButton (buttonMap ! t) True
+                StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
+                SliderMove t x -> onAxis (sliderMap ! t) x
+    WS.withPingThread conn 30 mempty
+        . runMonpad clientId e s0
+        $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+  where
+    getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
+        Left err -> Left $ WebSocketException err
+        Right b -> first UpdateDecodeException $ eitherDecode b
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.

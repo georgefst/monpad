@@ -1,4 +1,4 @@
-module MainOS (main) where
+module Main (main) where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)

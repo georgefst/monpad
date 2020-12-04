@@ -127,14 +127,10 @@ library
 executable monpad
     import:
         common
-    main-is: Main.hs
-    other-modules: MainOS
     if os(windows)
-        hs-source-dirs:
-            windows
+        main-is: Windows.hs
     if os(linux)
-        hs-source-dirs:
-            linux
+        main-is: Linux.hs
         other-modules:
             Orphans.Evdev
         build-depends:

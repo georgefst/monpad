@@ -27,7 +27,7 @@ let slider =
 
 in    { elements =
         [ slider 500 500 "Left" monpad.cols.green Axis.AbsX
-        , slider 1500 500 "Right" monpad.cols.red Axis.AbsX
+        , slider 1500 500 "Right" monpad.cols.red Axis.AbsRx
         ]
       , grid = { x = 2000, y = 1000 }
       }

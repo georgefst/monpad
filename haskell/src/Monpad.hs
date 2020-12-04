@@ -30,6 +30,7 @@ import Data.Map qualified as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
+import Data.Text.Lazy qualified as TL
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
 import Generics.SOP qualified as SOP
@@ -113,11 +114,17 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
   where
     nameBoxId = "name"
 
-mainHtml :: Port -> Text -> Html ()
-mainHtml wsPort username = doctypehtml_ $ mconcat
+mainHtml :: Layout a b -> Port -> Text -> Html ()
+mainHtml layout wsPort username = doctypehtml_ $ mconcat
     [ style_ (mainCSS ())
     , script_ [type_ jsScript] (elmJS ())
-    , script_ [type_ jsScript, makeAttribute "username" username, makeAttribute "wsPort" $ showT wsPort] (jsJS ())
+    , script_
+        [ type_ jsScript
+        , makeAttribute "layout" . TL.toStrict $ encodeToLazyText $ biVoid layout
+        , makeAttribute "wsPort" $ showT wsPort
+        , makeAttribute "username" username
+        ]
+        (jsJS ())
     ]
   where
     jsScript = "text/javascript"
@@ -135,7 +142,7 @@ data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeE
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: IO ()
-    , onNewConnection :: ClientID -> IO (Layout a b, e, s)
+    , onNewConnection :: ClientID -> IO (e, s)
     , onMessage :: Update -> Monpad e s ()
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
@@ -158,22 +165,20 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
         Button b -> over #buttonMap $ Map.insert e.name b.buttonData
 
-server :: Port -> ServerConfig e s a b -> IO ()
-server port conf = do
+server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
+server port layout conf = do
     onStart conf
-    run port $ websocketsOr wsOpts (websocketServer conf) httpServer
+    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) httpServer
   where
-    httpServer = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml port)
+    httpServer = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml layout port)
     wsOpts = WS.defaultConnectionOptions
 
-websocketServer :: ServerConfig e s a b -> WS.ServerApp
-websocketServer ServerConfig{..} pending = do
+websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
+websocketServer ServerEnv{..} ServerConfig{..} pending = do
         conn <- WS.acceptRequest pending
         clientId <- ClientID <$> WS.receiveData conn
-        (layout, e, s0) <- onNewConnection clientId
-        WS.sendTextData conn $ encodeToLazyText $ biVoid layout
-        let ServerEnv{..} = mkServerEnv $ elements layout
-            update u = do
+        (e, s0) <- onNewConnection clientId
+        let update u = do
                 onMessage u
                 case u of
                     ButtonUp t -> onButton (buttonMap ! t) False
@@ -215,15 +220,15 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    server 8000 config
+    layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
+    server 8000 layout config
   where
     config = ServerConfig
         { onStart = putStrLn "started"
         , onNewConnection = \c -> do
             putStrLn "connected:"
             pPrint c
-            layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
-            pure (layout, (), ())
+            pure ((), ())
         , onMessage = pPrint
         , onAxis = mempty
         , onButton = mempty

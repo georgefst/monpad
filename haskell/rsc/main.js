@@ -16,8 +16,9 @@ const username = document.currentScript.getAttribute("username");
 
 const wsPort = document.currentScript.getAttribute("wsPort");
 const wsAddress = "ws://" + location.hostname + ":" + wsPort;
-
 const ws = new WebSocket(wsAddress);
+
+const layout = JSON.parse(document.currentScript.getAttribute("layout"));
 
 window.onbeforeunload = function () {
     ws.close()
@@ -25,13 +26,10 @@ window.onbeforeunload = function () {
 
 ws.onopen = function (event) {
     ws.send(username);
-    ws.onmessage = function (message) {
-        const layout = JSON.parse(message.data);
-        const app = Elm.Main.init({
-            flags: { username, layout }
-        });
-        app.ports.sendUpdatePort.subscribe(function (message) {
-            ws.send(JSON.stringify(message));
-        });
-    }
+    const app = Elm.Main.init({
+        flags: { username, layout }
+    });
+    app.ports.sendUpdatePort.subscribe(function (message) {
+        ws.send(JSON.stringify(message));
+    });
 };

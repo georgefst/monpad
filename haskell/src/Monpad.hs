@@ -3,6 +3,7 @@
 
 module Monpad (
     server,
+    serverExtWs,
     Monpad,
     runMonpad,
     ServerConfig (..),
@@ -24,6 +25,7 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.Composition
 import Data.List
 import Data.Map (Map, (!))
 import Data.Map qualified as Map
@@ -168,10 +170,22 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
 server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
 server port layout conf = do
     onStart conf
-    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) httpServer
+    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) $ httpServer port layout
   where
-    httpServer = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml layout port)
     wsOpts = WS.defaultConnectionOptions
+
+-- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
+serverExtWs ::
+    -- | HTTP port
+    Port ->
+    -- | WS port
+    Port ->
+    Layout a b ->
+    IO ()
+serverExtWs httpPort = run httpPort .: httpServer
+
+httpServer :: Port -> Layout a b -> Application
+httpServer port layout = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml layout port)
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer ServerEnv{..} ServerConfig{..} pending = do

@@ -233,7 +233,7 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    layout <- layoutFromDhall @() @() $ voidLayout <> defaultDhall
+    layout <- layoutFromDhall @() @() $ "./../dhall/voidLayout.dhall " <> defaultDhall
     server 8000 layout config
   where
     config = ServerConfig
@@ -247,8 +247,3 @@ test = do
         , onButton = mempty
         , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
         }
-    voidLayout =
-        "let E = ./../dhall/evdev.dhall \
-        \let A = E.AbsAxis \
-        \let B = E.Key \
-        \in (./../dhall/monpad.dhall A B).mapLayout {} {} (λ(_ : A) → {=}) (λ(_ : B) → {=}) "

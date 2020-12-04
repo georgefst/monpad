@@ -14,6 +14,8 @@ module Monpad (
     testExt,
     Layout,
     layoutFromDhall,
+    defaultDhall,
+    mapLayoutDhall,
     allAxesAndButs,
     argParser,
 ) where
@@ -86,8 +88,8 @@ type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 {- | We don't provide a proper type for args, since backends will want to define their own.
 This function just contains the likely common ground.
 -}
-argParser :: Parser (Port, Text)
-argParser = (,)
+argParser :: Text -> Parser (Port, Text)
+argParser defDhall = (,)
     <$> (option auto . mconcat)
         [ long "port"
         , short 'p'
@@ -100,7 +102,7 @@ argParser = (,)
         [ long "layout-dhall"
         , short 'l'
         , metavar "EXPR"
-        , value defaultDhall
+        , value defDhall
         , help "Dhall expression to control layout of buttons etc."
         ]
 
@@ -233,7 +235,7 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    layout <- layoutFromDhall @() @() $ "./../dhall/voidLayout.dhall " <> defaultDhall
+    layout <- layoutFromDhall @() @() $ mapLayoutDhall <> ".void " <> defaultDhall
     server 8000 layout config
   where
     config = ServerConfig
@@ -248,4 +250,4 @@ test = do
         , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
         }
 testExt :: IO ()
-testExt = serverExtWs 8000 8001 =<< layoutFromDhall @() @() ("./../dhall/voidLayout.dhall " <> defaultDhall)
+testExt = serverExtWs 8000 8001 =<< layoutFromDhall @() @() (mapLayoutDhall <> ".void " <> defaultDhall)

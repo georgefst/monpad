@@ -1,18 +1,20 @@
-let Evdev = ./evdev.dhall
+let AllOS = ./lib/all-os.dhall
 
-let Axis = Evdev.AbsAxis
+let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
-let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
+let ButtonL = AllOS.ButtonLinux
+
+let AxisL = AllOS.AxisLinux
 
 let slider =
       λ(x : Natural) →
       λ(y : Natural) →
       λ(name : Text) →
       λ(sliderColour : monpad.Colour) →
-      λ(sliderData : Axis) →
+      λ(linux : AxisL) →
         { element =
             monpad.Element.Slider
-              { sliderData
+              { sliderData = { linux, windows = {=} }
               , length = 700
               , width = 100
               , radius = 100
@@ -26,8 +28,8 @@ let slider =
         }
 
 in    { elements =
-        [ slider 500 500 "Left" monpad.cols.green Axis.AbsX
-        , slider 1500 500 "Right" monpad.cols.red Axis.AbsRx
+        [ slider 500 500 "Left" monpad.cols.green AxisL.AbsX
+        , slider 1500 500 "Right" monpad.cols.red AxisL.AbsRx
         ]
       , grid = { x = 2000, y = 1000 }
       }

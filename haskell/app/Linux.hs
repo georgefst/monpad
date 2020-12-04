@@ -17,7 +17,8 @@ import Orphans.Evdev ()
 
 main :: IO ()
 main = do
-    (port, dhallLayout) <- execParser $ info (helper <*> argParser) (fullDesc <> header "monpad")
+    let defDhall = mapLayoutDhall <> ".toLinux " <> defaultDhall
+    (port, dhallLayout) <- execParser $ info (helper <*> argParser defDhall) (fullDesc <> header "monpad")
     layout <- layoutFromDhall dhallLayout
     server port layout ServerConfig
         { onStart = T.putStrLn "Monpad server started"

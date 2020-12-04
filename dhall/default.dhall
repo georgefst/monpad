@@ -1,33 +1,39 @@
-let Evdev = ./evdev.dhall
+let AllOS = ./lib/all-os.dhall
 
-let Axis = Evdev.AbsAxis
+let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
-let Key = Evdev.Key
+let ButtonL = AllOS.ButtonLinux
 
-let monpad = ./monpad.dhall Axis Key
+let ButtonW = {}
+
+let AxisL = AllOS.AxisLinux
 
 let button =
       λ(x : Natural) →
       λ(y : Natural) →
-      λ(buttonData : Key) →
+      λ(linux : ButtonL) →
+      λ(windows : ButtonW) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
         { element =
             monpad.Element.Button
-              { buttonData, colour, shape = monpad.Shape.Circle 120 }
+              { buttonData = { linux, windows }
+              , colour
+              , shape = monpad.Shape.Circle 120
+              }
         , location = { x, y }
         , name
         , showName = False
         }
 
 in    { elements =
-        [ button 1250 500 Key.BtnWest "Blue" monpad.cols.blue
-        , button 1500 250 Key.BtnSouth "Green" monpad.cols.green
-        , button 1750 500 Key.BtnEast "Red" monpad.cols.red
-        , button 1500 750 Key.BtnNorth "Yellow" monpad.cols.yellow
+        [ button 1250 500 ButtonL.BtnWest {=} "Blue" monpad.cols.blue
+        , button 1500 250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
+        , button 1750 500 ButtonL.BtnEast {=} "Red" monpad.cols.red
+        , button 1500 750 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Button
-                { buttonData = Key.BtnMode
+                { buttonData = { linux = ButtonL.BtnMode, windows = {=} }
                 , colour = monpad.cols.white
                 , shape = monpad.Shape.Circle 80
                 }
@@ -41,8 +47,8 @@ in    { elements =
                 , range = 320
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
-                , stickDataX = Axis.AbsX
-                , stickDataY = Axis.AbsY
+                , stickDataX = { linux = AxisL.AbsX, windows = {=} }
+                , stickDataY = { linux = AxisL.AbsY, windows = {=} }
                 }
           , location = { x = 500, y = 500 }
           , name = "Stick"

@@ -140,6 +140,13 @@ executable monpad
     build-depends:
         monpad,
 
+executable monpad-ext-ws
+    import: common
+    main-is: Main.hs
+    hs-source-dirs: ext-ws
+    build-depends:
+        monpad,
+
 executable monpad-layout-test
     import:
         common

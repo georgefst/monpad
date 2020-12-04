@@ -43,7 +43,6 @@ rules :: Rules ()
 rules = do
     want [monpad]
 
-    "dhall" ~> need [dhall]
     "elm" ~> need [elm]
 
     let rmr dir = liftIO $ removeFiles dir ["//*"]
@@ -61,15 +60,15 @@ rules = do
         putInfo "Cleaning Elm artefacts"
         rmr elmBuildDir
 
-    monpad %> \_ -> do
-        need [dhall, elm]
+    (distDir </> "*") %> \f -> do
+        need [dhall, dhallMapLayout, elm]
         needDirExcept hsBuildDir hsDir
         cmd_
             (Cwd hsDir)
-            "cabal build exe:monpad --flags=release"
-        getDirectoryFiles "" [hsBuildDir <//> monpadExe] >>= \case
+            ("cabal build --flags=release exe:" <> takeBaseName f)
+        getDirectoryFiles "" [hsBuildDir <//> takeFileName f] >>= \case
             [] -> error "No matches"
-            [f] -> copyFileChanged f monpad
+            [f'] -> copyFileChanged f' f
             fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     elm %> \_ -> do
@@ -77,11 +76,11 @@ rules = do
         cmd_ (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
         liftIO $ minifyFileJS elm
 
-    dhallRule dhall (("dhall" </>) . takeFileName)
+    dhallRule (rscDistDir <//> "*" <.> "dhall") (("dhall" </>) . takeFileName)
 
 {- Constants -}
 
-monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
+monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, dhallMapLayout, elm :: FilePath
 monpadExe = "monpad" <.> exe
 monpad = distDir </> monpadExe
 shakeDir = ".shake"
@@ -93,6 +92,7 @@ hsBuildDir = hsDir </> "dist-newstyle"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 dhall = rscDistDir </> "default" <.> "dhall"
+dhallMapLayout = rscDistDir </> "map-layout" <.> "dhall"
 elm = rscDistDir </> "elm" <.> "js"
 
 {- Util -}

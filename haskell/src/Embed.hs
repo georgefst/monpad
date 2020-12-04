@@ -15,7 +15,9 @@ mainCSS () = decodeUtf8 $(embedFile $ "rsc" </> "main.css")
 elmJS () = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "elm.js")
 jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
 defaultDhall :: Text
-defaultDhall = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
+defaultDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
+mapLayoutDhall :: Text
+mapLayoutDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "map-layout.dhall")
 
 #else
 
@@ -40,6 +42,11 @@ elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "dist" </> "elm.js"
 {-# NOINLINE jsJS #-}
 jsJS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.js"
 defaultDhall :: Text
-defaultDhall = "./../dhall/default.dhall"
+defaultDhall = bracketed "./../dhall/default.dhall"
+mapLayoutDhall :: Text
+mapLayoutDhall = bracketed "./../dhall/map-layout.dhall"
 
 #endif
+
+bracketed :: Text -> Text
+bracketed t = "(" <> t <> ")"

@@ -1,8 +1,10 @@
-let Prelude = ./Prelude.dhall
+let Prelude = ./lib/Prelude.dhall
 
-let Evdev = ./evdev.dhall
+let AllOS = ./lib/all-os.dhall
 
-let monpad = ./monpad.dhall Evdev.AbsAxis Evdev.Key
+let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
+
+let ButtonL = AllOS.ButtonLinux
 
 let grid = { x = 4, y = 4 }
 
@@ -19,7 +21,7 @@ let tile =
             monpad.Element.Button
               { shape = monpad.Shape.Rectangle rect
               , colour
-              , buttonData = Evdev.Key.BtnMisc
+              , buttonData = { linux = ButtonL.BtnMisc, windows = {=} }
               }
         , location = { x, y }
         , name

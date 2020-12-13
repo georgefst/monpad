@@ -2,10 +2,10 @@
 
 module Orphans.Tuple where
 
-import Data.Aeson.Types qualified as JSON
-import Language.Elm.Expression qualified as ElmExpr
-import Language.Elm.Name qualified as ElmName
-import Language.Elm.Type qualified as ElmType
+import qualified Data.Aeson.Types as JSON
+import qualified Language.Elm.Expression as ElmExpr
+import qualified Language.Elm.Name as ElmName
+import qualified Language.Elm.Type as ElmType
 import Language.Haskell.To.Elm (HasElmDecoder (elmDecoder), HasElmType (elmType))
 
 elmUnit :: ElmName.Qualified

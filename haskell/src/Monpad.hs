@@ -24,20 +24,20 @@ import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Aeson (FromJSON, ToJSON, eitherDecode)
-import Data.Aeson qualified as J
+import qualified Data.Aeson as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Composition
 import Data.List
 import Data.Map (Map, (!))
-import Data.Map qualified as Map
+import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
-import Data.Text.Lazy qualified as TL
+import qualified Data.Text.Lazy as TL
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
-import Generics.SOP qualified as SOP
+import qualified Generics.SOP as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
 import Linear
@@ -45,7 +45,7 @@ import Lucid
 import Lucid.Base (makeAttribute)
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WebSockets
-import Network.WebSockets qualified as WS
+import qualified Network.WebSockets as WS
 import Options.Applicative
 import Servant hiding (layout)
 import Servant.HTML.Lucid
@@ -59,7 +59,7 @@ import Embed
 import Layout
 import Orphans.V2 ()
 import Util
-import Util.Elm qualified as Elm
+import qualified Util.Elm as Elm
 
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)

@@ -3,7 +3,7 @@ module Util where
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
-import Data.Text qualified as T
+import qualified Data.Text as T
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import System.Directory (listDirectory)
 import System.FilePath ((</>))

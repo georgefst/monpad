@@ -4,18 +4,18 @@
 module Layout where
 
 import Data.Aeson.Types (ToJSON)
-import Data.Aeson.Types qualified as JSON
+import qualified Data.Aeson.Types as JSON
 import Data.Bifunctor.TH (deriveBifunctor)
 import Data.Either (partitionEithers)
 import Data.Text (Text)
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
-import Generics.SOP qualified as SOP
+import qualified Generics.SOP as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmType)
 import Linear.V2 (V2)
 import Orphans.Tuple ()
 import Orphans.V2 ()
-import Util.Elm qualified as Elm
+import qualified Util.Elm as Elm
 import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])

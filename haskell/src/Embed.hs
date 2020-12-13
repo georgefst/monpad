@@ -30,7 +30,7 @@ mapLayoutDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "map-
 module Embed where
 
 import Data.Text (Text)
-import Data.Text.IO qualified as T
+import qualified Data.Text.IO as T
 import System.FilePath
 import System.IO.Unsafe (unsafePerformIO)
 

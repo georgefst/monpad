@@ -2,7 +2,7 @@
 
 {- cabal:
 build-depends:
-    base >= 4.14,
+    base >= 4.13,
     dhall ^>= 1.36,
     extra ^>= 1.7.4,
     language-javascript ^>= 0.7.1.0,
@@ -11,7 +11,6 @@ build-depends:
     shake-dhall ^>= 0.1.0.0,
     text ^>= 1.2.3.2,
 -}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -21,14 +20,14 @@ import Control.Exception.Extra
 import Data.Function
 import Data.List
 
-import Data.Text.IO qualified as T
-import Data.Text.Lazy.IO qualified as TL
-import Dhall.Core qualified as Dhall
-import Dhall.Import qualified as Dhall
-import Dhall.Parser qualified as Dhall
+import qualified Data.Text.IO as T
+import qualified Data.Text.Lazy.IO as TL
+import qualified Dhall.Core as Dhall
+import qualified Dhall.Import as Dhall
+import qualified Dhall.Parser as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Language.JavaScript.Parser qualified as JS
-import Language.JavaScript.Process.Minify qualified as JS
+import qualified Language.JavaScript.Parser as JS
+import qualified Language.JavaScript.Process.Minify as JS
 
 import Development.Shake
 import Development.Shake.Dhall

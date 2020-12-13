@@ -15,19 +15,19 @@ import Data.Aeson as JSON
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import GHC.Generics (Generic, Rep)
-import Generics.SOP qualified as SOP
+import qualified Generics.SOP as SOP
 import Language.Elm.Definition
 import Language.Elm.Name
 import Language.Haskell.To.Elm as Elm
 import Type.Reflection (Typeable)
 
 import Control.Monad (forM_)
-import Data.HashMap.Strict qualified as HashMap
-import Data.Text qualified as T
-import Data.Text.IO qualified as T
+import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
-import Language.Elm.Pretty qualified as Pretty
+import qualified Language.Elm.Pretty as Pretty
 import Language.Elm.Simplification (simplifyDefinition)
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))

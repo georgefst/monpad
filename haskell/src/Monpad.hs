@@ -243,11 +243,13 @@ test = do
         , onNewConnection = \c -> do
             putStrLn "connected:"
             pPrint c
-            pure ((), ())
-        , onMessage = pPrint
+            pure ((), c)
+        , onMessage = \u -> do
+            c <- get
+            pPrint (c, u)
         , onAxis = mempty
         , onButton = mempty
-        , onDroppedConnection = \c -> liftIO $ putStrLn "disconnected:" >> pPrint c
+        , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
         }
 testExt :: IO ()
 testExt = serverExtWs 8000 8001 =<< layoutFromDhall @() @() (mapLayoutDhall <> ".void " <> defaultDhall)

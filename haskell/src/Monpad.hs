@@ -241,8 +241,7 @@ test = do
     config = ServerConfig
         { onStart = putStrLn "started"
         , onNewConnection = \c -> do
-            putStrLn "connected:"
-            pPrint c
+            pPrint ("connected" :: Text, c)
             pure ((), c)
         , onMessage = \u -> do
             c <- get

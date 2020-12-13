@@ -135,6 +135,8 @@ executable monpad
             Orphans.Evdev
         build-depends:
             evdev ^>= 2.0,
+    if os(darwin)
+        main-is: Mac.hs
     hs-source-dirs:
         app
     build-depends:

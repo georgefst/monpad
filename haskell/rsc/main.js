@@ -15,7 +15,7 @@ window.screen.orientation.onchange = function () {
 const username = document.currentScript.getAttribute("username");
 
 const wsPort = document.currentScript.getAttribute("wsPort");
-const wsAddress = "ws://" + location.hostname + ":" + wsPort;
+const wsAddress = "ws://" + location.hostname + ":" + wsPort + "/" + username;
 const ws = new WebSocket(wsAddress);
 
 const layout = JSON.parse(document.currentScript.getAttribute("layout"));
@@ -25,7 +25,6 @@ window.onbeforeunload = function () {
 }
 
 ws.onopen = function (event) {
-    ws.send(username);
     const app = Elm.Main.init({
         flags: { username, layout }
     });

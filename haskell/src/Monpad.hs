@@ -34,6 +34,8 @@ import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text.Lazy as TL
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
@@ -192,7 +194,6 @@ httpServer port layout = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml l
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer ServerEnv{..} ServerConfig{..} pending = do
     conn <- WS.acceptRequest pending
-    clientId <- ClientID <$> WS.receiveData conn
     (e, s0) <- onNewConnection clientId
     let update u = do
             onMessage u
@@ -205,6 +206,7 @@ websocketServer ServerEnv{..} ServerConfig{..} pending = do
         . runMonpad clientId e s0
         $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
   where
+    clientId = ClientID . T.dropWhile (== '/') . decodeUtf8 . WS.requestPath $ WS.pendingRequest pending
     getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
         Left err -> Left $ WebSocketException err
         Right b -> first UpdateDecodeException $ eitherDecode b

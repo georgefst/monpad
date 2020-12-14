@@ -60,7 +60,7 @@ rules = do
         rmr elmBuildDir
 
     (distDir </> "*") %> \f -> do
-        need [dhall, dhallMapLayout, elm]
+        need [dhall, elm] --TODO if only these have changed, cabal still does nothing as it thinks it's up to date
         needDirExcept hsBuildDir hsDir
         cmd_
             (Cwd hsDir)

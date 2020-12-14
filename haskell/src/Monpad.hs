@@ -39,6 +39,7 @@ import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text.Lazy as TL
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
+import GHC.TypeLits
 import qualified Generics.SOP as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
@@ -84,9 +85,8 @@ data ElmFlags = ElmFlags
     deriving (Show, Generic, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
 
-type Root = "monpad"
 type UsernameParam = "username"
-type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
+type API root = root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
 
 {- | We don't provide a proper type for args, since backends will want to define their own.
 This function just contains the likely common ground.
@@ -109,8 +109,8 @@ argParser defDhall = (,)
         , help "Dhall expression to control layout of buttons etc."
         ]
 
-loginHtml :: Html ()
-loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
+loginHtml :: Text -> Html ()
+loginHtml root = doctypehtml_ . form_ [action_ root] $ mconcat
     [ title_ "monpad: login"
     , style_ (mainCSS ())
     , label_ [for_ nameBoxId] "Username:"
@@ -148,7 +148,8 @@ data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeE
 
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
-    { onStart :: IO ()
+    { root :: Text
+    , onStart :: IO ()
     , onNewConnection :: ClientID -> IO (e, s)
     , onMessage :: Update -> Monpad e s ()
     , onAxis :: a -> Double -> Monpad e s ()
@@ -175,7 +176,7 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
 server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
 server port layout conf = do
     onStart conf
-    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) $ httpServer port layout
+    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) $ httpServer port (root conf) layout
   where
     wsOpts = WS.defaultConnectionOptions
 
@@ -185,12 +186,16 @@ serverExtWs ::
     Port ->
     -- | WS port
     Port ->
+    --TODO better wording
+    -- | URL root
+    Text ->
     Layout a b ->
     IO ()
-serverExtWs httpPort = run httpPort .: httpServer
+serverExtWs httpPort = run httpPort .:. httpServer
 
-httpServer :: Port -> Layout a b -> Application
-httpServer port layout = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml layout port)
+httpServer :: Port -> Text -> Layout a b -> Application
+httpServer port root layout = case someSymbolVal $ T.unpack root of
+    SomeSymbol (_ :: Proxy s) -> serve (Proxy @(API s)) $ pure . maybe (loginHtml root) (mainHtml layout port)
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
 websocketServer ServerEnv{..} ServerConfig{..} pending = do
@@ -242,7 +247,8 @@ test = do
     server 8000 layout config
   where
     config = ServerConfig
-        { onStart = putStrLn "started"
+        { root = "monpad"
+        , onStart = putStrLn "started"
         , onNewConnection = \c -> do
             pPrint ("connected" :: Text, c)
             pure ((), c)
@@ -254,4 +260,4 @@ test = do
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
         }
 testExt :: IO ()
-testExt = serverExtWs 8000 8001 =<< defaultSimple
+testExt = serverExtWs 8000 8001 "monpad" =<< defaultSimple

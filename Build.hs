@@ -59,6 +59,7 @@ rules = do
         putInfo "Cleaning Elm artefacts"
         rmr elmBuildDir
 
+    -- executables e.g. 'dist/monpad-ext-ws'
     (distDir </> "*") %> \f -> do
         need [dhall, elm] --TODO if only these have changed, cabal still does nothing as it thinks it's up to date
         needDirExcept hsBuildDir hsDir

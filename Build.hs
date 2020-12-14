@@ -65,7 +65,7 @@ rules = do
 
     -- executables e.g. 'dist/monpad-ext-ws'
     (distDir </> "*") %> \f -> do
-        need [dhall, elm] --TODO if only these have changed, cabal still does nothing as it thinks it's up to date
+        need [dhall, elm]
         needDirExcept hsBuildDir hsDir
         cmd_
             (Cwd hsDir)

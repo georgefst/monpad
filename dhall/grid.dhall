@@ -21,7 +21,7 @@ let tile =
             monpad.Element.Button
               { shape = monpad.Shape.Rectangle rect
               , colour
-              , buttonData = { linux = ButtonL.BtnMisc, windows = {=} }
+              , buttonData = { linux = ButtonL.BtnMisc, windows = {=}, mac = {=} }
               }
         , location = { x, y }
         , name

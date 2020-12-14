@@ -11,7 +11,7 @@ let button =
       λ(name : Text) →
         { element =
             monpad.Element.Button
-              { buttonData = { linux, windows = {=} }
+              { buttonData = { linux, windows = {=}, mac = {=} }
               , colour = monpad.cols.white
               , shape = monpad.Shape.Rectangle { x = 200, y = 200 }
               }

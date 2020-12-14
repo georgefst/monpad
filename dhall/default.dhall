@@ -17,7 +17,7 @@ let button =
       λ(colour : monpad.Colour) →
         { element =
             monpad.Element.Button
-              { buttonData = { linux, windows }
+              { buttonData = { linux, windows, mac = {=} }
               , colour
               , shape = monpad.Shape.Circle 120
               }
@@ -33,7 +33,8 @@ in    { elements =
         , button 1500 750 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Button
-                { buttonData = { linux = ButtonL.BtnMode, windows = {=} }
+                { buttonData =
+                  { linux = ButtonL.BtnMode, windows = {=}, mac = {=} }
                 , colour = monpad.cols.white
                 , shape = monpad.Shape.Circle 80
                 }
@@ -47,8 +48,8 @@ in    { elements =
                 , range = 320
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
-                , stickDataX = { linux = AxisL.AbsX, windows = {=} }
-                , stickDataY = { linux = AxisL.AbsY, windows = {=} }
+                , stickDataX = { linux = AxisL.AbsX, windows = {=}, mac = {=} }
+                , stickDataY = { linux = AxisL.AbsY, windows = {=}, mac = {=} }
                 }
           , location = { x = 500, y = 500 }
           , name = "Stick"

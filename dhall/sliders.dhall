@@ -14,7 +14,7 @@ let slider =
       λ(linux : AxisL) →
         { element =
             monpad.Element.Slider
-              { sliderData = { linux, windows = {=} }
+              { sliderData = { linux, windows = {=}, mac = {=} }
               , length = 700
               , width = 100
               , radius = 100

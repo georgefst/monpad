@@ -21,4 +21,4 @@ main :: IO ()
 main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info parser mempty
-    serverExtWs httpPort wsPort =<< layoutFromDhall @() @() (mapLayoutDhall <> ".void " <> defaultDhall)
+    serverExtWs httpPort wsPort =<< defaultSimple

@@ -15,7 +15,7 @@ module Monpad (
     Layout,
     layoutFromDhall,
     defaultDhall,
-    mapLayoutDhall,
+    defaultSimple,
     allAxesAndButs,
     argParser,
 ) where
@@ -57,6 +57,7 @@ import Text.Pretty.Simple
 --TODO shouldn't really use this in library code
 import Data.Generics.Labels ()
 
+import DhallHack
 import Embed
 import Layout
 import Orphans.V2 ()
@@ -237,7 +238,7 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    layout <- layoutFromDhall @() @() $ mapLayoutDhall <> ".void " <> defaultDhall
+    layout <- defaultSimple
     server 8000 layout config
   where
     config = ServerConfig
@@ -253,4 +254,4 @@ test = do
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
         }
 testExt :: IO ()
-testExt = serverExtWs 8000 8001 =<< layoutFromDhall @() @() (mapLayoutDhall <> ".void " <> defaultDhall)
+testExt = serverExtWs 8000 8001 =<< defaultSimple

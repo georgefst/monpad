@@ -1,4 +1,6 @@
-#!/usr/bin/env cabal
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wall #-}
 
 {- cabal:
 build-depends:
@@ -11,8 +13,6 @@ build-depends:
     shake-dhall ^>= 0.1.0.0,
     text ^>= 1.2.3.2,
 -}
-{-# LANGUAGE LambdaCase #-}
-{-# OPTIONS_GHC -Wall #-}
 
 module Main (main) where
 
@@ -20,11 +20,13 @@ import Control.Exception.Extra
 import Data.Function
 import Data.List
 
+import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy.IO as TL
 import qualified Dhall.Core as Dhall
 import qualified Dhall.Import as Dhall
 import qualified Dhall.Parser as Dhall
+import qualified Dhall.TypeCheck as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import qualified Language.JavaScript.Parser as JS
 import qualified Language.JavaScript.Process.Minify as JS
@@ -43,6 +45,8 @@ rules = do
     want [monpad]
 
     "elm" ~> need [elm]
+    "dhall" ~> do
+        need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
 
     let rmr dir = liftIO $ removeFiles dir ["//*"]
         clean = do
@@ -76,11 +80,23 @@ rules = do
         cmd_ (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
         liftIO $ minifyFileJS elm
 
-    dhallRule (rscDistDir <//> "*" <.> "dhall") (("dhall" </>) . takeFileName)
+    distDir </> "dhall" </> "*" %> \out -> do
+        let in' = "dhall" </> takeFileName out
+        needDhall [in']
+        putInfo $ "Resolving imports in: " <> out
+        liftIO $ do
+            c <- T.readFile in'
+            expr <-
+                Dhall.throws . Dhall.exprFromText in' $
+                    pack "(./lib/map-layout.dhall).to" <> osName <> pack " " <> bracketed c
+            resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
+            _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
+            T.writeFile out $ Dhall.pretty resolvedExpression
+    (rscDistDir <//> "*" <.> "dhall") %> \f -> copyFileChanged (distDir </> "dhall" </> takeFileName f) f
 
 {- Constants -}
 
-monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, dhallMapLayout, elm :: FilePath
+monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
 monpadExe = "monpad" <.> exe
 monpad = distDir </> monpadExe
 shakeDir = ".shake"
@@ -92,8 +108,20 @@ hsBuildDir = hsDir </> "dist-newstyle"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 dhall = rscDistDir </> "default" <.> "dhall"
-dhallMapLayout = rscDistDir </> "map-layout" <.> "dhall"
 elm = rscDistDir </> "elm" <.> "js"
+
+osName :: Text
+osName = pack
+
+#if linux_HOST_OS
+    "Linux"
+#elif mingw32_HOST_OS
+    "Windows"
+#elif darwin_HOST_OS
+    "Mac"
+#else
+    error "unknown OS"
+#endif
 
 {- Util -}
 
@@ -102,28 +130,11 @@ needDirExcept :: FilePath -> FilePath -> Action ()
 needDirExcept except dir =
     need . filter (not . (isPrefixOf `on` splitDirectories) except) =<< getDirectoryFiles "" [dir <//> "*"]
 
--- | Resolve imports in given files
-dhallRule ::
-    FilePattern ->
-    -- | Compute output file name from input
-    (FilePath -> FilePath) ->
-    Rules ()
-dhallRule p f =
-    p %> \out -> do
-        let in' = f out
-        needDhall [in']
-        putInfo $ "Resolving imports in: " <> out
-        liftIO $ dhallResolve in' out
-  where
-    dhallResolve :: FilePath -> FilePath -> IO ()
-    dhallResolve in' out = do
-        expr <- Dhall.throws . Dhall.exprFromText in' =<< T.readFile in'
-        resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
-        T.writeFile out $ Dhall.pretty resolvedExpression
-
--- | Minify in place. Fails if file doesn't contain valid JS.
 minifyFileJS :: Partial => FilePath -> IO ()
 minifyFileJS file =
     (flip JS.parse file <$> readFile file) >>= \case
         Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
         Right ast -> TL.writeFile file $ JS.renderToText $ JS.minifyJS ast
+
+bracketed :: Text -> Text
+bracketed t = pack "(" <> t <> pack ")"

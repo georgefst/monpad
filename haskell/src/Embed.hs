@@ -16,8 +16,6 @@ elmJS () = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "elm.js")
 jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
 defaultDhall :: Text
 defaultDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
-mapLayoutDhall :: Text
-mapLayoutDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "map-layout.dhall")
 
 #else
 
@@ -42,9 +40,7 @@ elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "dist" </> "elm.js"
 {-# NOINLINE jsJS #-}
 jsJS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.js"
 defaultDhall :: Text
-defaultDhall = bracketed "./../dhall/default.dhall"
-mapLayoutDhall :: Text
-mapLayoutDhall = bracketed "./../dhall/map-layout.dhall"
+defaultDhall = bracketed "./../dist/dhall/default.dhall"
 
 #endif
 

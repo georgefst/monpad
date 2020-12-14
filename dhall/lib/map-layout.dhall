@@ -1,8 +1,6 @@
---TODO this is a workaround until we have something like https://github.com/dhall-lang/dhall-haskell/issues/1521
+let AllOS = ./all-os.dhall
 
-let AllOS = ./lib/all-os.dhall
-
-let monpad = ./lib/monpad.dhall
+let monpad = ./monpad.dhall
 
 let monpadAll = monpad AllOS.Axis AllOS.Button
 
@@ -20,6 +18,13 @@ let toWindows =
         (λ(a : AllOS.Axis) → a.windows)
         (λ(b : AllOS.Button) → b.windows)
 
+let toMac =
+      monpadAll.mapLayout
+        AllOS.AxisMac
+        AllOS.ButtonMac
+        (λ(a : AllOS.Axis) → a.mac)
+        (λ(b : AllOS.Button) → b.mac)
+
 let void =
       monpadAll.mapLayout
         {}
@@ -27,4 +32,4 @@ let void =
         (λ(_ : AllOS.Axis) → {=})
         (λ(_ : AllOS.Button) → {=})
 
-in  { void, toLinux, toWindows }
+in  { void, toLinux, toWindows, toMac }

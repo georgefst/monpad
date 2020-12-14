@@ -16,7 +16,7 @@ let button =
       λ(colour : monpad.Colour) →
         { element =
             monpad.Element.Button
-              { buttonData = { linux, windows = {=} }
+              { buttonData = { linux, windows = {=}, mac = {=} }
               , colour
               , shape = monpad.Shape.Circle 100
               }
@@ -33,7 +33,7 @@ let button2 =
       λ(showName : Bool) →
         { element =
             monpad.Element.Button
-              { buttonData = { linux, windows = {=} }
+              { buttonData = { linux, windows = {=}, mac = {=} }
               , colour = monpad.cols.grey
               , shape = monpad.Shape.Rectangle { x = 150, y = 150 }
               }
@@ -54,8 +54,8 @@ let stick =
               , range = 200
               , stickColour = monpad.cols.white
               , backgroundColour = monpad.cols.grey
-              , stickDataX = { linux = linuxX, windows = {=} }
-              , stickDataY = { linux = linuxY, windows = {=} }
+              , stickDataX = { linux = linuxX, windows = {=}, mac = {=} }
+              , stickDataY = { linux = linuxY, windows = {=}, mac = {=} }
               }
         , location = { x, y }
         , name
@@ -74,7 +74,7 @@ let slider =
               , radius = 80
               , backgroundColour = monpad.cols.white
               , sliderColour = monpad.cols.black
-              , sliderData = { linux, windows = {=} }
+              , sliderData = { linux, windows = {=}, mac = {=} }
               , vertical = True
               }
         , location = { x, y }

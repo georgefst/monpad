@@ -88,6 +88,7 @@ library
         Layout
     other-modules:
         Embed
+        DhallHack
         Orphans.Tuple
         Orphans.V2
         Util

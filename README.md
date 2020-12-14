@@ -25,7 +25,7 @@ Prerequisites:
 
 If you haven't done so before, run `cabal update` to grab the latest package index from [Hackage](https://hackage.haskell.org/).
 
-Run `./Build.hs` to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
+Run `cabal run Build.hs` to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
 
 # Run
 
@@ -40,7 +40,7 @@ Note that the `monpad` binary is self-contained - you can move it to any locatio
 
 # Customise
 
-The controller layout and button/axis mapping can be fully customised using [Dhall](https://dhall-lang.org/). Examples are [in this repository](https://github.com/georgefst/monpad/tree/master/dhall). Note that some of these files import each other by relative path, so they are best kept together.
+The controller layout and button/axis mapping can be fully customised using [Dhall](https://dhall-lang.org/). Examples are [in this repository](https://github.com/georgefst/monpad/tree/master/dhall). Note that some of these files import each other by relative path, so they are best kept together. Running the build script with the argument `dhall` will generate standalone versions, specialised to the host OS, though these will be less human-readable.
 
 # Compatibility / Troubleshooting
 

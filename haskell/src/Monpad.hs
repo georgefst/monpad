@@ -34,8 +34,8 @@ import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (encodeUtf8)
+import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
@@ -46,9 +46,9 @@ import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
 import Network.Wai.Handler.Warp
-import Network.Wai.Handler.WebSockets
 import qualified Network.WebSockets as WS
 import Options.Applicative
+import Servant.API.WebSocket
 import Servant hiding (layout)
 import Servant.HTML.Lucid
 import System.FilePath
@@ -86,7 +86,8 @@ data ElmFlags = ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
-type API = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
+type HttpApi = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
+type WsApi = QueryParam UsernameParam Text :> WebSocketPending
 
 {- | We don't provide a proper type for args, since backends will want to define their own.
 This function just contains the likely common ground.
@@ -175,9 +176,8 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
 server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
 server port layout conf = do
     onStart conf
-    run port $ websocketsOr wsOpts (websocketServer (mkServerEnv $ elements layout) conf) $ httpServer port layout
-  where
-    wsOpts = WS.defaultConnectionOptions
+    run port . serve (Proxy @(HttpApi :<|> WsApi)) $
+        httpServer port layout :<|> websocketServer (mkServerEnv $ elements layout) conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -187,30 +187,33 @@ serverExtWs ::
     Port ->
     Layout a b ->
     IO ()
-serverExtWs httpPort = run httpPort .: httpServer
+serverExtWs httpPort = run httpPort . serve (Proxy @HttpApi) .: httpServer
 
-httpServer :: Port -> Layout a b -> Application
-httpServer port layout = serve (Proxy @API) $ pure . maybe loginHtml (mainHtml layout port)
+httpServer :: Port -> Layout a b -> Server HttpApi
+httpServer wsPort layout = pure . maybe loginHtml (mainHtml layout wsPort)
 
-websocketServer :: ServerEnv a b -> ServerConfig e s a b -> WS.ServerApp
-websocketServer ServerEnv{..} ServerConfig{..} pending = do
-    conn <- WS.acceptRequest pending
-    (e, s0) <- onNewConnection clientId
-    let update u = do
-            onMessage u
-            case u of
-                ButtonUp t -> onButton (buttonMap ! t) False
-                ButtonDown t -> onButton (buttonMap ! t) True
-                StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
-                SliderMove t x -> onAxis (sliderMap ! t) x
-    WS.withPingThread conn 30 mempty
-        . runMonpad clientId e s0
-        $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
-  where
-    clientId = ClientID . T.dropWhile (== '/') . decodeUtf8 . WS.requestPath $ WS.pendingRequest pending
-    getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
-        Left err -> Left $ WebSocketException err
-        Right b -> first UpdateDecodeException $ eitherDecode b
+websocketServer :: ServerEnv a b -> ServerConfig e s a b -> Server WsApi
+websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
+    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
+      where err = "no username parameter"
+    Just username -> do
+        conn <- WS.acceptRequest pending
+        (e, s0) <- onNewConnection clientId
+        let update u = do
+                onMessage u
+                case u of
+                    ButtonUp t -> onButton (buttonMap ! t) False
+                    ButtonDown t -> onButton (buttonMap ! t) True
+                    StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
+                    SliderMove t x -> onAxis (sliderMap ! t) x
+        WS.withPingThread conn 30 mempty
+            . runMonpad clientId e s0
+            $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+      where
+        clientId = ClientID username
+        getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
+            Left err -> Left $ WebSocketException err
+            Right b -> first UpdateDecodeException $ eitherDecode b
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to open this file in GHCI and run 'elm'.

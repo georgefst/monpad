@@ -15,7 +15,7 @@ window.screen.orientation.onchange = function () {
 const username = document.currentScript.getAttribute("username");
 
 const wsPort = document.currentScript.getAttribute("wsPort");
-const wsAddress = "ws://" + location.hostname + ":" + wsPort + "/" + username;
+const wsAddress = "ws://" + location.hostname + ":" + wsPort + "?" + new URLSearchParams({ username });
 const ws = new WebSocket(wsAddress);
 
 const layout = JSON.parse(document.currentScript.getAttribute("layout"));

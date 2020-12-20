@@ -21,7 +21,7 @@ const ws = new WebSocket(wsAddress);
 
 const layout = JSON.parse(attr("layout"));
 
-window.onbeforeunload = ws.close;
+window.onbeforeunload = () => ws.close();
 
 ws.onopen = (event) => {
     const app = Elm.Main.init({

@@ -40,7 +40,7 @@ elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "dist" </> "elm.js"
 {-# NOINLINE jsJS #-}
 jsJS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.js"
 defaultDhall :: Text
-defaultDhall = bracketed "./../dist/dhall/default.dhall"
+defaultDhall = bracketed "./rsc/dist/default.dhall"
 
 #endif
 

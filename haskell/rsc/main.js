@@ -12,13 +12,14 @@ window.screen.orientation.onchange = function () {
     };
 }
 
-const username = document.currentScript.getAttribute("username");
+function attr(s) { return document.currentScript.attributes.getNamedItem(s).value }
 
-const wsPort = document.currentScript.getAttribute("wsPort");
-const wsAddress = "ws://" + location.hostname + ":" + wsPort + "?" + new URLSearchParams({ username });
+const username = attr("username");
+
+const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + new URLSearchParams({ username });
 const ws = new WebSocket(wsAddress);
 
-const layout = JSON.parse(document.currentScript.getAttribute("layout"));
+const layout = JSON.parse(attr("layout"));
 
 window.onbeforeunload = function () {
     ws.close()

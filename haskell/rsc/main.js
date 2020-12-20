@@ -10,7 +10,7 @@ window.screen.orientation.onchange = function () {
             document.exitFullscreen();
             break;
     };
-}
+};
 
 function attr(s) { return document.currentScript.attributes.getNamedItem(s).value }
 

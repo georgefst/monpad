@@ -47,6 +47,7 @@ rules = do
     "elm" ~> need [elm]
     "dhall" ~> do
         need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
+    "assets" ~> need assets -- useful for 'test' function from repl
 
     let rmr dir = liftIO $ removeFiles dir ["//*"]
         clean = do
@@ -65,7 +66,7 @@ rules = do
 
     -- executables e.g. 'dist/monpad-ext-ws'
     (distDir </> "*") %> \f -> do
-        need [dhall, elm]
+        need assets
         needDirExcept hsBuildDir hsDir
         cmd_
             (Cwd hsDir)
@@ -109,6 +110,9 @@ elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 dhall = rscDistDir </> "default" <.> "dhall"
 elm = rscDistDir </> "elm" <.> "js"
+
+assets :: [FilePath]
+assets = [dhall, elm]
 
 osName :: Text
 osName = pack

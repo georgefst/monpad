@@ -1,5 +1,5 @@
 // use fullscreen when in landscape
-window.screen.orientation.onchange = function () {
+window.screen.orientation.onchange = () => {
     console.log(this.type)
     switch (this.type) {
         case "landscape-primary":
@@ -12,7 +12,7 @@ window.screen.orientation.onchange = function () {
     };
 };
 
-function attr(s) { return document.currentScript.attributes.getNamedItem(s).value }
+const attr = s => document.currentScript.attributes.getNamedItem(s).value;
 
 const username = attr("username");
 
@@ -21,11 +21,9 @@ const ws = new WebSocket(wsAddress);
 
 const layout = JSON.parse(attr("layout"));
 
-window.onbeforeunload = function () {
-    ws.close()
-}
+window.onbeforeunload = ws.close;
 
-ws.onopen = function (event) {
+ws.onopen = (event) => {
     const app = Elm.Main.init({
         flags: { username, layout }
     });

@@ -23,11 +23,9 @@ const layout = JSON.parse(attr("layout"));
 
 window.onbeforeunload = () => ws.close();
 
-ws.onopen = (event) => {
+ws.onopen = event => {
     const app = Elm.Main.init({
         flags: { username, layout }
     });
-    app.ports.sendUpdatePort.subscribe(function (message) {
-        ws.send(JSON.stringify(message));
-    });
+    app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)));
 };

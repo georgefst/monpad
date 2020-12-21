@@ -66,6 +66,7 @@ import qualified Util.Elm as Elm
 
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)
+    deriving newtype FromHttpApiData
 
 -- | A message sent by a client.
 data Update
@@ -86,8 +87,8 @@ data ElmFlags = ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
-type HttpApi = Root :> QueryParam UsernameParam Text :> Get '[HTML] (Html ())
-type WsApi = QueryParam UsernameParam Text :> WebSocketPending
+type HttpApi = Root :> QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
+type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
 {- | We don't provide a proper type for args, since backends will want to define their own.
 This function just contains the likely common ground.
@@ -122,8 +123,8 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
   where
     nameBoxId = "name"
 
-mainHtml :: Layout a b -> Port -> Text -> Html ()
-mainHtml layout wsPort username = doctypehtml_ $ mconcat
+mainHtml :: Layout a b -> Port -> ClientID -> Html ()
+mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
     [ style_ (mainCSS ())
     , script_ [type_ jsScript] (elmJS ())
     , script_
@@ -196,7 +197,7 @@ websocketServer :: ServerEnv a b -> ServerConfig e s a b -> Server WsApi
 websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
-    Just username -> do
+    Just clientId -> do
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
         let update u = do
@@ -210,7 +211,6 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
             . runMonpad clientId e s0
             $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
       where
-        clientId = ClientID username
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err
             Right b -> first UpdateDecodeException $ eitherDecode b

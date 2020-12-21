@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
@@ -17,6 +18,8 @@ build-depends:
 module Main (main) where
 
 import Control.Exception.Extra
+import Control.Monad
+import Control.Monad.Extra
 import Data.Function
 import Data.List
 
@@ -30,6 +33,7 @@ import qualified Dhall.TypeCheck as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import qualified Language.JavaScript.Parser as JS
 import qualified Language.JavaScript.Process.Minify as JS
+import qualified System.Directory as Dir
 
 import Development.Shake
 import Development.Shake.Dhall
@@ -54,7 +58,7 @@ rules = do
             putInfo "Cleaning Shake build artefacts"
             rmr shakeDir
             putInfo "Cleaning generated assets"
-            rmr rscDistDir
+            rmr rscDir
             rmr distDir
     "clean" ~> clean
     "deep-clean" ~> do
@@ -63,6 +67,11 @@ rules = do
         rmr hsBuildDir
         putInfo "Cleaning Elm artefacts"
         rmr elmBuildDir
+
+    forM_ linkedAssets \(file, link) ->
+        link %> \_ -> do
+            need [file]
+            liftIO $ unlessM (Dir.doesFileExist link) $ Dir.createFileLink (".." </> ".." </> file) link
 
     -- executables e.g. 'dist/monpad-ext-ws'
     (distDir </> "*") %> \f -> do
@@ -93,26 +102,29 @@ rules = do
             resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression
-    (rscDistDir <//> "*" <.> "dhall") %> \f -> copyFileChanged (distDir </> "dhall" </> takeFileName f) f
 
 {- Constants -}
 
-monpadExe, monpad, shakeDir, distDir, rscDir, rscDistDir, hsDir, hsBuildDir, elmDir, elmBuildDir, dhall, elm :: FilePath
+monpadExe, monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elm :: FilePath
 monpadExe = "monpad" <.> exe
 monpad = distDir </> monpadExe
 shakeDir = ".shake"
 distDir = "dist"
 rscDir = hsDir </> "rsc"
-rscDistDir = rscDir </> "dist"
 hsDir = "haskell"
 hsBuildDir = hsDir </> "dist-newstyle"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
-dhall = rscDistDir </> "default" <.> "dhall"
-elm = rscDistDir </> "elm" <.> "js"
+elm = rscDir </> "elm" <.> "js"
+
+linkedAssets :: [(FilePath, FilePath)]
+linkedAssets =
+    [ (file, rscDir </> takeFileName file)
+    | file <- ["dist" </> "dhall" </> "default.dhall", "js" </> "main.js", "css" </> "main.css"]
+    ]
 
 assets :: [FilePath]
-assets = [dhall, elm]
+assets = elm : map snd linkedAssets
 
 osName :: Text
 osName = pack

@@ -12,10 +12,10 @@ import System.FilePath
 
 mainCSS, elmJS, jsJS :: () -> Text
 mainCSS () = decodeUtf8 $(embedFile $ "rsc" </> "main.css")
-elmJS () = decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "elm.js")
+elmJS () = decodeUtf8 $(embedFile $ "rsc" </> "elm.js")
 jsJS () = decodeUtf8 $(embedFile $ "rsc" </> "main.js")
 defaultDhall :: Text
-defaultDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "dist" </> "default.dhall")
+defaultDhall = bracketed $ decodeUtf8 $(embedFile $ "rsc" </> "default.dhall")
 
 #else
 
@@ -36,11 +36,11 @@ mainCSS, elmJS, jsJS :: () -> Text
 {-# NOINLINE mainCSS #-}
 mainCSS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.css"
 {-# NOINLINE elmJS #-}
-elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "dist" </> "elm.js"
+elmJS () = unsafePerformIO $ T.readFile $ "rsc" </> "elm.js"
 {-# NOINLINE jsJS #-}
 jsJS () = unsafePerformIO $ T.readFile $ "rsc" </> "main.js"
 defaultDhall :: Text
-defaultDhall = bracketed "./rsc/dist/default.dhall"
+defaultDhall = bracketed "./rsc/default.dhall"
 
 #endif
 

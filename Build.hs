@@ -51,7 +51,7 @@ rules = do
     "elm" ~> need [elm]
     "dhall" ~> do
         need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
-    "assets" ~> need assets -- useful for 'test' function from repl
+    "assets" ~> need assets
 
     let rmr dir = liftIO $ removeFiles dir ["//*"]
         clean = do

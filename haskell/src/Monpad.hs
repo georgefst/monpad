@@ -238,6 +238,7 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
     , Elm.encodedTypes @(V2 Int)
     ]
 
+-- 'runghc Build.hs assets' before using this
 test :: IO ()
 test = do
     setLocaleEncoding utf8

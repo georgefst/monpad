@@ -99,6 +99,7 @@ rules = do
             expr <-
                 Dhall.throws . Dhall.exprFromText in' $
                     pack "(./lib/map-layout.dhall).to" <> osName <> pack " " <> bracketed c
+            --TODO huge due to https://github.com/dhall-lang/dhall-haskell/issues/2116
             resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression

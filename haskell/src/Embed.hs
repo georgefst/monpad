@@ -6,7 +6,7 @@
 #define GET_FILE(FILE) decodeUtf8 $(embedFile $ FILE)
 {-# LANGUAGE TemplateHaskell #-}
 module Embed where
-import Data.FileEmbed
+import Data.FileEmbed (embedFile)
 import Data.Text.Encoding (decodeUtf8)
 
 #else
@@ -20,7 +20,7 @@ import System.IO.Unsafe (unsafePerformIO)
 #endif
 
 import Data.Text (Text)
-import System.FilePath
+import System.FilePath ((</>))
 
 {-# NOINLINE mainCSS #-}
 {-# NOINLINE elmJS #-}

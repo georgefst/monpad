@@ -12,7 +12,7 @@ defaultSimple :: IO (Layout () ())
 defaultSimple = bimap mempty mempty <$> layout
 
 layout :: IO (Layout A B)
-layout = input auto defaultDhall
+layout = input auto $ defaultDhall ()
 
 #if linux_HOST_OS
 data A

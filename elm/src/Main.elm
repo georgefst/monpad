@@ -202,6 +202,9 @@ viewElement model element =
                     in
                     stack [ front, slider |> shiftSlider (pos * length / 2), background ]
 
+                Image i ->
+                    image (both toFloat ( i.width, i.height )) i.url
+
 
 
 {- Model -}

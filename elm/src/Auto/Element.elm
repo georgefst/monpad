@@ -1,6 +1,7 @@
 module Auto.Element exposing (..)
 
 import Auto.Button
+import Auto.Image
 import Auto.Slider
 import Auto.Stick
 import Json.Decode
@@ -11,6 +12,7 @@ type Element
     = Stick Auto.Stick.Stick
     | Button Auto.Button.Button
     | Slider Auto.Slider.Slider
+    | Image Auto.Image.Image
 
 
 decode : Json.Decode.Decoder Element
@@ -28,6 +30,10 @@ decode =
         "Slider" ->
             Json.Decode.succeed Slider |>
             Json.Decode.Pipeline.required "contents" Auto.Slider.decode
+        
+        "Image" ->
+            Json.Decode.succeed Image |>
+            Json.Decode.Pipeline.required "contents" Auto.Image.decode
         
         _ ->
             Json.Decode.fail "No matching constructor")

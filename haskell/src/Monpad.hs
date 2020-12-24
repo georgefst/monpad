@@ -173,6 +173,7 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
         Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
         Button b -> over #buttonMap $ Map.insert e.name b.buttonData
+        Image _ -> id
 
 server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
 server port layout conf = do
@@ -234,6 +235,7 @@ elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
     , Elm.encodedTypes @(Stick ())
     , Elm.encodedTypes @(Slider ())
     , Elm.encodedTypes @(Button ())
+    , Elm.encodedTypes @Image
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)
     ]

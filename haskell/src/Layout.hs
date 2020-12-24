@@ -23,6 +23,7 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Stick s -> map Left [s.stickDataX, s.stickDataY]
     Button b -> [Right b.buttonData]
     Slider s -> [Left s.sliderData]
+    Image _ -> []
 
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
@@ -47,6 +48,7 @@ data Element a b
     = Stick (Stick a)
     | Button (Button b)
     | Slider (Slider a)
+    | Image Image
     deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
 
@@ -80,6 +82,14 @@ data Slider a = Slider'
     }
     deriving (Show, Functor, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider
+
+data Image = Image'
+    { width :: Int
+    , height :: Int
+    , url :: Text
+    }
+    deriving (Show, Generic, FromDhall, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
 
 data Shape
     = Circle Int

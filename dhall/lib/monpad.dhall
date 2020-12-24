@@ -29,10 +29,16 @@ let Slider =
         , sliderData : a
         }
 
+let Image = { width : Natural, height : Natural, url : Text }
+
 let Element =
       λ(a : Type) →
       λ(b : Type) →
-        < Button : Button b | Stick : Stick a | Slider : Slider a >
+        < Button : Button b
+        | Stick : Stick a
+        | Slider : Slider a
+        | Image : Image
+        >
 
 let FullElement =
       λ(a : Type) →
@@ -106,6 +112,7 @@ let mapLayout
                                     (   slider
                                       ⫽ { sliderData = fa slider.sliderData }
                                     )
+                            , Image = (Element a1 b1).Image
                             }
                             fe.element
                       }

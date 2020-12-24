@@ -45,7 +45,9 @@ import Lens.Micro
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
+import Network.HTTP.Types.Status
 import Network.Wai.Handler.Warp
+import Network.Wai
 import qualified Network.WebSockets as WS
 import Options.Applicative
 import Servant.API.WebSocket
@@ -87,14 +89,16 @@ data ElmFlags = ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
-type HttpApi = Root :> QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
+type ImageApi = "images" :> Raw
+type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
+type HttpApi = Root :> (CoreApi :<|> ImageApi)
 type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
 {- | We don't provide a proper type for args, since backends will want to define their own.
 This function just contains the likely common ground.
 -}
-argParser :: Text -> Parser (Port, Text)
-argParser defDhall = (,)
+argParser :: Text -> Parser (Port, Maybe FilePath, Text)
+argParser defDhall = (,,)
     <$> (option auto . mconcat)
         [ long "port"
         , short 'p'
@@ -102,6 +106,12 @@ argParser defDhall = (,)
         , value 8000
         , showDefault
         , help "Port number for the server to listen on"
+        ]
+    <*> (optional . strOption . mconcat)
+        [ long "images"
+        , short 'i'
+        , metavar "DIR"
+        , help "Directory from which to serve image files"
         ]
     <*> (strOption . mconcat)
         [ long "layout-dhall"
@@ -175,11 +185,11 @@ mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
         Button b -> over #buttonMap $ Map.insert e.name b.buttonData
         Image _ -> id
 
-server :: Port -> Layout a b -> ServerConfig e s a b -> IO ()
-server port layout conf = do
+server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
+server port imageDir layout conf = do
     onStart conf
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port layout :<|> websocketServer (mkServerEnv $ elements layout) conf
+        httpServer port imageDir layout :<|> websocketServer (mkServerEnv $ elements layout) conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -187,12 +197,19 @@ serverExtWs ::
     Port ->
     -- | WS port
     Port ->
+    Maybe FilePath ->
     Layout a b ->
     IO ()
-serverExtWs httpPort = run httpPort . serve (Proxy @HttpApi) .: httpServer
+serverExtWs httpPort = run httpPort . serve (Proxy @HttpApi) .:. httpServer
 
-httpServer :: Port -> Layout a b -> Server HttpApi
-httpServer wsPort layout = pure . maybe loginHtml (mainHtml layout wsPort)
+--TODO take directory as arg (noting that it can be absolute or relative to the path of the executable)
+httpServer :: Port -> Maybe FilePath -> Layout a b -> Server HttpApi
+httpServer wsPort imageDir layout =
+    (pure . maybe loginHtml (mainHtml layout wsPort))
+        :<|> maybe
+            (pure $ const ($ responseLBS status404 [] "no image directory specified"))
+            serveDirectoryWebApp
+            imageDir
 
 websocketServer :: ServerEnv a b -> ServerConfig e s a b -> Server WsApi
 websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
@@ -245,7 +262,7 @@ test :: IO ()
 test = do
     setLocaleEncoding utf8
     layout <- defaultSimple
-    server 8000 layout config
+    server 8000 (Just "../dist/images") layout config
   where
     config = ServerConfig
         { onStart = putStrLn "started"
@@ -260,4 +277,4 @@ test = do
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
         }
 testExt :: IO ()
-testExt = serverExtWs 8000 8001 =<< defaultSimple
+testExt = serverExtWs 8000 8001 (Just "../dist/images") =<< defaultSimple

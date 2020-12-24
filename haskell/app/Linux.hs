@@ -17,9 +17,9 @@ import Orphans.Evdev ()
 
 main :: IO ()
 main = do
-    (port, dhallLayout) <- execParser $ info (helper <*> argParser (defaultDhall ())) (fullDesc <> header "monpad")
+    (port, imageDir, dhallLayout) <- execParser $ info (helper <*> argParser (defaultDhall ())) (fullDesc <> header "monpad")
     layout <- layoutFromDhall dhallLayout
-    server port layout ServerConfig
+    server port imageDir layout ServerConfig
         { onStart = T.putStrLn "Monpad server started"
         , onNewConnection = \(ClientID i) -> do
             T.putStrLn $ "New client: " <> i

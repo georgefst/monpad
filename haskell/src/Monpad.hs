@@ -246,16 +246,18 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
             Right b -> first UpdateDecodeException $ eitherDecode b
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
-It's best to open this file in GHCI and run 'elm'.
+It's best to run this via GHCI or HLS.
 We could make it externally executable and fully integrate with the build process, but there wouldn't be much point
 since the kinds of changes we're likely to make which would require re-running this,
 are likely to require manual changes to Elm code anyway.
 e.g. if we added an extra case to 'Update', it would need to be handled in various Elm functions.
 -}
-elm :: IO ()
-elm = Elm.writeDefs (".." </> "elm" </> "src") $ mconcat
+-- >>> elm "elm"
+elm :: FilePath -> IO ()
+elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
     [ Elm.decodedTypes @Update
     , Elm.decodedTypes @(V2 Double)
+    , Elm.encodedTypes @ServerUpdate
     , Elm.encodedTypes @ElmFlags
     , Elm.encodedTypes @Colour
     , Elm.encodedTypes @(Layout () ())

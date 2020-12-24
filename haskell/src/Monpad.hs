@@ -20,10 +20,11 @@ module Monpad (
     argParser,
 ) where
 
+import Control.Concurrent
 import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Aeson (FromJSON, ToJSON, eitherDecode)
+import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.Aeson as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
@@ -53,6 +54,8 @@ import Options.Applicative
 import Servant.API.WebSocket
 import Servant hiding (layout)
 import Servant.HTML.Lucid
+import Streamly
+import qualified Streamly.Prelude as SP
 import System.FilePath
 import Text.Pretty.Simple
 
@@ -78,6 +81,11 @@ data Update
     | SliderMove Text Double -- abs <= 1
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
     deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
+
+data ServerUpdate
+    = SetImageURL Text Text
+    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ServerUpdate
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -166,6 +174,7 @@ data ServerConfig e s a b = ServerConfig
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
     , onDroppedConnection :: MonpadException -> Monpad e s ()
+    , updates :: Serial ServerUpdate
     }
 
 -- | Maps of element names to axes and buttons.
@@ -225,10 +234,12 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
                     ButtonDown t -> onButton (buttonMap ! t) True
                     StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
+        _ <- forkIO $ SP.mapM_ (sendUpdate conn) updates --TODO move inside 'runMonpad' - error handling, env etc.
         WS.withPingThread conn 30 mempty
             . runMonpad clientId e s0
             $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
       where
+        sendUpdate conn = WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err
             Right b -> first UpdateDecodeException $ eitherDecode b
@@ -275,6 +286,7 @@ test = do
         , onAxis = mempty
         , onButton = mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
+        , updates = mempty
         }
 testExt :: IO ()
 testExt = serverExtWs 8000 8001 (Just "../dist/images") =<< defaultSimple

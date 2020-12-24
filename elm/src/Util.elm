@@ -15,6 +15,16 @@ both f ( x, y ) =
     ( f x, f y )
 
 
+maybe : a -> (b -> a) -> Maybe b -> a
+maybe e f x =
+    case x of
+        Just x1 ->
+            f x1
+
+        Nothing ->
+            e
+
+
 limit : ( comparable, comparable ) -> comparable -> comparable
 limit ( l, u ) =
     max l << min u

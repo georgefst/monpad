@@ -28,4 +28,7 @@ ws.onopen = event => {
         flags: { username, layout }
     })
     app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
+    ws.addEventListener("message", event =>
+        app.ports.receiveUpdatePort.send(JSON.parse(event.data))
+    )
 }

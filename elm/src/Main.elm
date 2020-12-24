@@ -6,6 +6,7 @@ import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.IntVec2 as IntVec2 exposing (IntVec2)
 import Auto.Layout exposing (..)
+import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Auto.Update exposing (..)
 import Basics exposing (..)
@@ -29,6 +30,7 @@ import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
 import Ports exposing (..)
 import Set exposing (Set)
+import Svg.Attributes exposing (mode)
 import Tuple exposing (..)
 import Util exposing (..)
 import Util.Prog exposing (..)
@@ -40,7 +42,7 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = always Sub.none
+        , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
         , decoder = Auto.ElmFlags.decode
         }
 
@@ -202,8 +204,10 @@ viewElement model element =
                     in
                     stack [ front, slider |> shiftSlider (pos * length / 2), background ]
 
-                Image i ->
-                    image (both toFloat ( i.width, i.height )) i.url
+                Image img ->
+                    image (both toFloat ( img.width, img.height )) <|
+                        Maybe.withDefault img.url <|
+                            Dict.get element.name model.imageToUrl
 
 
 
@@ -216,20 +220,39 @@ type alias Model =
     , stickPos : Dict String Vec2
     , pressed : Set String
     , sliderPos : Dict String Float
+    , imageToUrl : Dict String String
     }
 
 
 type Msg
     = Update Update
+    | ServerUpdate ServerUpdate
+    | EmptyMsg
 
 
 init : ElmFlags -> ( Model, Cmd Msg )
 init flags =
+    let
+        imageToUrl =
+            flags.layout.elements
+                |> List.map
+                    (\e ->
+                        case e.element of
+                            Image img ->
+                                Just ( e.name, img.url )
+
+                            _ ->
+                                Nothing
+                    )
+                |> filterMap identity
+                |> Dict.fromList
+    in
     ( { username = flags.username
       , layout = flags.layout
       , stickPos = Dict.empty
       , pressed = Set.empty
       , sliderPos = Dict.empty
+      , imageToUrl = imageToUrl
       }
     , Cmd.none
     )
@@ -257,3 +280,11 @@ update msg model =
             ( model1
             , sendUpdate u
             )
+
+        ServerUpdate u ->
+            case u of
+                SetImageURL image url ->
+                    ( { model | imageToUrl = Dict.insert image url model.imageToUrl }, Cmd.none )
+
+        EmptyMsg ->
+            ( model, Cmd.none )

@@ -51,6 +51,7 @@ main = do
         , onDroppedConnection = \_ -> do
             (ClientID i) <- asks snd
             liftIO $ T.putStrLn $ "Client disconnected: " <> i
+        , updates = mempty
         }
 
 -- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")

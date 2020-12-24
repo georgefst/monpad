@@ -213,7 +213,6 @@ serverExtWs ::
     IO ()
 serverExtWs httpPort = run httpPort . serve (Proxy @HttpApi) .:. httpServer
 
---TODO take directory as arg (noting that it can be absolute or relative to the path of the executable)
 httpServer :: Port -> Maybe FilePath -> Layout a b -> Server HttpApi
 httpServer wsPort imageDir layout =
     (pure . maybe loginHtml (mainHtml layout wsPort))

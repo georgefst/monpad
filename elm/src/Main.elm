@@ -286,5 +286,8 @@ update msg model =
                 SetImageURL image url ->
                     ( { model | imageToUrl = Dict.insert image url model.imageToUrl }, Cmd.none )
 
+                ServerUpdatePlaceholder ->
+                    ( model, Cmd.none )
+
         EmptyMsg ->
             ( model, Cmd.none )

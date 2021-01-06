@@ -18,7 +18,7 @@ parser :: Parser Args
 parser = do
     httpPort <- option auto $ long "http" <> metavar "PORT"
     wsPort <- option auto $ long "ws" <> metavar "PORT"
-    imageDir <- optional . option auto $ long "images" <> metavar "DIR"
+    imageDir <- optional . strOption $ long "images" <> metavar "DIR"
     layoutDhall <- optional . strOption $ long "layout" <> metavar "EXPR"
     pure Args{..}
 

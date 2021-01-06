@@ -4,7 +4,7 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (handle)
-import Data.Text.IO qualified as T
+import qualified Data.Text.IO as T
 import Data.Void
 import Dhall
 import Dhall.Core
@@ -15,7 +15,7 @@ import Diagrams.Backend.SVG
 import Diagrams.Prelude
 import Layout
 import Streamly.FSNotify
-import Streamly.Prelude qualified as SP
+import qualified Streamly.Prelude as SP
 import System.Directory
 import System.Environment (getArgs)
 import System.FilePath hiding (hasExtension)

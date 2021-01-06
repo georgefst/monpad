@@ -61,10 +61,10 @@ printDhallErrors =
 -}
 dhallResolve :: FilePath -> IO Text
 dhallResolve file =
-    pure . pretty
-        =<< loadRelativeTo (takeDirectory file) UseSemanticCache
-        =<< throws . exprFromText file
-        =<< T.readFile file
+    fmap pretty $
+        loadRelativeTo (takeDirectory file) UseSemanticCache
+            =<< throws . exprFromText file
+            =<< T.readFile file
 
 class Draw a where
     draw :: a -> Diagram B

@@ -235,7 +235,7 @@ init flags =
     let
         imageToUrl =
             flags.layout.elements
-                |> List.map
+                |> filterMap
                     (\e ->
                         case e.element of
                             Image img ->
@@ -244,7 +244,6 @@ init flags =
                             _ ->
                                 Nothing
                     )
-                |> filterMap identity
                 |> Dict.fromList
     in
     ( { username = flags.username

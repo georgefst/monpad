@@ -281,12 +281,46 @@ update msg model =
             )
 
         ServerUpdate u ->
+            let
+                layout =
+                    model.layout
+            in
             case u of
                 SetImageURL image url ->
                     ( { model | imageToUrl = Dict.insert image url model.imageToUrl }, Cmd.none )
 
-                ServerUpdatePlaceholder ->
-                    ( model, Cmd.none )
+                SetLayout l ->
+                    ( { model | layout = l }
+                    , Cmd.none
+                    )
+
+                AddElement e ->
+                    ( { model | layout = { layout | elements = e :: layout.elements } }
+                    , Cmd.none
+                    )
+
+                RemoveElement e ->
+                    ( { username = model.username
+                      , stickPos = Dict.remove e model.stickPos
+                      , pressed = Set.remove e model.pressed
+                      , sliderPos = Dict.remove e model.sliderPos
+                      , imageToUrl = Dict.remove e model.imageToUrl
+                      , layout =
+                            { layout
+                                | elements =
+                                    layout.elements
+                                        |> List.filterMap
+                                            (\e1 ->
+                                                if e1.name == e then
+                                                    Nothing
+
+                                                else
+                                                    Just e1
+                                            )
+                            }
+                      }
+                    , Cmd.none
+                    )
 
         EmptyMsg ->
             ( model, Cmd.none )

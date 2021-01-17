@@ -84,9 +84,10 @@ data Update
 
 data ServerUpdate
     = SetImageURL Text Text
-    | ServerUpdatePlaceholder --TODO remove once we have another constructor -
-        -- this is the easiest way to get the more future-proof 'ToJSON'
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
+    | SetLayout (Layout () ())
+    | AddElement (FullElement () ())
+    | RemoveElement Text
+    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ServerUpdate
 
 -- | The arguments with which the frontend is initialised.

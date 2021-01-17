@@ -4,9 +4,12 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (handle)
+import Control.Monad
+import qualified Data.ByteString.Char8 as BS
+import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Void
-import Dhall
 import Dhall.Core
 import Dhall.Import
 import Dhall.Parser
@@ -14,11 +17,13 @@ import Dhall.TypeCheck
 import Diagrams.Backend.SVG
 import Diagrams.Prelude
 import Layout
+import Network.HTTP.Simple
 import Streamly.FSNotify
 import qualified Streamly.Prelude as SP
 import System.Directory
 import System.Environment (getArgs)
 import System.FilePath hiding (hasExtension)
+import System.Random
 
 main :: IO ()
 main = getArgs >>= \case
@@ -41,9 +46,8 @@ drawLayout file = printDhallErrors do
     let v@(V2 x y) = fi <$> layout.grid
         ss = mkSizeSpec $ Just <$> v
         out = file -<.> "svg"
-    renderSVG out ss $
-        lw 3 $
-            foldMap draw layout.elements <> (rect x y & translate (v / 2) & fc pastelBlue)
+    els <- foldMap draw layout.elements
+    renderSVG out ss $ lw 3 $ els <> (rect x y & translate (v / 2) & fc pastelBlue)
     putStrLn $ "Successfully rendered to: " <> out
 
 {-TODO this may well be incomplete
@@ -67,27 +71,37 @@ dhallResolve file =
             =<< T.readFile file
 
 class Draw a where
-    draw :: a -> Diagram B
+    draw :: a -> IO (Diagram B)
 
 instance Draw (FullElement a b) where
-    draw e = draw e.element & translate (fi <$> e.location)
+    draw e = draw e.element <&> translate (fi <$> e.location)
 
 instance Draw (Element a b) where
     draw = \case
-        Stick s -> mconcat
+        Stick s -> pure $ mconcat
             [ circle (fi s.radius) & fc' s.stickColour
             , circle (fi s.range) & fc' s.backgroundColour
             ]
-        Button b -> draw b.shape & fc' b.colour
-        Slider s -> mconcat
+        Button b -> draw b.shape <&> fc' b.colour
+        Slider s -> pure $ mconcat
             [ circle (fi s.radius) & fc' s.sliderColour
             , roundedRect (fi s.length) (fi s.width) (fi s.width / 2)
                 & applyWhen s.vertical (rotateBy 0.25)
                 & fc' s.backgroundColour
             ]
+        Image i -> x <&> fitWithin (fromIntegral <$> V2 i.width i.height)
+          where
+            x = do
+                tmp <- getTemporaryDirectory
+                let dir = tmp </> "monpad-layout-test-pics"
+                createDirectoryIfMissing False dir
+                rand <- replicateM 16 $ randomRIO ('a', 'z')
+                let file = dir </> rand
+                BS.writeFile file . getResponseBody =<< httpBS (parseRequest_ $ T.unpack i.url)
+                loadImageEmb file >>= either (\s -> putStrLn s >> mempty) (pure . image)
 
 instance Draw Shape where
-    draw = \case
+    draw = pure . \case
         Circle r -> circle $ fi r
         Rectangle (V2 x y) -> rect (fi x) (fi y)
 
@@ -105,3 +119,8 @@ applyWhen b f = if b then f else id
 
 pastelBlue :: (Ord a, Floating a) => Diagrams.Prelude.Colour a
 pastelBlue = sRGB24 207 231 247
+
+fitWithin :: V2 Double -> Diagram B -> Diagram B
+fitWithin (V2 w h) d = scale m d
+  where
+    m = min (w / diameter unitX d) (h / diameter unitY d)

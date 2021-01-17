@@ -44,7 +44,7 @@ drawLayout file = printDhallErrors do
     layout <- layoutFromDhall @() @() =<< dhallResolve file
     threadDelay 10000
     let v@(V2 x y) = fi <$> layout.grid
-        ss = mkSizeSpec $ Just <$> v
+        ss = mkSizeSpec $ Just . (/ 2) <$> v
         out = file -<.> "svg"
     els <- foldMap draw layout.elements
     renderSVG out ss $ lw 3 $ els <> (rect x y & translate (v / 2) & fc pastelBlue)

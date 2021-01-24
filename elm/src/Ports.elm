@@ -27,7 +27,7 @@ receiveUpdate =
                 Ok v ->
                     Just v
 
-                Err e ->
+                Err _ ->
                     Nothing
 
 

@@ -15,24 +15,12 @@ type ServerUpdate
 
 decode : Json.Decode.Decoder ServerUpdate
 decode =
-    Json.Decode.field "tag" Json.Decode.string |>
-    Json.Decode.andThen (\a -> case a of
-        "SetImageURL" ->
-            Json.Decode.field "contents" (Json.Decode.succeed SetImageURL |>
-            Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
-            Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
-        
-        "SetLayout" ->
-            Json.Decode.succeed SetLayout |>
-            Json.Decode.Pipeline.required "contents" Auto.Layout.decode
-        
-        "AddElement" ->
-            Json.Decode.succeed AddElement |>
-            Json.Decode.Pipeline.required "contents" Auto.FullElement.decode
-        
-        "RemoveElement" ->
-            Json.Decode.succeed RemoveElement |>
-            Json.Decode.Pipeline.required "contents" Json.Decode.string
-        
-        _ ->
-            Json.Decode.fail "No matching constructor")
+    Json.Decode.oneOf [ Json.Decode.field "setImageURL" (Json.Decode.succeed SetImageURL |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
+    , Json.Decode.succeed SetLayout |>
+    Json.Decode.Pipeline.required "setLayout" Auto.Layout.decode
+    , Json.Decode.succeed AddElement |>
+    Json.Decode.Pipeline.required "addElement" Auto.FullElement.decode
+    , Json.Decode.succeed RemoveElement |>
+    Json.Decode.Pipeline.required "removeElement" Json.Decode.string ]

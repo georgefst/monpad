@@ -17,23 +17,11 @@ type Element
 
 decode : Json.Decode.Decoder Element
 decode =
-    Json.Decode.field "tag" Json.Decode.string |>
-    Json.Decode.andThen (\a -> case a of
-        "Stick" ->
-            Json.Decode.succeed Stick |>
-            Json.Decode.Pipeline.required "contents" Auto.Stick.decode
-        
-        "Button" ->
-            Json.Decode.succeed Button |>
-            Json.Decode.Pipeline.required "contents" Auto.Button.decode
-        
-        "Slider" ->
-            Json.Decode.succeed Slider |>
-            Json.Decode.Pipeline.required "contents" Auto.Slider.decode
-        
-        "Image" ->
-            Json.Decode.succeed Image |>
-            Json.Decode.Pipeline.required "contents" Auto.Image.decode
-        
-        _ ->
-            Json.Decode.fail "No matching constructor")
+    Json.Decode.oneOf [ Json.Decode.succeed Stick |>
+    Json.Decode.Pipeline.required "stick" Auto.Stick.decode
+    , Json.Decode.succeed Button |>
+    Json.Decode.Pipeline.required "button" Auto.Button.decode
+    , Json.Decode.succeed Slider |>
+    Json.Decode.Pipeline.required "slider" Auto.Slider.decode
+    , Json.Decode.succeed Image |>
+    Json.Decode.Pipeline.required "image" Auto.Image.decode ]

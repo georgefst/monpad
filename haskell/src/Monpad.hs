@@ -67,6 +67,7 @@ import Embed
 import Layout
 import Orphans.V2 ()
 import Util
+import Util.Elm (Unit(Unit))
 import qualified Util.Elm as Elm
 
 newtype ClientID = ClientID Text
@@ -79,24 +80,24 @@ data Update
     | ButtonDown Text
     | StickMove Text (V2 Double) -- always a vector within the unit circle
     | SliderMove Text Double -- abs <= 1
-    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, FromJSON)
-    deriving (HasElmType, HasElmEncoder J.Value) via Elm.Via Update
+    deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 data ServerUpdate
     = SetImageURL Text Text
-    | SetLayout (Layout () ())
-    | AddElement (FullElement () ())
+    | SetLayout (Layout Unit Unit)
+    | AddElement (FullElement Unit Unit)
     | RemoveElement Text
-    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ServerUpdate
+    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder J.Value) via Elm.Via ServerUpdate
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
-    { layout :: Layout () ()
+    { layout :: Layout Unit Unit
     , username :: Text
     }
-    deriving (Show, Generic, ToJSON, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
+    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder J.Value) via Elm.Via ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
@@ -150,7 +151,7 @@ mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
-        , makeAttribute "layout" . TL.toStrict $ encodeToLazyText $ biVoid layout
+        , makeAttribute "layout" . TL.toStrict $ encodeToLazyText $ bimap (const Unit) (const Unit) layout
         , makeAttribute "wsPort" $ showT wsPort
         , makeAttribute "username" username
         ]
@@ -270,6 +271,7 @@ elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
     , Elm.encodedTypes @Image
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)
+    , Elm.encodedTypes @Unit
     ]
 
 -- 'runghc Build.hs assets' before using this

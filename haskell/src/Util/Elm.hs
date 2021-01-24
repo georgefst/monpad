@@ -2,37 +2,54 @@
 
 module Util.Elm (
     writeDefs,
-    Via,
-    Via1,
-    Via2,
+    Via (..),
+    Via1 (..),
+    Via2 (..),
     encodedTypes,
     decodedTypes,
     jsonDefinitions,
     autoDir,
+    Unit (..),
 ) where
 
+import Control.Monad (forM_)
 import Data.Aeson as JSON
+import Data.Char (toLower)
+import qualified Data.HashMap.Strict as HashMap
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
-import GHC.Generics (Generic, Rep)
-import qualified Generics.SOP as SOP
-import Language.Elm.Definition
-import Language.Elm.Name
-import Language.Haskell.To.Elm as Elm
-import Type.Reflection (Typeable)
-
-import Control.Monad (forM_)
-import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
+import Dhall (FromDhall)
+import GHC.Generics (Generic, Rep)
+import qualified Generics.SOP as SOP
+import Language.Elm.Definition (Definition)
+import qualified Language.Elm.Expression as Expr
+import Language.Elm.Name (Qualified (Qualified))
+import qualified Language.Elm.Name as Name
 import qualified Language.Elm.Pretty as Pretty
 import Language.Elm.Simplification (simplifyDefinition)
+import qualified Language.Elm.Type as Type
+import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
+import Type.Reflection (Typeable)
 
 import Util
+
+{- | Isomorphic to '()', but we want to decode to empty record, rather than list, in order to match 'dhall-to-json'.
+Also avoids orphans for 'HasElmType' etc.
+-}
+data Unit = Unit
+    deriving (Show, Generic, FromDhall)
+elmUnit :: Name.Qualified
+elmUnit = Name.Qualified ["Basics"] "()"
+instance HasElmDecoder JSON.Value Unit where
+    elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
+instance HasElmType Unit where elmType = Type.Global elmUnit
+instance ToJSON Unit where toJSON Unit = Object HashMap.empty
 
 writeDefs :: FilePath -> [Definition] -> IO ()
 writeDefs src defs = do
@@ -46,7 +63,13 @@ writeDefs src defs = do
     autoFull = src </> T.unpack autoDir
 
 jsonOpts :: JSON.Options
-jsonOpts = JSON.defaultOptions --TODO {sumEncoding = ObjectWithSingleField} -- not yet in haskell-to-elm
+jsonOpts =
+    JSON.defaultOptions
+        { sumEncoding = ObjectWithSingleField
+        , JSON.constructorTagModifier = \case
+            c : cs -> toLower c : cs
+            "" -> ""
+        }
 
 elmOpts :: Elm.Options
 elmOpts = Elm.defaultOptions
@@ -76,53 +99,53 @@ instance
     elmDecoderDefinition =
         Just $ Elm.deriveElmJSONDecoder @a elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
-newtype Via1 a = Via1 (a ())
-instance (Generic (a ()), GToJSON Zero (Rep (a ())), Typeable (a ())) => ToJSON (Via1 a) where
+newtype Via1 a = Via1 (a Unit)
+instance (Generic (a Unit), GToJSON Zero (Rep (a Unit)), Typeable (a Unit)) => ToJSON (Via1 a) where
     toJSON (Via1 a) = genericToJSON jsonOpts a
-instance (Generic (a ()), GFromJSON Zero (Rep (a ())), Typeable (a ())) => FromJSON (Via1 a) where
+instance (Generic (a Unit), GFromJSON Zero (Rep (a Unit)), Typeable (a Unit)) => FromJSON (Via1 a) where
     parseJSON = fmap Via1 . genericParseJSON jsonOpts
 instance
-    (SOP.HasDatatypeInfo (a ()), SOP.All2 HasElmType (SOP.Code (a ())), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit), SOP.All2 HasElmType (SOP.Code (a Unit)), Typeable a) =>
     HasElmType (Via1 a)
     where
     elmDefinition =
-        Just $ deriveElmTypeDefinition @(a ()) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
+        Just $ deriveElmTypeDefinition @(a Unit) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
 instance
-    (SOP.HasDatatypeInfo (a ()), HasElmType (a ()), SOP.All2 (HasElmEncoder Value) (SOP.Code (a ())), HasElmType (Via1 a), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit), HasElmType (a Unit), SOP.All2 (HasElmEncoder Value) (SOP.Code (a Unit)), HasElmType (Via1 a), Typeable a) =>
     HasElmEncoder Value (Via1 a)
     where
     elmEncoderDefinition =
-        Just $ deriveElmJSONEncoder @(a ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
+        Just $ deriveElmJSONEncoder @(a Unit) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
 instance
-    (SOP.HasDatatypeInfo (a ()), HasElmType (a ()), SOP.All2 (HasElmDecoder Value) (SOP.Code (a ())), HasElmType (Via1 a), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit), HasElmType (a Unit), SOP.All2 (HasElmDecoder Value) (SOP.Code (a Unit)), HasElmType (Via1 a), Typeable a) =>
     HasElmDecoder Value (Via1 a)
     where
     elmDecoderDefinition =
-        Just $ Elm.deriveElmJSONDecoder @(a ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
+        Just $ Elm.deriveElmJSONDecoder @(a Unit) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
-newtype Via2 a = Via2 (a () ())
-instance (Generic (a () ()), GToJSON Zero (Rep (a () ())), Typeable (a () ())) => ToJSON (Via2 a) where
+newtype Via2 a = Via2 (a Unit Unit)
+instance (Generic (a Unit Unit), GToJSON Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => ToJSON (Via2 a) where
     toJSON (Via2 a) = genericToJSON jsonOpts a
-instance (Generic (a () ()), GFromJSON Zero (Rep (a () ())), Typeable (a () ())) => FromJSON (Via2 a) where
+instance (Generic (a Unit Unit), GFromJSON Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => FromJSON (Via2 a) where
     parseJSON = fmap Via2 . genericParseJSON jsonOpts
 instance
-    (SOP.HasDatatypeInfo (a () ()), SOP.All2 HasElmType (SOP.Code (a () ())), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit Unit), SOP.All2 HasElmType (SOP.Code (a Unit Unit)), Typeable a) =>
     HasElmType (Via2 a)
     where
     elmDefinition =
-        Just $ deriveElmTypeDefinition @(a () ()) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
+        Just $ deriveElmTypeDefinition @(a Unit Unit) elmOpts $ Qualified [autoDir, typeRepT @a] $ typeRepT @a
 instance
-    (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmEncoder Value) (SOP.Code (a () ())), HasElmType (Via2 a), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit Unit), HasElmType (a Unit Unit), SOP.All2 (HasElmEncoder Value) (SOP.Code (a Unit Unit)), HasElmType (Via2 a), Typeable a) =>
     HasElmEncoder Value (Via2 a)
     where
     elmEncoderDefinition =
-        Just $ deriveElmJSONEncoder @(a () ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
+        Just $ deriveElmJSONEncoder @(a Unit Unit) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "encode"
 instance
-    (SOP.HasDatatypeInfo (a () ()), HasElmType (a () ()), SOP.All2 (HasElmDecoder Value) (SOP.Code (a () ())), HasElmType (Via2 a), Typeable a) =>
+    (SOP.HasDatatypeInfo (a Unit Unit), HasElmType (a Unit Unit), SOP.All2 (HasElmDecoder Value) (SOP.Code (a Unit Unit)), HasElmType (Via2 a), Typeable a) =>
     HasElmDecoder Value (Via2 a)
     where
     elmDecoderDefinition =
-        Just $ Elm.deriveElmJSONDecoder @(a () ()) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
+        Just $ Elm.deriveElmJSONDecoder @(a Unit Unit) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 autoDir :: Text
 autoDir = "Auto"

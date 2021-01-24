@@ -91,7 +91,6 @@ library
     other-modules:
         Embed
         DhallHack
-        Orphans.Tuple
         Orphans.V2
         Util
         Util.Elm

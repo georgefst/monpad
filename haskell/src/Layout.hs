@@ -95,15 +95,13 @@ data Image = Image'
     , url :: Text
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
-deriving via (Elm.Via Image) instance ToJSON Image
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
 
 data Shape
     = Circle Int
     | Rectangle (V2 Int)
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via Shape
-deriving via (Elm.Via Shape) instance ToJSON Shape
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Shape
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
@@ -113,8 +111,7 @@ data Colour = Colour
     , alpha :: Double
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via Colour
-deriving via (Elm.Via Colour) instance ToJSON Colour
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Colour
 
 $(deriveBifunctor ''Layout)
 $(deriveBifunctor ''FullElement)

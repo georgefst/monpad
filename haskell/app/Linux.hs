@@ -49,7 +49,7 @@ main = do
             dev <- asks fst
             liftIO $ writeBatch dev [KeyEvent key $ bool Released Pressed up]
         , onDroppedConnection = \_ -> do
-            (ClientID i) <- asks snd
+            ClientID i <- asks snd
             liftIO $ T.putStrLn $ "Client disconnected: " <> i
         , updates = mempty
         }

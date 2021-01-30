@@ -4,7 +4,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Int (Int32)
-import Data.Text.IO qualified as T
+import qualified Data.Text.IO as T
 import Numeric (readHex)
 import Options.Applicative (execParser, fullDesc, header, helper, info)
 import Text.Pretty.Simple (pPrint)

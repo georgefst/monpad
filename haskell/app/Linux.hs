@@ -7,7 +7,7 @@ import Data.Bool (bool)
 import Data.Int (Int32)
 import qualified Data.Text.IO as T
 import Numeric (readHex)
-import Options.Applicative (execParser, fullDesc, header, helper, info, short, switch)
+import Options.Applicative (execParser, fullDesc, header, helper, info, long, short, switch)
 import Text.Pretty.Simple (pPrint)
 
 import Evdev

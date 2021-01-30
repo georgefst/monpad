@@ -15,7 +15,28 @@ layout :: IO (Layout A B)
 layout = input auto $ defaultDhall ()
 
 #if linux_HOST_OS
-data A
+data A = AxisInfo
+    { axis :: Axis
+    , multiplier :: Double
+    }
+    deriving (Generic, FromDhall)
+data Axis
+    = Abs Abs
+    | Rel Rel
+    deriving (Generic, FromDhall)
+data Rel
+    = RelX
+    | RelY
+    | RelZ
+    | RelRx
+    | RelRy
+    | RelRz
+    | RelHwheel
+    | RelDial
+    | RelWheel
+    | RelMisc
+    deriving (Generic, FromDhall)
+data Abs
     = AbsBrake
     | AbsDistance
     | AbsGas

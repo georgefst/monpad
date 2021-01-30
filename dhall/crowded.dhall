@@ -4,9 +4,16 @@ let AllOS = ./lib/all-os.dhall
 
 let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
+let Evdev = ./lib/evdev.dhall
+
+let Abs = Evdev.AbsAxis
+
 let ButtonL = AllOS.ButtonLinux
 
 let AxisL = AllOS.AxisLinux
+
+let axis =
+      λ(a : Evdev.AbsAxis) → { axis = Evdev.Axis.Abs a, multiplier = 255.0 }
 
 let button =
       λ(x : Natural) →
@@ -91,10 +98,10 @@ in    { elements =
         , button 640 480 ButtonL.BtnDpadDown "Down" monpad.cols.grey
         , button 840 680 ButtonL.BtnDpadRight "Right" monpad.cols.grey
         , button 640 880 ButtonL.BtnDpadUp "Up" monpad.cols.grey
-        , stick 300 300 "Left" AxisL.AbsX AxisL.AbsY
-        , stick 1700 300 "Right" AxisL.AbsRx AxisL.AbsRy
-        , slider 150 750 "LT" AxisL.AbsZ
-        , slider 1850 750 "RT" AxisL.AbsRz
+        , stick 300 300 "Left" (axis Abs.AbsX) (axis Abs.AbsY)
+        , stick 1700 300 "Right" (axis Abs.AbsRx) (axis Abs.AbsRy)
+        , slider 150 750 "LT" (axis Abs.AbsZ)
+        , slider 1850 750 "RT" (axis Abs.AbsRz)
         , button2 1000 400 ButtonL.BtnMode "Mode" True
         , button2 800 200 ButtonL.BtnSelect "Select" True
         , button2 1200 200 ButtonL.BtnStart "Start" True

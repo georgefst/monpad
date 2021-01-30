@@ -5,8 +5,8 @@ let Windows = ./windows.dhall
 let Mac = ./mac.dhall
 
 in  { Button = { linux : Evdev.Key, windows : Windows.Button, mac : Mac.Button }
-    , Axis = { linux : Evdev.AbsAxis, windows : Windows.Axis, mac : Mac.Axis }
-    , AxisLinux = Evdev.AbsAxis
+    , Axis = { linux : Evdev.AxisInfo, windows : Windows.Axis, mac : Mac.Axis }
+    , AxisLinux = Evdev.AxisInfo
     , ButtonLinux = Evdev.Key
     , AxisWindows = Windows.Axis
     , ButtonWindows = Windows.Button

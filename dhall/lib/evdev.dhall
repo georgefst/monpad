@@ -43,6 +43,23 @@ let AbsAxis =
       | AbsMtToolY
       >
 
+let RelAxis =
+      < RelX
+      | RelY
+      | RelZ
+      | RelRx
+      | RelRy
+      | RelRz
+      | RelHwheel
+      | RelDial
+      | RelWheel
+      | RelMisc
+      >
+
+let Axis = < Abs : AbsAxis | Rel : RelAxis >
+
+let AxisInfo = { axis : Axis, multiplier : Double }
+
 let Key =
       < KeyReserved
       | KeyEsc
@@ -586,4 +603,4 @@ let Key =
       | BtnTriggerHappy40
       >
 
-in  { AbsAxis, Key }
+in  { AbsAxis, RelAxis, Axis, AxisInfo, Key }

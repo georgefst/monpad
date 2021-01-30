@@ -2,11 +2,18 @@ let AllOS = ./lib/all-os.dhall
 
 let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
+let Evdev = ./lib/evdev.dhall
+
 let ButtonL = AllOS.ButtonLinux
 
 let ButtonW = {}
 
-let AxisL = AllOS.AxisLinux
+let axis =
+      λ(a : Evdev.AbsAxis) →
+        { linux = { axis = Evdev.Axis.Abs a, multiplier = 255.0 }
+        , windows = {=}
+        , mac = {=}
+        }
 
 let button =
       λ(x : Natural) →
@@ -48,8 +55,8 @@ in    { elements =
                 , range = 320
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
-                , stickDataX = { linux = AxisL.AbsX, windows = {=}, mac = {=} }
-                , stickDataY = { linux = AxisL.AbsY, windows = {=}, mac = {=} }
+                , stickDataX = axis Evdev.AbsAxis.AbsX
+                , stickDataY = axis Evdev.AbsAxis.AbsY
                 }
           , location = { x = 500, y = 500 }
           , name = "Stick"

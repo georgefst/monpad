@@ -1,12 +1,13 @@
 module Main (main) where
 
+import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Int (Int32)
 import qualified Data.Text.IO as T
 import Numeric (readHex)
-import Options.Applicative (execParser, fullDesc, header, helper, info)
+import Options.Applicative (execParser, fullDesc, header, helper, info, short, switch)
 import Text.Pretty.Simple (pPrint)
 
 import Evdev
@@ -17,7 +18,8 @@ import Orphans.Evdev ()
 
 main :: IO ()
 main = do
-    (port, imageDir, dhallLayout) <- execParser $ info (helper <*> argParser (defaultDhall ())) (fullDesc <> header "monpad")
+    let parser = (,) <$> switch (short 'q' <> long "quiet") <*> argParser (defaultDhall ())
+    (quiet, (port, imageDir, dhallLayout)) <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layout <- layoutFromDhall dhallLayout
     server port imageDir layout ServerConfig
         { onStart = T.putStrLn "Monpad server started"
@@ -41,8 +43,7 @@ main = do
             return (dev, ())
         , onMessage = \m -> do
             c <- asks snd
-            pPrint (c, m)
-        , onAxis = \a x -> do
+            unless quiet $ pPrint (c, m)
             dev <- asks fst
             liftIO $ writeBatch dev [AbsoluteEvent a $ EventValue $ translate x]
         , onButton = \key up -> do

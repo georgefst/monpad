@@ -43,6 +43,7 @@ instance HasElmDecoder J.Value (V2 Int) where
 instance HasElmType (V2 Int) where
     elmDefinition = elmDefinition @IntVec2
 
+deriving instance ToJSON (V2 Double)
 deriving instance FromJSON (V2 Double)
 deriving instance SOP.Generic (V2 Double)
 deriving instance SOP.HasDatatypeInfo (V2 Double)

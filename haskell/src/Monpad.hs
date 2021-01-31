@@ -81,7 +81,7 @@ data Update
     | StickMove Text (V2 Double) -- always a vector within the unit circle
     | SliderMove Text Double -- abs <= 1
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
+    deriving (ToJSON, FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 data ServerUpdate
     = SetImageURL Text Text

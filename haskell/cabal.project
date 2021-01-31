@@ -9,7 +9,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/georgefst/haskell-to-elm
-  tag: 46ed897440c1987c32fbed86020d1eb1cc9e81c0
+  tag: 33d6076972b4aa753031299692c7ab631ddb780d
 
 allow-newer:
   active:base

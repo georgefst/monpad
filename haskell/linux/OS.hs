@@ -5,6 +5,7 @@ import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Either (partitionEithers)
 import Data.Functor ((<&>))
+import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Numeric (readHex)
@@ -18,7 +19,7 @@ import Orphans.Evdev ()
 conf :: Layout AxisInfo Key -> ServerConfig UDevice () AxisInfo Key
 conf layout = ServerConfig
     { onStart = mempty
-    , onNewConnection = \_ -> do
+    , onNewConnection = \(ClientID clientId) -> do
         let (as, bs) = allAxesAndButs layout
             (aas, ras) = partitionEithers $ as <&> \case
                 AxisInfo{axis = Abs a, ..} -> Left
@@ -33,7 +34,7 @@ conf layout = ServerConfig
                         }
                     )
                 AxisInfo{axis = Rel a} -> Right a
-        dev <- newUDevice (defaultNewUDevice "Monpad")
+        dev <- newUDevice (defaultNewUDevice $ "Monpad (" <> encodeUtf8 clientId <> ")")
             { keys = bs
             , absAxes = aas
             , relAxes = ras

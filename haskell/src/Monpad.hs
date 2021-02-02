@@ -6,9 +6,12 @@ module Monpad (
     Monpad,
     runMonpad,
     ServerConfig (..),
+    emptyServerConfig,
     ClientID (..),
     Update (..),
+    ServerUpdate (..),
     V2 (..),
+    Unit (..),
     elm,
     test,
     testExt,
@@ -17,7 +20,6 @@ module Monpad (
     defaultDhall,
     defaultSimple,
     allAxesAndButs,
-    argParser,
 ) where
 
 import Control.Concurrent
@@ -50,7 +52,6 @@ import Network.HTTP.Types.Status
 import Network.Wai.Handler.Warp
 import Network.Wai
 import qualified Network.WebSockets as WS
-import Options.Applicative
 import Servant.API.WebSocket
 import Servant hiding (layout)
 import Servant.HTML.Lucid
@@ -106,33 +107,6 @@ type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = Root :> (CoreApi :<|> ImageApi)
 type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
-{- | We don't provide a proper type for args, since backends will want to define their own.
-This function just contains the likely common ground.
--}
-argParser :: Text -> Parser (Port, Maybe FilePath, Text)
-argParser defDhall = (,,)
-    <$> (option auto . mconcat)
-        [ long "port"
-        , short 'p'
-        , metavar "INT"
-        , value 8000
-        , showDefault
-        , help "Port number for the server to listen on"
-        ]
-    <*> (optional . strOption . mconcat)
-        [ long "images"
-        , short 'i'
-        , metavar "DIR"
-        , help "Directory from which to serve image files"
-        ]
-    <*> (strOption . mconcat)
-        [ long "layout-dhall"
-        , short 'l'
-        , metavar "EXPR"
-        , value defDhall
-        , help "Dhall expression to control layout of buttons etc."
-        ]
-
 loginHtml :: Html ()
 loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
     [ title_ "monpad: login"
@@ -179,6 +153,17 @@ data ServerConfig e s a b = ServerConfig
     , onButton :: b -> Bool -> Monpad e s ()
     , onDroppedConnection :: MonpadException -> Monpad e s ()
     , updates :: Serial ServerUpdate
+    }
+
+emptyServerConfig :: ServerConfig () () Unit Unit
+emptyServerConfig = ServerConfig
+    { onStart = mempty
+    , onNewConnection = mempty
+    , onMessage = mempty
+    , onAxis = mempty
+    , onButton = mempty
+    , onDroppedConnection = mempty
+    , updates = mempty
     }
 
 -- | Maps of element names to axes and buttons.

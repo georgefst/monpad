@@ -49,7 +49,9 @@ common common
         record-dot-preprocessor ^>= 0.2.5,
         record-hasfield ^>= 1.0,
         streamly ^>= 0.7.2,
+        streamly-fsnotify ^>= 1.1.1.0,
         text ^>= 1.2.3,
+        time ^>= 1.9.3,
         transformers ^>= 0.5.6,
         unordered-containers ^>= 0.2.10,
     default-language: Haskell2010
@@ -129,16 +131,18 @@ library
 executable monpad
     import:
         common
+    main-is:
+        Main.hs
+    other-modules:
+        OS
     if os(windows)
-        main-is: Windows.hs
+        hs-source-dirs: windows
     if os(linux)
-        main-is: Linux.hs
-        other-modules:
-            Orphans.Evdev
-        build-depends:
-            evdev ^>= 2.0,
+        hs-source-dirs: linux
+        other-modules: Orphans.Evdev
+        build-depends: evdev ^>= 2.0,
     if os(darwin)
-        main-is: Mac.hs
+        hs-source-dirs: mac
     hs-source-dirs:
         app
     build-depends:
@@ -150,18 +154,3 @@ executable monpad-ext-ws
     hs-source-dirs: ext-ws
     build-depends:
         monpad,
-
-executable monpad-layout-test
-    import:
-        common
-    main-is: Main.hs
-    hs-source-dirs:
-        layout-test
-    build-depends:
-        monpad,
-        diagrams-core ^>= 1.4.2,
-        diagrams-lib ^>= 1.4.3,
-        diagrams-svg ^>= 1.4.3,
-        http-conduit ^>= 2.3.7.4,
-        streamly ^>= 0.7.2,
-        streamly-fsnotify ^>= 1.1.1.0,

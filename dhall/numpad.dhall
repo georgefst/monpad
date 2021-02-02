@@ -5,8 +5,8 @@ let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 let ButtonL = AllOS.ButtonLinux
 
 let button =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(linux : ButtonL) →
       λ(name : Text) →
         { element =
@@ -21,16 +21,16 @@ let button =
         }
 
 in    { elements =
-        [ button 400 100 ButtonL.Key0 "0"
-        , button 200 300 ButtonL.Key1 "1"
-        , button 400 300 ButtonL.Key2 "2"
-        , button 600 300 ButtonL.Key3 "3"
-        , button 200 500 ButtonL.Key4 "4"
-        , button 400 500 ButtonL.Key5 "5"
-        , button 600 500 ButtonL.Key6 "6"
-        , button 200 700 ButtonL.Key7 "7"
-        , button 400 700 ButtonL.Key8 "8"
-        , button 600 700 ButtonL.Key9 "9"
+        [ button +400 +100 ButtonL.Key0 "0"
+        , button +200 +300 ButtonL.Key1 "1"
+        , button +400 +300 ButtonL.Key2 "2"
+        , button +600 +300 ButtonL.Key3 "3"
+        , button +200 +500 ButtonL.Key4 "4"
+        , button +400 +500 ButtonL.Key5 "5"
+        , button +600 +500 ButtonL.Key6 "6"
+        , button +200 +700 ButtonL.Key7 "7"
+        , button +400 +700 ButtonL.Key8 "8"
+        , button +600 +700 ButtonL.Key9 "9"
         ]
       , grid = { x = 800, y = 800 }
       }

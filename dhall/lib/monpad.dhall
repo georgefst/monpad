@@ -2,9 +2,9 @@ let Prelude = ./Prelude.dhall
 
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
-let Vec2 = { x : Natural, y : Natural }
+let V2 = λ(a : Type) → { x : a, y : a }
 
-let Shape = < Circle : Natural | Rectangle : Vec2 >
+let Shape = < Circle : Natural | Rectangle : V2 Natural >
 
 let Button = λ(b : Type) → { shape : Shape, colour : Colour, buttonData : b }
 
@@ -43,12 +43,16 @@ let Element =
 let FullElement =
       λ(a : Type) →
       λ(b : Type) →
-        { element : Element a b, location : Vec2, name : Text, showName : Bool }
+        { element : Element a b
+        , location : V2 Integer
+        , name : Text
+        , showName : Bool
+        }
 
 let Layout =
       λ(a : Type) →
       λ(b : Type) →
-        { elements : List (FullElement a b), grid : Vec2 }
+        { elements : List (FullElement a b), grid : V2 Natural }
 
 let col =
       λ(r : Double) →
@@ -123,7 +127,7 @@ let mapLayout
 in  λ(a : Type) →
     λ(b : Type) →
       { Colour
-      , Vec2
+      , V2
       , Shape
       , cols
       , Element = Element a b

@@ -21,15 +21,16 @@ let tile =
             monpad.Element.Button
               { shape = monpad.Shape.Rectangle rect
               , colour
-              , buttonData = { linux = ButtonL.BtnMisc, windows = {=}, mac = {=} }
+              , buttonData =
+                { linux = ButtonL.BtnMisc, windows = {=}, mac = {=} }
               }
-        , location = { x, y }
+        , location = { x = Natural/toInteger x, y = Natural/toInteger y }
         , name
         , showName = True
         }
 
 let colour =
-      λ(v : monpad.Vec2) →
+      λ(v : monpad.V2 Natural) →
         if    Natural/even v.x != Natural/even v.y
         then  monpad.cols.black
         else  monpad.cols.white
@@ -51,6 +52,6 @@ in    { elements =
           Prelude.List.concat
             monpad.FullElement
             (Prelude.List.generate grid.y (List monpad.FullElement) row)
-      , grid = { x = grid.x * rect.x, y = grid.y * rect.y }
+      , grid = { x = grid.x, y = grid.y }
       }
     : monpad.Layout

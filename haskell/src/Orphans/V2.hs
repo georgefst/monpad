@@ -1,8 +1,7 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-{- | Instances for working with Elm and Dhall.
-Note that we perform some unsafe numeric conversions, e.g. 'Natural' to 'Int'.
--}
+-- | Instances for working with Elm and Dhall.
 module Orphans.V2 () where
 
 import Data.Aeson (FromJSON, ToJSON)
@@ -14,13 +13,18 @@ import qualified Language.Elm.Expression as Expr
 import qualified Language.Elm.Name as Name
 import qualified Language.Elm.Type as Type
 import Language.Haskell.To.Elm (
-    HasElmDecoder (elmDecoderDefinition),
-    HasElmEncoder (elmEncoder),
-    HasElmType (elmDefinition, elmType),
+    HasElmDecoder (..),
+    HasElmEncoder (..),
+    HasElmType (..),
  )
 import Linear.V2 (V2 (V2))
-import Numeric.Natural (Natural)
 import qualified Util.Elm as Elm
+
+-- NB we can decode but encoding would be unsafe
+instance HasElmType Word where
+    elmType = "Basics.Int"
+instance HasElmDecoder J.Value Word where
+    elmDecoder = "Json.Decode.int"
 
 data IntVec2 = IntVec2
     { x :: Int
@@ -28,13 +32,22 @@ data IntVec2 = IntVec2
     }
     deriving (Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via IntVec2
+data WordVec2 = WordVec2
+    { x :: Word
+    , y :: Word
+    }
+    deriving (Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via IntVec2
+
 instance ToJSON (V2 Int) where
     toJSON = J.toJSON . \(V2 x y) -> IntVec2 x y
+instance ToJSON (V2 Word) where
+    toJSON = J.toJSON . \(V2 x y) -> WordVec2 x y
 
 instance FromDhall (V2 Int) where
     autoWith = fmap (\(IntVec2 x y) -> V2 x y) . autoWith
-instance FromDhall Int where
-    autoWith = fmap (fromIntegral @Natural) . autoWith
+instance FromDhall (V2 Word) where
+    autoWith = fmap (\(WordVec2 x y) -> V2 x y) . autoWith
 
 deriving instance SOP.Generic (V2 Int)
 deriving instance SOP.HasDatatypeInfo (V2 Int)
@@ -42,6 +55,13 @@ instance HasElmDecoder J.Value (V2 Int) where
     elmDecoderDefinition = elmDecoderDefinition @J.Value @IntVec2
 instance HasElmType (V2 Int) where
     elmDefinition = elmDefinition @IntVec2
+
+deriving instance SOP.Generic (V2 Word)
+deriving instance SOP.HasDatatypeInfo (V2 Word)
+instance HasElmDecoder J.Value (V2 Word) where
+    elmDecoderDefinition = elmDecoderDefinition @J.Value @WordVec2
+instance HasElmType (V2 Word) where
+    elmDefinition = elmDefinition @WordVec2
 
 deriving instance ToJSON (V2 Double)
 deriving instance FromJSON (V2 Double)

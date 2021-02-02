@@ -16,8 +16,8 @@ let axis =
         }
 
 let button =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(linux : ButtonL) →
       λ(windows : ButtonW) →
       λ(name : Text) →
@@ -34,10 +34,10 @@ let button =
         }
 
 in    { elements =
-        [ button 1250 500 ButtonL.BtnWest {=} "Blue" monpad.cols.blue
-        , button 1500 250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
-        , button 1750 500 ButtonL.BtnEast {=} "Red" monpad.cols.red
-        , button 1500 750 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
+        [ button +1250 +500 ButtonL.BtnWest {=} "Blue" monpad.cols.blue
+        , button +1500 +250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
+        , button +1750 +500 ButtonL.BtnEast {=} "Red" monpad.cols.red
+        , button +1500 +750 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Button
                 { buttonData =
@@ -45,7 +45,7 @@ in    { elements =
                 , colour = monpad.cols.white
                 , shape = monpad.Shape.Circle 80
                 }
-          , location = { x = 1000, y = 200 }
+          , location = { x = +1000, y = +200 }
           , name = "M"
           , showName = True
           }
@@ -58,7 +58,7 @@ in    { elements =
                 , stickDataX = axis Evdev.AbsAxis.AbsX
                 , stickDataY = axis Evdev.AbsAxis.AbsY
                 }
-          , location = { x = 500, y = 500 }
+          , location = { x = +500, y = +500 }
           , name = "Stick"
           , showName = False
           }

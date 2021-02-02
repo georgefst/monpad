@@ -30,7 +30,7 @@ layoutFromDhall = input auto
 
 data Layout a b = Layout
     { elements :: [FullElement a b]
-    , grid :: V2 Int
+    , grid :: V2 Word
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout
@@ -56,8 +56,8 @@ data Element a b
 deriving via (Elm.Via2 Element) instance ToJSON (Element Unit Unit)
 
 data Stick a = Stick'
-    { radius :: Int
-    , range :: Int
+    { radius :: Word
+    , range :: Word
     , stickColour :: Colour
     , backgroundColour :: Colour
     , stickDataX :: a
@@ -77,9 +77,9 @@ data Button b = Button'
 deriving via (Elm.Via1 Button) instance ToJSON (Button Unit)
 
 data Slider a = Slider'
-    { radius :: Int
-    , length :: Int
-    , width :: Int
+    { radius :: Word
+    , length :: Word
+    , width :: Word
     , sliderColour :: Colour
     , backgroundColour :: Colour
     , vertical :: Bool
@@ -90,16 +90,16 @@ data Slider a = Slider'
 deriving via (Elm.Via1 Slider) instance ToJSON (Slider Unit)
 
 data Image = Image'
-    { width :: Int
-    , height :: Int
+    { width :: Word
+    , height :: Word
     , url :: Text
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
 
 data Shape
-    = Circle Int
-    | Rectangle (V2 Int)
+    = Circle Word
+    | Rectangle (V2 Word)
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Shape
 

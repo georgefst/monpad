@@ -16,8 +16,8 @@ let axis =
       λ(a : Evdev.AbsAxis) → { axis = Evdev.Axis.Abs a, multiplier = 255.0 }
 
 let button =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(linux : ButtonL) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
@@ -33,8 +33,8 @@ let button =
         }
 
 let button2 =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(linux : ButtonL) →
       λ(name : Text) →
       λ(showName : Bool) →
@@ -50,8 +50,8 @@ let button2 =
         }
 
 let stick =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(name : Text) →
       λ(linuxX : AxisL) →
       λ(linuxY : AxisL) →
@@ -70,8 +70,8 @@ let stick =
         }
 
 let slider =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(name : Text) →
       λ(linux : AxisL) →
         { element =
@@ -90,23 +90,23 @@ let slider =
         }
 
 in    { elements =
-        [ button 1160 680 ButtonL.BtnWest "Blue" monpad.cols.blue
-        , button 1360 480 ButtonL.BtnSouth "Green" monpad.cols.green
-        , button 1560 680 ButtonL.BtnEast "Red" monpad.cols.red
-        , button 1360 880 ButtonL.BtnNorth "Yellow" monpad.cols.yellow
-        , button 440 680 ButtonL.BtnDpadLeft "Left" monpad.cols.grey
-        , button 640 480 ButtonL.BtnDpadDown "Down" monpad.cols.grey
-        , button 840 680 ButtonL.BtnDpadRight "Right" monpad.cols.grey
-        , button 640 880 ButtonL.BtnDpadUp "Up" monpad.cols.grey
-        , stick 300 300 "Left" (axis Abs.AbsX) (axis Abs.AbsY)
-        , stick 1700 300 "Right" (axis Abs.AbsRx) (axis Abs.AbsRy)
-        , slider 150 750 "LT" (axis Abs.AbsZ)
-        , slider 1850 750 "RT" (axis Abs.AbsRz)
-        , button2 1000 400 ButtonL.BtnMode "Mode" True
-        , button2 800 200 ButtonL.BtnSelect "Select" True
-        , button2 1200 200 ButtonL.BtnStart "Start" True
-        , button2 360 900 ButtonL.BtnTl "LB" False
-        , button2 1640 900 ButtonL.BtnTr "RB" False
+        [ button +1160 +680 ButtonL.BtnWest "Blue" monpad.cols.blue
+        , button +1360 +480 ButtonL.BtnSouth "Green" monpad.cols.green
+        , button +1560 +680 ButtonL.BtnEast "Red" monpad.cols.red
+        , button +1360 +880 ButtonL.BtnNorth "Yellow" monpad.cols.yellow
+        , button +440 +680 ButtonL.BtnDpadLeft "Left" monpad.cols.grey
+        , button +640 +480 ButtonL.BtnDpadDown "Down" monpad.cols.grey
+        , button +840 +680 ButtonL.BtnDpadRight "Right" monpad.cols.grey
+        , button +640 +880 ButtonL.BtnDpadUp "Up" monpad.cols.grey
+        , stick +300 +300 "Left" (axis Abs.AbsX) (axis Abs.AbsY)
+        , stick +1700 +300 "Right" (axis Abs.AbsRx) (axis Abs.AbsRy)
+        , slider +150 +750 "LT" (axis Abs.AbsZ)
+        , slider +1850 +750 "RT" (axis Abs.AbsRz)
+        , button2 +1000 +400 ButtonL.BtnMode "Mode" True
+        , button2 +800 +200 ButtonL.BtnSelect "Select" True
+        , button2 +1200 +200 ButtonL.BtnStart "Start" True
+        , button2 +360 +900 ButtonL.BtnTl "LB" False
+        , button2 +1640 +900 ButtonL.BtnTr "RB" False
         ]
       , grid = { x = 2000, y = 1000 }
       }

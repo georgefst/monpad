@@ -17,8 +17,8 @@ let axis =
         }
 
 let button =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(linux : ButtonL) →
       λ(windows : ButtonW) →
       λ(name : Text) →
@@ -36,8 +36,8 @@ let button =
 
 let layoutAll =
         { elements =
-          [ button 200 1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
-          , button 800 1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
+          [ button +200 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
+          , button +800 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
           , { element =
                 monpad.Element.Slider
                   { radius = 90
@@ -48,7 +48,7 @@ let layoutAll =
                   , vertical = True
                   , sliderData = axis Evdev.RelAxis.RelWheel 5.0
                   }
-            , location = { x = 500, y = 1650 }
+            , location = { x = +500, y = +1650 }
             , name = "Slider"
             , showName = False
             }
@@ -61,7 +61,7 @@ let layoutAll =
                   , stickDataX = axis Evdev.RelAxis.RelX 15.0
                   , stickDataY = axis Evdev.RelAxis.RelY 15.0
                   }
-            , location = { x = 500, y = 900 }
+            , location = { x = +500, y = +900 }
             , name = "Stick"
             , showName = False
             }

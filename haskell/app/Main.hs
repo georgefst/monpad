@@ -17,6 +17,7 @@ import qualified Dhall.Core as Dhall
 import qualified Dhall.Import as Dhall
 import qualified Dhall.Parser as Dhall
 import qualified Dhall.TypeCheck as Dhall
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Monpad
 import qualified OS
 import Options.Applicative
@@ -67,6 +68,7 @@ parser = do
 
 main :: IO ()
 main = do
+    setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layoutFile <- canonicalizePath $ T.unpack dhallLayout
     let watchPred = (isCreation `disj` isModification) `conj` EventPredicate ((== layoutFile) . eventPath)

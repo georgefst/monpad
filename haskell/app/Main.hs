@@ -101,12 +101,8 @@ main = do
             , updates = asyncly $ serially evs <> serially sc.updates
             }
     if systemDevice
-        then do
-            layout <- layoutFromDhall dhallLayout
-            run (OS.conf layout) layout
-        else do
-            layout <- layoutFromDhall dhallLayout
-            run emptyServerConfig layout
+        then join (run . OS.conf) =<< layoutFromDhall dhallLayout
+        else run emptyServerConfig =<< layoutFromDhall dhallLayout
 
 mkUpdate :: FilePath -> IO (Maybe ServerUpdate)
 mkUpdate file = printDhallErrors $ fmap SetLayout <$> layoutFromDhall =<< dhallResolve file

@@ -52,6 +52,6 @@ in    { elements =
           Prelude.List.concat
             monpad.FullElement
             (Prelude.List.generate grid.y (List monpad.FullElement) row)
-      , grid = { x = grid.x, y = grid.y }
+      , grid = { x = grid.x * rect.x, y = grid.y * rect.y }
       }
     : monpad.Layout

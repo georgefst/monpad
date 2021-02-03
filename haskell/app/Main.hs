@@ -80,28 +80,28 @@ main = do
             T.putStrLn $ "Watching: " <> T.pack layoutFile
             pure $ traceStream (const $ T.putStrLn "Sending new layout to client") $
                 SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es
-        else pure mempty
-    let run sc l = server port imageDir l $ sc0 <> sc
-        sc0 = ServerConfig
-            { onStart = T.putStrLn "Monpad server started"
-            , onNewConnection = \(ClientID i) -> do
-                T.putStrLn $ "New client: " <> i
-                pure (mempty, mempty)
-            , onMessage = \m -> do
-                ClientID c <- asks snd
-                unless quiet do
-                    liftIO $ T.putStrLn $ "Message received from client: " <> c
-                    pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
-            , onAxis = mempty
-            , onButton = mempty
-            , onDroppedConnection = \_ -> do
-                ClientID i <- asks snd
-                liftIO $ T.putStrLn $ "Client disconnected: " <> i
-            , updates = serially evs
-            }
+        else mempty
+    let scSendLayout = mempty {updates = serially evs}
+        run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout
         else run mempty =<< layoutFromDhall dhallLayout
+
+scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
+scPrintStuff quiet = mempty
+    { onStart = T.putStrLn "Monpad server started"
+    , onNewConnection = \(ClientID i) -> do
+        T.putStrLn $ "New client: " <> i
+        mempty
+    , onMessage = \m -> do
+        ClientID c <- asks snd
+        unless quiet do
+            liftIO $ T.putStrLn $ "Message received from client: " <> c
+            pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
+    , onDroppedConnection = \_ -> do
+        ClientID i <- asks snd
+        liftIO $ T.putStrLn $ "Client disconnected: " <> i
+    }
 
 mkUpdate :: FilePath -> IO (Maybe ServerUpdate)
 mkUpdate file = printDhallErrors $ fmap SetLayout <$> layoutFromDhall =<< dhallResolve file

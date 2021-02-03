@@ -4,6 +4,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bool (bool)
 import Data.Either (partitionEithers)
+import Data.Foldable (for_)
 import Data.Functor ((<&>))
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
@@ -16,7 +17,7 @@ import Evdev.Codes
 import Monpad
 import Orphans.Evdev ()
 
-conf :: Layout AxisInfo Key -> ServerConfig UDevice () AxisInfo Key
+conf :: Layout AxisInfo Key -> ServerConfig [UDevice] () AxisInfo Key
 conf layout = ServerConfig
     { onStart = mempty
     , onNewConnection = \(ClientID clientId) -> do
@@ -42,16 +43,16 @@ conf layout = ServerConfig
             , idVendor = Just monpadId
             , idProduct = Just monpadId
             }
-        return (dev, ())
+        return (pure dev, ())
     , onMessage = mempty
     , onAxis = \AxisInfo{..} x -> do --note that x is always between -1 and 1
-        dev <- asks fst
-        liftIO $ writeBatch dev $ pure @[] case axis of
+        devs <- asks fst
+        liftIO $ for_ devs $ \d -> writeBatch d $ pure @[] case axis of
             Abs a -> AbsoluteEvent a $ EventValue $ round $ (x + 1) * multiplier / 2
             Rel a -> RelativeEvent a $ EventValue $ round $ x * multiplier
     , onButton = \key up -> do
-        dev <- asks fst
-        liftIO $ writeBatch dev [KeyEvent key $ bool Released Pressed up]
+        devs <- asks fst
+        liftIO $ for_ devs $ \d -> writeBatch d [KeyEvent key $ bool Released Pressed up]
     , onDroppedConnection = mempty
     , updates = mempty
     }

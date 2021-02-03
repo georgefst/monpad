@@ -76,7 +76,7 @@ main = do
             unlessM (doesFileExist layoutFile) do
                 T.putStrLn "Dhall expression provided is not a file, so can't be watched"
                 exitFailure
-            (_, es) <- liftIO (watchDirectory (takeDirectory layoutFile) watchPred)
+            (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
             T.putStrLn $ "Watching: " <> T.pack layoutFile
             pure $ traceStream (const $ T.putStrLn "Sending new layout to client") $
                 SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es

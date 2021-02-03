@@ -1,5 +1,4 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Main (main) where
 
@@ -84,21 +83,21 @@ main = do
             else mempty
         run :: ServerConfig e s a b -> Layout a b -> IO ()
         run sc l = server port imageDir l ServerConfig
-            { onStart = T.putStrLn "Monpad server started" >> sc.onStart
+            { onStart = T.putStrLn "Monpad server started" >> onStart sc
             , onNewConnection = \c@(ClientID i) -> do
                 T.putStrLn $ "New client: " <> i
-                sc.onNewConnection c
+                onNewConnection sc c
             , onMessage = \m -> do
                 c <- asks snd
                 unless quiet $ pPrint (c, m)
-                sc.onMessage m
-            , onAxis = sc.onAxis
-            , onButton = sc.onButton
+                onMessage sc m
+            , onAxis = onAxis sc
+            , onButton = onButton sc
             , onDroppedConnection = \e -> do
                 ClientID i <- asks snd
                 liftIO $ T.putStrLn $ "Client disconnected: " <> i
-                sc.onDroppedConnection e
-            , updates = asyncly $ serially evs <> serially sc.updates
+                onDroppedConnection sc e
+            , updates = asyncly $ serially evs <> serially (updates sc)
             }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout

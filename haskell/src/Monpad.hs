@@ -143,6 +143,9 @@ runMonpad c e s mon = runReaderT (evalStateT (unMonpad mon) s) (e, c)
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
+{-TODO impredicative types should allow use to use a forall for the stream type
+getting rid of some 'asyncly', 'serially' boilerplate
+-}
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: IO ()
@@ -151,33 +154,19 @@ data ServerConfig e s a b = ServerConfig
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
     , onDroppedConnection :: MonpadException -> Monpad e s ()
-    , updates :: Serial ServerUpdate
+    , updates :: Async ServerUpdate
     }
 
 instance (Semigroup e, Semigroup s) => Semigroup (ServerConfig e s a b) where
-    sc1 <> sc2 = ServerConfig
-        { onStart = f
-            (onStart sc1)
-            (onStart sc2)
-        , onNewConnection = \x -> f
-            (onNewConnection sc1 x)
-            (onNewConnection sc2 x)
-        , onMessage = \x -> f
-            (onMessage sc1 x)
-            (onMessage sc2 x)
-        , onAxis = \x y -> f
-            (onAxis sc1 x y)
-            (onAxis sc2 x y)
-        , onButton = \x y -> f
-            (onButton sc1 x y)
-            (onButton sc2 x y)
-        , onDroppedConnection = \x -> f
-            (onDroppedConnection sc1 x)
-            (onDroppedConnection sc2 x)
-        , updates = asyncly $ serially sc1.updates <> serially sc2.updates
+    x <> y = ServerConfig
+        { onStart = x.onStart <> y.onStart
+        , onNewConnection = x.onNewConnection <> y.onNewConnection
+        , onMessage = x.onMessage <> y.onMessage
+        , onAxis = x.onAxis <> y.onAxis
+        , onButton = x.onButton <> y.onButton
+        , onDroppedConnection = x.onDroppedConnection <> y.onDroppedConnection
+        , updates = x.updates <> y.updates
         }
-      where
-        f a b = (<>) <$> a <*> b
 
 instance Monoid (ServerConfig () () Unit Unit) where
     mempty = ServerConfig
@@ -246,7 +235,7 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
                     ButtonDown t -> onButton (buttonMap ! t) True
                     StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
-        _ <- forkIO $ SP.mapM_ (sendUpdate conn) updates --TODO move inside 'runMonpad' - error handling, env etc.
+        _ <- forkIO $ SP.mapM_ (sendUpdate conn) $ asyncly updates --TODO move inside 'runMonpad' - error handling, env etc.
         WS.withPingThread conn 30 mempty
             . runMonpad clientId e s0
             $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)

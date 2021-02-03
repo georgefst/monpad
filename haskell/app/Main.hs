@@ -20,7 +20,7 @@ import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Monpad
 import qualified OS
 import Options.Applicative
-import Streamly (Serial, asyncly, serially)
+import Streamly (Serial, serially)
 import Streamly.FSNotify
 import qualified Streamly.Prelude as SP
 import System.Directory
@@ -97,7 +97,7 @@ main = do
             , onDroppedConnection = \_ -> do
                 ClientID i <- asks snd
                 liftIO $ T.putStrLn $ "Client disconnected: " <> i
-            , updates = evs
+            , updates = serially evs
             }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout

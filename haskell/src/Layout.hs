@@ -30,7 +30,7 @@ layoutFromDhall = input auto
 
 data Layout a b = Layout
     { elements :: [FullElement a b]
-    , grid :: V2 Word
+    , viewBox :: ViewBox
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout
@@ -112,6 +112,15 @@ data Colour = Colour
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Colour
+
+data ViewBox = ViewBox
+    { x :: Int
+    , y :: Int
+    , w :: Int
+    , h :: Int
+    }
+    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via ViewBox
 
 $(deriveBifunctor ''Layout)
 $(deriveBifunctor ''FullElement)

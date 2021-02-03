@@ -32,6 +32,6 @@ in    { elements =
         , button +400 +700 ButtonL.Key8 "8"
         , button +600 +700 ButtonL.Key9 "9"
         ]
-      , grid = { x = 800, y = 800 }
+      , viewBox = { x = +0, y = -800, w = +800, h = +800 }
       }
     : monpad.Layout

@@ -34,10 +34,10 @@ let button =
         }
 
 in    { elements =
-        [ button +1250 +500 ButtonL.BtnWest {=} "Blue" monpad.cols.blue
-        , button +1500 +250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
-        , button +1750 +500 ButtonL.BtnEast {=} "Red" monpad.cols.red
-        , button +1500 +750 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
+        [ button +250 +0 ButtonL.BtnWest {=} "Blue" monpad.cols.blue
+        , button +500 -250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
+        , button +750 +0 ButtonL.BtnEast {=} "Red" monpad.cols.red
+        , button +500 +250 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
         , { element =
               monpad.Element.Button
                 { buttonData =
@@ -45,7 +45,7 @@ in    { elements =
                 , colour = monpad.cols.white
                 , shape = monpad.Shape.Circle 80
                 }
-          , location = { x = +1000, y = +200 }
+          , location = { x = +0, y = -300 }
           , name = "M"
           , showName = True
           }
@@ -58,11 +58,11 @@ in    { elements =
                 , stickDataX = axis Evdev.AbsAxis.AbsX
                 , stickDataY = axis Evdev.AbsAxis.AbsY
                 }
-          , location = { x = +500, y = +500 }
+          , location = { x = -500, y = +0 }
           , name = "Stick"
           , showName = False
           }
         ]
-      , grid = { x = 2000, y = 1000 }
+      , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }
       }
     : monpad.Layout

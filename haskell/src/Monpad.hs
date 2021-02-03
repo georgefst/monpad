@@ -246,6 +246,7 @@ elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
     , Elm.decodedTypes @(V2 Double)
     , Elm.encodedTypes @ServerUpdate
     , Elm.encodedTypes @ElmFlags
+    , Elm.encodedTypes @ViewBox
     , Elm.encodedTypes @Colour
     , Elm.encodedTypes @(Layout () ())
     , Elm.encodedTypes @(FullElement () ())

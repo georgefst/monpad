@@ -36,8 +36,8 @@ let button =
 
 let layoutAll =
         { elements =
-          [ button +200 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
-          , button +800 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
+          [ button -300 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
+          , button +300 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
           , { element =
                 monpad.Element.Slider
                   { radius = 90
@@ -48,7 +48,7 @@ let layoutAll =
                   , vertical = True
                   , sliderData = axis Evdev.RelAxis.RelWheel 5.0
                   }
-            , location = { x = +500, y = +1650 }
+            , location = { x = +0, y = +1650 }
             , name = "Slider"
             , showName = False
             }
@@ -61,12 +61,12 @@ let layoutAll =
                   , stickDataX = axis Evdev.RelAxis.RelX 15.0
                   , stickDataY = axis Evdev.RelAxis.RelY 15.0
                   }
-            , location = { x = +500, y = +900 }
+            , location = { x = +0, y = +900 }
             , name = "Stick"
             , showName = False
             }
           ]
-        , grid = { x = 1000, y = 2000 }
+        , viewBox = { x = -500, y = -2000, w = +1000, h = +2000 }
         }
       : monpad.Layout
 

@@ -57,10 +57,10 @@ view model =
     , body =
         [ svgExplicit
             [ let
-                { x, y } =
-                    model.layout.grid
+                { x, y, w, h } =
+                    model.layout.viewBox
               in
-              viewBox 0 -y x y
+              viewBox x y w h
             , style "touch-action" "none"
             ]
           <|

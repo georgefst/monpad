@@ -90,24 +90,24 @@ let slider =
         }
 
 in    { elements =
-        [ button +1160 +680 ButtonL.BtnWest "Blue" monpad.cols.blue
-        , button +1360 +480 ButtonL.BtnSouth "Green" monpad.cols.green
-        , button +1560 +680 ButtonL.BtnEast "Red" monpad.cols.red
-        , button +1360 +880 ButtonL.BtnNorth "Yellow" monpad.cols.yellow
-        , button +440 +680 ButtonL.BtnDpadLeft "Left" monpad.cols.grey
-        , button +640 +480 ButtonL.BtnDpadDown "Down" monpad.cols.grey
-        , button +840 +680 ButtonL.BtnDpadRight "Right" monpad.cols.grey
-        , button +640 +880 ButtonL.BtnDpadUp "Up" monpad.cols.grey
-        , stick +300 +300 "Left" (axis Abs.AbsX) (axis Abs.AbsY)
-        , stick +1700 +300 "Right" (axis Abs.AbsRx) (axis Abs.AbsRy)
-        , slider +150 +750 "LT" (axis Abs.AbsZ)
-        , slider +1850 +750 "RT" (axis Abs.AbsRz)
-        , button2 +1000 +400 ButtonL.BtnMode "Mode" True
-        , button2 +800 +200 ButtonL.BtnSelect "Select" True
-        , button2 +1200 +200 ButtonL.BtnStart "Start" True
-        , button2 +360 +900 ButtonL.BtnTl "LB" False
-        , button2 +1640 +900 ButtonL.BtnTr "RB" False
+        [ button +160 +180 ButtonL.BtnWest "Blue" monpad.cols.blue
+        , button +360 -20 ButtonL.BtnSouth "Green" monpad.cols.green
+        , button +560 +180 ButtonL.BtnEast "Red" monpad.cols.red
+        , button +360 +380 ButtonL.BtnNorth "Yellow" monpad.cols.yellow
+        , button -560 +180 ButtonL.BtnDpadLeft "Left" monpad.cols.grey
+        , button -360 -20 ButtonL.BtnDpadDown "Down" monpad.cols.grey
+        , button -160 +180 ButtonL.BtnDpadRight "Right" monpad.cols.grey
+        , button -360 +380 ButtonL.BtnDpadUp "Up" monpad.cols.grey
+        , stick -700 -200 "Left" (axis Abs.AbsX) (axis Abs.AbsY)
+        , stick +700 -200 "Right" (axis Abs.AbsRx) (axis Abs.AbsRy)
+        , slider -850 +250 "LT" (axis Abs.AbsZ)
+        , slider +850 +250 "RT" (axis Abs.AbsRz)
+        , button2 +0 -100 ButtonL.BtnMode "Mode" True
+        , button2 -200 -300 ButtonL.BtnSelect "Select" True
+        , button2 +200 -300 ButtonL.BtnStart "Start" True
+        , button2 -640 +400 ButtonL.BtnTl "LB" False
+        , button2 +640 +400 ButtonL.BtnTr "RB" False
         ]
-      , grid = { x = 2000, y = 1000 }
+      , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }
       }
     : monpad.Layout

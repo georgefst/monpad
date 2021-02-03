@@ -2,6 +2,8 @@ let Prelude = ./Prelude.dhall
 
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
+let ViewBox = { x : Integer, y : Integer, w : Integer, h : Integer }
+
 let V2 = λ(a : Type) → { x : a, y : a }
 
 let Shape = < Circle : Natural | Rectangle : V2 Natural >
@@ -52,7 +54,7 @@ let FullElement =
 let Layout =
       λ(a : Type) →
       λ(b : Type) →
-        { elements : List (FullElement a b), grid : V2 Natural }
+        { elements : List (FullElement a b), viewBox : ViewBox }
 
 let col =
       λ(r : Double) →

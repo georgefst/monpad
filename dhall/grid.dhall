@@ -13,8 +13,8 @@ let halfRect = { x = 50, y = 25 }
 let rect = { x = halfRect.x * 2, y = halfRect.y * 2 }
 
 let tile =
-      λ(x : Natural) →
-      λ(y : Natural) →
+      λ(x : Integer) →
+      λ(y : Integer) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
         { element =
@@ -24,7 +24,7 @@ let tile =
               , buttonData =
                 { linux = ButtonL.BtnMisc, windows = {=}, mac = {=} }
               }
-        , location = { x = Natural/toInteger x, y = Natural/toInteger y }
+        , location = { x, y }
         , name
         , showName = True
         }
@@ -42,8 +42,8 @@ let row =
           monpad.FullElement
           ( λ(x : Natural) →
               tile
-                (x * rect.x + halfRect.x)
-                (y * rect.y + halfRect.y)
+                (Natural/toInteger (x * rect.x + halfRect.x))
+                (Natural/toInteger (y * rect.y + halfRect.y))
                 "( ${Natural/show x} , ${Natural/show y} )"
                 (colour { x, y })
           )
@@ -52,6 +52,11 @@ in    { elements =
           Prelude.List.concat
             monpad.FullElement
             (Prelude.List.generate grid.y (List monpad.FullElement) row)
-      , grid = { x = grid.x * rect.x, y = grid.y * rect.y }
+      , viewBox =
+        { x = +0
+        , y = Integer/negate (Natural/toInteger (grid.y * 50))
+        , w = Natural/toInteger (grid.x * rect.x)
+        , h = Natural/toInteger (grid.y * rect.y)
+        }
       }
     : monpad.Layout

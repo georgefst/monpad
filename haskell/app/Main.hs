@@ -26,7 +26,7 @@ import qualified Streamly.Prelude as SP
 import System.Directory
 import System.Exit
 import System.FilePath
-import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple
 
 data Args = Args
     { quiet :: Bool
@@ -88,8 +88,10 @@ main = do
                 T.putStrLn $ "New client: " <> i
                 onNewConnection sc c
             , onMessage = \m -> do
-                c <- asks snd
-                unless quiet $ pPrint (c, m)
+                ClientID c <- asks snd
+                unless quiet do
+                    liftIO $ T.putStrLn $ "Message received from client: " <> c
+                    pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
                 onMessage sc m
             , onAxis = onAxis sc
             , onButton = onButton sc

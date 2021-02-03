@@ -143,7 +143,7 @@ runMonpad c e s mon = runReaderT (evalStateT (unMonpad mon) s) (e, c)
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
-{-TODO impredicative types should allow use to use a forall for the stream type
+{-TODO impredicative types should allow us to use a forall for the stream type
 getting rid of some 'asyncly', 'serially' boilerplate
 -}
 -- | `e` is a fixed environment. 's' is an updateable state.

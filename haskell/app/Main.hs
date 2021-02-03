@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Main (main) where
 
@@ -6,12 +7,14 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
+import Data.Bifunctor (bimap)
 import Data.Functor
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Time
 import Data.Void (Void)
+import Dhall (FromDhall)
 import qualified Dhall.Core as Dhall
 import qualified Dhall.Import as Dhall
 import qualified Dhall.Parser as Dhall
@@ -78,14 +81,20 @@ main = do
                 exitFailure
             (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
             T.putStrLn $ "Watching: " <> T.pack layoutFile
-            pure $ traceStream (const $ T.putStrLn "Sending new layout to client") $
-                SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es
+            pure $ ignoreCloseFollowers es
         else mempty
-    let scSendLayout = mempty {updates = serially evs}
+    let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
+            ServerConfig e s a b -> Layout a b -> IO ()
         run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
+          where
+            scSendLayout = mempty
+                { updates = serially $ traceStream (const $ T.putStrLn "Sending new layout to client") $
+                    SP.map (SetLayout . bimap mempty mempty) $ SP.mapMaybeM (const $ mkUpdate @a @b layoutFile) evs
+                }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout
-        else run mempty =<< layoutFromDhall dhallLayout
+        else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
+    mempty --TODO bizarrely, this saves us from a type error caused by ApplicativeDo
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty
@@ -103,8 +112,8 @@ scPrintStuff quiet = mempty
         liftIO $ T.putStrLn $ "Client disconnected: " <> i
     }
 
-mkUpdate :: FilePath -> IO (Maybe ServerUpdate)
-mkUpdate file = printDhallErrors $ fmap SetLayout <$> layoutFromDhall =<< dhallResolve file
+mkUpdate :: (FromDhall a, FromDhall b) => FilePath -> IO (Maybe (Layout a b))
+mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
   where
     {-TODO this may well be incomplete
         anyway, if there isn't a better way of doing this, report to 'dhall-haskell'

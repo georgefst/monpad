@@ -81,29 +81,27 @@ main = do
             pure $ traceStream (const $ T.putStrLn "Sending new layout to client") $
                 SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es
         else pure mempty
-    let run :: ServerConfig e s a b -> Layout a b -> IO ()
-        run sc l = server port imageDir l ServerConfig
-            { onStart = T.putStrLn "Monpad server started" >> onStart sc
-            , onNewConnection = \c@(ClientID i) -> do
+    let run sc l = server port imageDir l $ sc0 <> sc
+        sc0 = ServerConfig
+            { onStart = T.putStrLn "Monpad server started"
+            , onNewConnection = \(ClientID i) -> do
                 T.putStrLn $ "New client: " <> i
-                onNewConnection sc c
+                pure (mempty, mempty)
             , onMessage = \m -> do
                 ClientID c <- asks snd
                 unless quiet do
                     liftIO $ T.putStrLn $ "Message received from client: " <> c
                     pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
-                onMessage sc m
-            , onAxis = onAxis sc
-            , onButton = onButton sc
-            , onDroppedConnection = \e -> do
+            , onAxis = mempty
+            , onButton = mempty
+            , onDroppedConnection = \_ -> do
                 ClientID i <- asks snd
                 liftIO $ T.putStrLn $ "Client disconnected: " <> i
-                onDroppedConnection sc e
-            , updates = asyncly $ serially evs <> serially (updates sc)
+            , updates = evs
             }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout
-        else run emptyServerConfig =<< layoutFromDhall dhallLayout
+        else run mempty =<< layoutFromDhall dhallLayout
 
 mkUpdate :: FilePath -> IO (Maybe ServerUpdate)
 mkUpdate file = printDhallErrors $ fmap SetLayout <$> layoutFromDhall =<< dhallResolve file

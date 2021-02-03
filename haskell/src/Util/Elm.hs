@@ -44,6 +44,8 @@ Also avoids orphans for 'HasElmType' etc.
 -}
 data Unit = Unit
     deriving (Show, Generic, FromDhall)
+instance Semigroup Unit where Unit <> Unit = Unit
+instance Monoid Unit where mempty = Unit
 elmUnit :: Name.Qualified
 elmUnit = Name.Qualified ["Basics"] "()"
 instance HasElmDecoder JSON.Value Unit where

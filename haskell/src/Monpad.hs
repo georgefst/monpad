@@ -6,7 +6,6 @@ module Monpad (
     Monpad,
     runMonpad,
     ServerConfig (..),
-    emptyServerConfig,
     ClientID (..),
     Update (..),
     ServerUpdate (..),
@@ -155,16 +154,41 @@ data ServerConfig e s a b = ServerConfig
     , updates :: Serial ServerUpdate
     }
 
-emptyServerConfig :: ServerConfig () () Unit Unit
-emptyServerConfig = ServerConfig
-    { onStart = mempty
-    , onNewConnection = mempty
-    , onMessage = mempty
-    , onAxis = mempty
-    , onButton = mempty
-    , onDroppedConnection = mempty
-    , updates = mempty
-    }
+instance (Semigroup e, Semigroup s) => Semigroup (ServerConfig e s a b) where
+    sc1 <> sc2 = ServerConfig
+        { onStart = f
+            (onStart sc1)
+            (onStart sc2)
+        , onNewConnection = \x -> f
+            (onNewConnection sc1 x)
+            (onNewConnection sc2 x)
+        , onMessage = \x -> f
+            (onMessage sc1 x)
+            (onMessage sc2 x)
+        , onAxis = \x y -> f
+            (onAxis sc1 x y)
+            (onAxis sc2 x y)
+        , onButton = \x y -> f
+            (onButton sc1 x y)
+            (onButton sc2 x y)
+        , onDroppedConnection = \x -> f
+            (onDroppedConnection sc1 x)
+            (onDroppedConnection sc2 x)
+        , updates = asyncly $ serially sc1.updates <> serially sc2.updates
+        }
+      where
+        f a b = (<>) <$> a <*> b
+
+instance Monoid (ServerConfig () () Unit Unit) where
+    mempty = ServerConfig
+        { onStart = mempty
+        , onNewConnection = mempty
+        , onMessage = mempty
+        , onAxis = mempty
+        , onButton = mempty
+        , onDroppedConnection = mempty
+        , updates = mempty
+        }
 
 -- | Maps of element names to axes and buttons.
 data ServerEnv a b = ServerEnv

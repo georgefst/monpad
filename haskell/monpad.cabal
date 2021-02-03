@@ -38,6 +38,7 @@ common common
         either ^>= 5.0.1,
         extra ^>= 1.7.1,
         filepath ^>= 1.4.2,
+        generic-data ^>= 0.9.2,
         generic-lens ^>= 2.0.0,
         linear ^>= 1.21,
         microlens ^>= 0.4.11,

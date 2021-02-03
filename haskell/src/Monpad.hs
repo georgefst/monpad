@@ -39,6 +39,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
+import Generic.Data (Generically(..))
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (utf8, setLocaleEncoding)
 import qualified Generics.SOP as SOP
@@ -156,28 +157,8 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: MonpadException -> Monpad e s ()
     , updates :: Async ServerUpdate
     }
-
-instance (Semigroup e, Semigroup s) => Semigroup (ServerConfig e s a b) where
-    x <> y = ServerConfig
-        { onStart = x.onStart <> y.onStart
-        , onNewConnection = x.onNewConnection <> y.onNewConnection
-        , onMessage = x.onMessage <> y.onMessage
-        , onAxis = x.onAxis <> y.onAxis
-        , onButton = x.onButton <> y.onButton
-        , onDroppedConnection = x.onDroppedConnection <> y.onDroppedConnection
-        , updates = x.updates <> y.updates
-        }
-
-instance Monoid (ServerConfig () () Unit Unit) where
-    mempty = ServerConfig
-        { onStart = mempty
-        , onNewConnection = mempty
-        , onMessage = mempty
-        , onAxis = mempty
-        , onButton = mempty
-        , onDroppedConnection = mempty
-        , updates = mempty
-        }
+    deriving Generic
+    deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
 
 -- | Maps of element names to axes and buttons.
 data ServerEnv a b = ServerEnv

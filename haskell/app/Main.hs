@@ -71,17 +71,17 @@ main = do
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layoutFile <- canonicalizePath $ T.unpack dhallLayout
     let watchPred = (isCreation `disj` isModification) `conj` EventPredicate ((== layoutFile) . eventPath)
-        evs = if watchLayout
-            then do
-                liftIO $ unlessM (doesFileExist layoutFile) do
-                    T.putStrLn "Dhall expression provided is not a file, so can't be watched"
-                    exitFailure
-                (_, es) <- liftIO (watchDirectory (takeDirectory layoutFile) watchPred)
-                liftIO $ T.putStrLn $ "Watching: " <> T.pack layoutFile
-                traceStream (const $ T.putStrLn "Sending new layout to client") $
-                    SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es
-            else mempty
-        run :: ServerConfig e s a b -> Layout a b -> IO ()
+    evs <- if watchLayout
+        then do
+            unlessM (doesFileExist layoutFile) do
+                T.putStrLn "Dhall expression provided is not a file, so can't be watched"
+                exitFailure
+            (_, es) <- liftIO (watchDirectory (takeDirectory layoutFile) watchPred)
+            T.putStrLn $ "Watching: " <> T.pack layoutFile
+            pure $ traceStream (const $ T.putStrLn "Sending new layout to client") $
+                SP.mapMaybeM (mkUpdate . eventPath) $ ignoreCloseFollowers es
+        else pure mempty
+    let run :: ServerConfig e s a b -> Layout a b -> IO ()
         run sc l = server port imageDir l ServerConfig
             { onStart = T.putStrLn "Monpad server started" >> onStart sc
             , onNewConnection = \c@(ClientID i) -> do

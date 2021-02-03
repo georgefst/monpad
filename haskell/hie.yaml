@@ -6,8 +6,14 @@ cradle:
     - path: ./app
       component: exe:monpad
 
+    - path: ./linux
+      component: exe:monpad
+
+    - path: ./mac
+      component: exe:monpad
+
+    - path: ./windos
+      component: exe:monpad
+
     - path: ./ext-ws
       component: exe:monpad-ext-ws
-
-    - path: ./layout-test
-      component: exe:monpad-layout-test

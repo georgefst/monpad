@@ -155,7 +155,7 @@ data ServerConfig e s a b = ServerConfig
     , onAxis :: a -> Double -> Monpad e s ()
     , onButton :: b -> Bool -> Monpad e s ()
     , onDroppedConnection :: MonpadException -> Monpad e s ()
-    , updates :: Async ServerUpdate
+    , updates :: Async (e -> s -> ServerUpdate)
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
@@ -216,10 +216,12 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
                     ButtonDown t -> onButton (buttonMap ! t) True
                     StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
-            s = asyncly $ (Left <$> updates) <> (Right <$> SP.repeatM (getUpdate conn))
+            stream = asyncly $ (Left <$> updates) <> (Right <$> SP.repeatM (getUpdate conn))
         WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 do
-            SP.drain $ flip SP.takeWhileM (SP.hoist liftIO s) \case
-                Left su -> sendUpdate conn su >> pure True
+            SP.drain $ flip SP.takeWhileM (SP.hoist liftIO stream) \case
+                Left su -> do
+                    s <- get
+                    sendUpdate conn (su e s) >> pure True
                 Right (Left err) -> onDroppedConnection err >> pure False
                 Right (Right u) -> update u >> pure True
       where

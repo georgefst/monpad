@@ -88,8 +88,10 @@ main = do
         run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
           where
             scSendLayout = mempty
-                { updates = serially $ traceStream (const $ T.putStrLn "Sending new layout to client") $
-                    SP.map (SetLayout . bimap mempty mempty) $ SP.mapMaybeM (const $ mkUpdate @a @b layoutFile) evs
+                { updates = serially $
+                    traceStream (const $ T.putStrLn "Sending new layout to client") $
+                    SP.map (const . const . SetLayout . bimap mempty mempty) $
+                    SP.mapMaybeM (const $ mkUpdate @a @b layoutFile) evs
                 }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout

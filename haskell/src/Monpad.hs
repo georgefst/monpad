@@ -216,7 +216,7 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
                     ButtonDown t -> onButton (buttonMap ! t) True
                     StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
-            stream = asyncly $ (Left <$> updates) <> (Right <$> SP.repeatM (getUpdate conn))
+            stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
         WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 do
             SP.drain $ flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left su -> do

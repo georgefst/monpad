@@ -8,11 +8,9 @@ import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bifunctor (bimap)
-import Data.Functor
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Time
 import Data.Void (Void)
 import Dhall (FromDhall)
 import qualified Dhall.Core as Dhall
@@ -81,7 +79,7 @@ main = do
                 exitFailure
             (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
             T.putStrLn $ "Watching: " <> T.pack layoutFile
-            pure $ ignoreCloseFollowers es
+            pure es
         else mempty
     let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
             ServerConfig e s a b -> Layout a b -> IO ()
@@ -137,19 +135,6 @@ mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
             =<< T.readFile p
         T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
         pure x
-
-{-TODO
-the issue (on Linux, though Mac seems similar) is that we get too many events, when all we care about is CLOSE_WRITE
-    but because 'fsnotify' is cross-platform, there may be no good way to filter
-what may be needed on Linux (this is only tested on Mac right now) is to actually take the last of these events
-    slightly trickier to implement
-test on all platforms, with debug logging on result of 'tooSoon'
--}
--- | Ignore any event which appears within 1s of another.
-ignoreCloseFollowers :: Serial a -> Serial a
-ignoreCloseFollowers = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) x -> do
-    t <- getCurrentTime
-    pure (\t' -> diffUTCTime t' t < 1, guard (not $ tooSoon t) $> x)
 
 --TODO better name
 -- | Attach an extra action to each element of the stream.

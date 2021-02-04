@@ -21,7 +21,6 @@ module Monpad (
     allAxesAndButs,
 ) where
 
-import Control.Concurrent
 import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.State
@@ -57,6 +56,7 @@ import Servant hiding (layout)
 import Servant.HTML.Lucid
 import Streamly
 import qualified Streamly.Prelude as SP
+import qualified Streamly.Internal.Prelude as SP
 import System.FilePath
 import Text.Pretty.Simple
 
@@ -216,12 +216,14 @@ websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
                     ButtonDown t -> onButton (buttonMap ! t) True
                     StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
                     SliderMove t x -> onAxis (sliderMap ! t) x
-        _ <- forkIO $ SP.mapM_ (sendUpdate conn) $ asyncly updates --TODO move inside 'runMonpad' - error handling, env etc.
-        WS.withPingThread conn 30 mempty
-            . runMonpad clientId e s0
-            $ onDroppedConnection =<< untilLeft (mapRightM update =<< getUpdate conn)
+            s = asyncly $ (Left <$> updates) <> (Right <$> SP.repeatM (getUpdate conn))
+        WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 do
+            SP.drain $ flip SP.takeWhileM (SP.hoist liftIO s) \case
+                Left su -> sendUpdate conn su >> pure True
+                Right (Left err) -> onDroppedConnection err >> pure False
+                Right (Right u) -> update u >> pure True
       where
-        sendUpdate conn = WS.sendTextData conn . encode
+        sendUpdate conn = liftIO . WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err
             Right b -> first UpdateDecodeException $ eitherDecode b

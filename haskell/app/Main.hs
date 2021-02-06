@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 module Main (main) where
 
@@ -35,7 +36,7 @@ import Text.Pretty.Simple
 data Args = Args
     { quiet :: Bool
     , systemDevice :: Bool
-    , watchLayout :: Maybe Int --TODO just fix the interval length once we've found one that's fine across platforms
+    , watchLayout :: Maybe Float --TODO just fix the interval length once we've found one that's fine across platforms
     , port :: Int --TODO 'Port'
     , imageDir :: Maybe FilePath
     , dhallLayout :: Text
@@ -48,7 +49,7 @@ parser = do
     --TODO check how this works with multiple clients
     watchLayout <- optional . option auto $ mconcat
         [ long "watch-layout"
-        , metavar "MS"
+        , metavar "SECONDS"
         ]
     port <- option auto $ mconcat
         [ long "port"
@@ -152,13 +153,13 @@ traceStream f = SP.mapM \x -> f x >> pure x
 the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
     but because 'fsnotify' is cross-platform, there may be no good way to filter
 -}
--- | Ignore events which are followed within `interval` milliseconds.
-lastOfGroup :: Int -> Async a -> Serial a
+-- | Ignore events which are followed within `interval` seconds.
+lastOfGroup :: Float -> Async a -> Serial a
 lastOfGroup interval = f2 . asyncly . f1
   where
     -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
     f1 = SP.concatMapWith (<>) \x ->
-        SP.yieldM (pure Nothing) <> SP.yieldM (threadDelay interval >> pure (Just x))
+        SP.yieldM (pure Nothing) <> SP.yieldM (threadDelay (round $ 1_000_000 * interval) >> pure (Just x))
     -- ignore any event which appears within `interval` of a 'Nothing'
     f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) -> \case
         Just x -> do
@@ -166,4 +167,4 @@ lastOfGroup interval = f2 . asyncly . f1
             pure (tooSoon, guard (not $ tooSoon t) $> x)
         Nothing -> do
             t <- getCurrentTime
-            pure (\t' -> diffUTCTime t' t < 1, Nothing)
+            pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)

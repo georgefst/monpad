@@ -46,7 +46,6 @@ parser :: Parser Args
 parser = do
     quiet <- switch $ short 'q' <> long "quiet"
     systemDevice <- switch $ long "system-device"
-    --TODO check how this works with multiple clients
     watchLayout <- optional . option auto $ mconcat
         [ long "watch-layout"
         , metavar "SECONDS"

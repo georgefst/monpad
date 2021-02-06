@@ -269,9 +269,9 @@ test = do
         { onStart = putStrLn "started"
         , onNewConnection = \c -> do
             pPrint ("connected" :: Text, c)
-            pure ((), c)
+            pure ((), ())
         , onMessage = \u -> do
-            c <- get
+            c <- asks snd
             pPrint (c, u)
         , onAxis = mempty
         , onButton = mempty

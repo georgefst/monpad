@@ -1,5 +1,6 @@
 .shake/
 dist*/
+.build/
 elm-stuff*/
 .ghc.environment.*
 cabal.project.local*

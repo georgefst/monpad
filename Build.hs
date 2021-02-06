@@ -80,6 +80,7 @@ rules = do
         cmd_
             (Cwd hsDir)
             ("cabal build --flags=release exe:" <> takeBaseName f)
+            ("--builddir=" <> (".." </> hsBuildDir))
         getDirectoryFiles "" [hsBuildDir <//> takeFileName f] >>= \case
             [] -> error "No matches"
             [f'] -> copyFileChanged f' f
@@ -113,7 +114,7 @@ shakeDir = ".shake"
 distDir = "dist"
 rscDir = hsDir </> "rsc"
 hsDir = "haskell"
-hsBuildDir = hsDir </> "dist-newstyle"
+hsBuildDir = ".build" </> "hs"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 elm = rscDir </> "elm" <.> "js"

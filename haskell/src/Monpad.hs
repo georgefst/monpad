@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Monpad (
@@ -28,9 +29,10 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.Aeson as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.Bifunctor.TH (deriveBifunctor)
 import Data.Composition
 import Data.List
-import Data.Map (Map, (!))
+import Data.Map (Map, (!?))
 import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
@@ -38,9 +40,10 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
+import Data.Tuple.Extra (snd3, thd3)
 import Generic.Data (Generically(..))
 import GHC.Generics (Generic)
-import GHC.IO.Encoding (utf8, setLocaleEncoding)
+import GHC.IO.Encoding (setLocaleEncoding)
 import qualified Generics.SOP as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
@@ -58,6 +61,7 @@ import Streamly
 import qualified Streamly.Prelude as SP
 import qualified Streamly.Internal.Prelude as SP
 import System.FilePath
+import System.IO
 import Text.Pretty.Simple
 
 --TODO shouldn't really use this in library code
@@ -84,13 +88,15 @@ data Update
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
-data ServerUpdate
+data ServerUpdate a b
     = SetImageURL Text Text
-    | SetLayout (Layout Unit Unit)
-    | AddElement (FullElement Unit Unit)
+    | SetLayout (Layout a b)
+    | AddElement (FullElement a b)
     | RemoveElement Text
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder J.Value) via Elm.Via ServerUpdate
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
+deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
+$(deriveBifunctor ''ServerUpdate)
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -134,13 +140,14 @@ mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
   where
     jsScript = "text/javascript"
 
+--TODO use dedicated record types for State and Reader, and expose a cleaner interface
 -- | The Monpad monad
-newtype Monpad e s a = Monpad {unMonpad :: StateT s (ReaderT (e, ClientID) IO) a}
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState s)
-deriving via Action (Monpad e s) instance (Semigroup (Monpad e s ()))
-deriving via Action (Monpad e s) instance (Monoid (Monpad e s ()))
-runMonpad :: ClientID -> e -> s -> Monpad e s a -> IO a
-runMonpad c e s mon = runReaderT (evalStateT (unMonpad mon) s) (e, c)
+newtype Monpad e s a b x = Monpad {unMonpad :: StateT (Layout a b, ElementMaps a b, s) (ReaderT (e, ClientID) IO) x}
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState (Layout a b, ElementMaps a b, s))
+deriving via Action (Monpad e s a b) instance (Semigroup (Monpad e s a b ()))
+deriving via Action (Monpad e s a b) instance (Monoid (Monpad e s a b ()))
+runMonpad :: Layout a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
+runMonpad l c e s mon = runReaderT (evalStateT (unMonpad mon) (l, mkElementMaps l.elements, s)) (e, c)
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
@@ -151,27 +158,28 @@ getting rid of some 'asyncly', 'serially' boilerplate
 data ServerConfig e s a b = ServerConfig
     { onStart :: IO ()
     , onNewConnection :: ClientID -> IO (e, s)
-    , onMessage :: Update -> Monpad e s ()
-    , onAxis :: a -> Double -> Monpad e s ()
-    , onButton :: b -> Bool -> Monpad e s ()
-    , onDroppedConnection :: MonpadException -> Monpad e s ()
-    , updates :: Async (e -> s -> ServerUpdate)
+    , onMessage :: Update -> Monpad e s a b ()
+    , onAxis :: a -> Double -> Monpad e s a b ()
+    , onButton :: b -> Bool -> Monpad e s a b ()
+    , onDroppedConnection :: MonpadException -> Monpad e s a b ()
+    , updates :: Async (e -> s -> ServerUpdate a b)
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
 
 -- | Maps of element names to axes and buttons.
-data ServerEnv a b = ServerEnv
+data ElementMaps a b = ElementMaps
     { stickMap :: Map Text (a, a)
     , sliderMap :: Map Text a
     , buttonMap :: Map Text b
     }
     deriving (Show, Generic)
 
-mkServerEnv :: Foldable t => t (FullElement a b) -> ServerEnv a b
-mkServerEnv = foldl' (flip addToEnv) $ ServerEnv mempty mempty mempty
-  where
-    addToEnv e = case e.element of
+mkElementMaps :: Foldable t => t (FullElement a b) -> ElementMaps a b
+mkElementMaps = foldl' (flip addToElementMaps) $ ElementMaps mempty mempty mempty
+
+addToElementMaps :: FullElement a b -> ElementMaps a b -> ElementMaps a b
+addToElementMaps e = case e.element of
         Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
         Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
         Button b -> over #buttonMap $ Map.insert e.name b.buttonData
@@ -181,7 +189,7 @@ server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do
     onStart conf
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port imageDir layout :<|> websocketServer (mkServerEnv $ elements layout) conf
+        httpServer port imageDir layout :<|> websocketServer layout conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -202,28 +210,43 @@ httpServer wsPort imageDir layout =
             serveDirectoryWebApp
             imageDir
 
-websocketServer :: ServerEnv a b -> ServerConfig e s a b -> Server WsApi
-websocketServer ServerEnv{..} ServerConfig{..} mu pending = liftIO case mu of
+websocketServer :: Layout a b -> ServerConfig e s a b -> Server WsApi
+websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
     Just clientId -> do
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
-        let update u = do
-                onMessage u
-                case u of
-                    ButtonUp t -> onButton (buttonMap ! t) False
-                    ButtonDown t -> onButton (buttonMap ! t) True
-                    StickMove t (V2 x y) -> let (x', y') = stickMap ! t in onAxis x' x >> onAxis y' y
-                    SliderMove t x -> onAxis (sliderMap ! t) x
-            stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-        WS.withPingThread conn 30 mempty $ runMonpad clientId e s0 do
-            SP.drain $ flip SP.takeWhileM (SP.hoist liftIO stream) \case
+        let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
+        WS.withPingThread conn 30 mempty . runMonpad layout clientId e s0 . SP.drain $
+            flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left su -> do
-                    s <- get
-                    sendUpdate conn (su e s) >> pure True
+                    s <- gets thd3
+                    let update = su e s
+                    case update of
+                        SetImageURL _ _ -> pure ()
+                        SetLayout l -> put (l, mkElementMaps l.elements, s)
+                        AddElement el -> modify . first $ addToElementMaps el
+                        RemoveElement el -> modify . first $
+                            over #stickMap (Map.delete el)
+                                . over #sliderMap (Map.delete el)
+                                . over #buttonMap (Map.delete el)
+                    sendUpdate conn (bimap (const Unit) (const Unit) update)
+                    pure True
+                Right (Right u) -> do
+                    ElementMaps{..} <- gets snd3
+                    onMessage u
+                    case u of
+                        ButtonUp t -> lookup' buttonMap t $ flip onButton False
+                        ButtonDown t -> lookup' buttonMap t $ flip onButton True
+                        StickMove t (V2 x y) -> lookup' stickMap t \(x', y') -> onAxis x' x >> onAxis y' y
+                        SliderMove t x -> lookup' sliderMap t $ flip onAxis x
+                    pure True
+                  where
+                    lookup' m t f = case m !? t of
+                        Just b -> f b
+                        Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t
                 Right (Left err) -> onDroppedConnection err >> pure False
-                Right (Right u) -> update u >> pure True
       where
         sendUpdate conn = liftIO . WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
@@ -242,7 +265,7 @@ elm :: FilePath -> IO ()
 elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
     [ Elm.decodedTypes @Update
     , Elm.decodedTypes @(V2 Double)
-    , Elm.encodedTypes @ServerUpdate
+    , Elm.encodedTypes @(ServerUpdate () ())
     , Elm.encodedTypes @ElmFlags
     , Elm.encodedTypes @ViewBox
     , Elm.encodedTypes @Colour

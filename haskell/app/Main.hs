@@ -9,7 +9,6 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
-import Data.Bifunctor (bimap)
 import Data.Functor
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -95,8 +94,8 @@ main = do
             scSendLayout = mempty
                 { updates = serially $
                     traceStream (const $ T.putStrLn "Sending new layout to client") $
-                    SP.map (const . const . SetLayout . bimap mempty mempty) $
-                    SP.mapMaybeM (const $ mkUpdate @a @b layoutFile) evs
+                    SP.map (const . const . SetLayout) $
+                    SP.mapMaybeM (const $ mkUpdate layoutFile) evs
                 }
     if systemDevice
         then join (run . OS.conf) =<< layoutFromDhall dhallLayout

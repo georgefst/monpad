@@ -137,13 +137,13 @@ mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
         (and be total, while we're at it?)
         also 'normalize' and 'typeOf'
     -}
-    dhallResolve p = fmap Dhall.pretty do
+    dhallResolve p = do
         x <- Dhall.loadRelativeTo (takeDirectory p) Dhall.UseSemanticCache
             =<< Dhall.throws . Dhall.exprFromText p
             =<< T.readFile p
         _ <- Dhall.throws $ Dhall.typeOf x
         T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
-        pure x
+        pure $ Dhall.pretty x
 
 --TODO better name
 -- | Attach an extra action to each element of the stream.

@@ -136,14 +136,14 @@ mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
     {-TODO using 'pretty' means we're repeating work
         perhaps 'layoutFromDhall' should take an 'Expr Src/Void Void'
         (and be total, while we're at it?)
-        also 'normalize'
+        also 'normalize' and 'typeOf'
     -}
     dhallResolve p = fmap Dhall.pretty do
-        x <- Dhall.throws . Dhall.typeOf
-            =<< Dhall.loadRelativeTo (takeDirectory p) Dhall.UseSemanticCache
+        x <- Dhall.loadRelativeTo (takeDirectory p) Dhall.UseSemanticCache
             =<< Dhall.throws . Dhall.exprFromText p
             =<< T.readFile p
-        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
+        x' <- Dhall.throws $ Dhall.typeOf x
+        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x')
         pure x
 
 --TODO better name

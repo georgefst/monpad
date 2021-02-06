@@ -3,14 +3,17 @@
 
 module Main (main) where
 
+import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Bifunctor (bimap)
+import Data.Functor
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Data.Time (diffUTCTime, getCurrentTime)
 import Data.Void (Void)
 import Dhall (FromDhall)
 import qualified Dhall.Core as Dhall
@@ -21,7 +24,7 @@ import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Monpad
 import qualified OS
 import Options.Applicative
-import Streamly (Serial, serially)
+import Streamly (Async, Serial, asyncly, serially)
 import Streamly.FSNotify
 import qualified Streamly.Prelude as SP
 import System.Directory
@@ -32,7 +35,7 @@ import Text.Pretty.Simple
 data Args = Args
     { quiet :: Bool
     , systemDevice :: Bool
-    , watchLayout :: Bool
+    , watchLayout :: Maybe Int --TODO just fix the interval length once we've found one that's fine across platforms
     , port :: Int --TODO 'Port'
     , imageDir :: Maybe FilePath
     , dhallLayout :: Text
@@ -42,7 +45,11 @@ parser :: Parser Args
 parser = do
     quiet <- switch $ short 'q' <> long "quiet"
     systemDevice <- switch $ long "system-device"
-    watchLayout <- switch $ long "watch-layout" --TODO check how this works with multiple clients
+    --TODO check how this works with multiple clients
+    watchLayout <- optional . option auto $ mconcat
+        [ long "watch-layout"
+        , metavar "MS"
+        ]
     port <- option auto $ mconcat
         [ long "port"
         , short 'p'
@@ -71,16 +78,16 @@ main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layoutFile <- canonicalizePath $ T.unpack dhallLayout
-    let watchPred = (isCreation `disj` isModification) `conj` EventPredicate ((== layoutFile) . eventPath)
-    evs <- if watchLayout
-        then do
+    let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
+    evs <- case watchLayout of
+        Just interval -> do
             unlessM (doesFileExist layoutFile) do
                 T.putStrLn "Dhall expression provided is not a file, so can't be watched"
                 exitFailure
             (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
             T.putStrLn $ "Watching: " <> T.pack layoutFile
-            pure es
-        else mempty
+            pure $ lastOfGroup interval es
+        Nothing -> mempty
     let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
             ServerConfig e s a b -> Layout a b -> IO ()
         run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
@@ -140,3 +147,23 @@ mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
 -- | Attach an extra action to each element of the stream.
 traceStream :: (a -> IO ()) -> Serial a -> Serial a
 traceStream f = SP.mapM \x -> f x >> pure x
+
+{-TODO
+the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
+    but because 'fsnotify' is cross-platform, there may be no good way to filter
+-}
+-- | Ignore events which are followed within `interval` milliseconds.
+lastOfGroup :: Int -> Async a -> Serial a
+lastOfGroup interval = f2 . asyncly . f1
+  where
+    -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
+    f1 = SP.concatMapWith (<>) \x ->
+        SP.yieldM (pure Nothing) <> SP.yieldM (threadDelay interval >> pure (Just x))
+    -- ignore any event which appears within `interval` of a 'Nothing'
+    f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) -> \case
+        Just x -> do
+            t <- getCurrentTime
+            pure (tooSoon, guard (not $ tooSoon t) $> x)
+        Nothing -> do
+            t <- getCurrentTime
+            pure (\t' -> diffUTCTime t' t < 1, Nothing)

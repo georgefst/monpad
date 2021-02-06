@@ -141,8 +141,8 @@ mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
         x <- Dhall.loadRelativeTo (takeDirectory p) Dhall.UseSemanticCache
             =<< Dhall.throws . Dhall.exprFromText p
             =<< T.readFile p
-        x' <- Dhall.throws $ Dhall.typeOf x
-        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x')
+        _ <- Dhall.throws $ Dhall.typeOf x
+        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
         pure x
 
 --TODO better name

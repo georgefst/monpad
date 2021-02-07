@@ -35,7 +35,7 @@ import Text.Pretty.Simple
 data Args = Args
     { quiet :: Bool
     , systemDevice :: Bool
-    , watchLayout :: Maybe Float --TODO just fix the interval length once we've found one that's fine across platforms
+    , watchLayout :: Bool
     , port :: Int --TODO 'Port'
     , imageDir :: Maybe FilePath
     , dhallLayout :: Text
@@ -45,9 +45,8 @@ parser :: Parser Args
 parser = do
     quiet <- switch $ short 'q' <> long "quiet"
     systemDevice <- switch $ long "system-device"
-    watchLayout <- optional . option auto $ mconcat
+    watchLayout <- switch $ mconcat
         [ long "watch-layout"
-        , metavar "SECONDS"
         ]
     port <- option auto $ mconcat
         [ long "port"
@@ -78,15 +77,15 @@ main = do
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layoutFile <- canonicalizePath $ T.unpack dhallLayout
     let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
-    evs <- case watchLayout of
-        Just interval -> do
+    evs <- if watchLayout
+        then do
             unlessM (doesFileExist layoutFile) do
                 T.putStrLn "Dhall expression provided is not a file, so can't be watched"
                 exitFailure
             (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
             T.putStrLn $ "Watching: " <> T.pack layoutFile
-            pure $ lastOfGroup interval es
-        Nothing -> mempty
+            pure $ lastOfGroup es
+        else mempty
     let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
             ServerConfig e s a b -> Layout a b -> IO ()
         run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
@@ -153,9 +152,9 @@ traceStream f = SP.mapM \x -> f x >> pure x
 the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
     but because 'fsnotify' is cross-platform, there may be no good way to filter
 -}
--- | Ignore events which are followed within `interval` seconds.
-lastOfGroup :: Float -> Async a -> Serial a
-lastOfGroup interval = f2 . asyncly . f1
+-- | Ignore events which are followed within 0.1s.
+lastOfGroup :: Async a -> Serial a
+lastOfGroup = f2 . asyncly . f1
   where
     -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
     f1 = SP.concatMapWith (<>) \x ->
@@ -168,3 +167,4 @@ lastOfGroup interval = f2 . asyncly . f1
         Nothing -> do
             t <- getCurrentTime
             pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)
+    interval = 0.1 :: Float

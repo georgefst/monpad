@@ -38,7 +38,9 @@ data Args = Args
     , watchLayout :: Bool
     , port :: Int --TODO 'Port'
     , imageDir :: Maybe FilePath
-    , dhallLayout :: Text
+    , maybeLayoutExpr :: Maybe Text
+    --TODO this is only really needed due to the fact that Dhall doesn't like absolute paths on Windows
+    , maybeLayoutFile :: Maybe FilePath
     }
 
 parser :: Parser Args
@@ -62,12 +64,16 @@ parser = do
         , metavar "DIR"
         , help "Directory from which to serve image files"
         ]
-    dhallLayout <- strOption $ mconcat
-        [ long "layout-dhall"
+    maybeLayoutExpr <- optional . strOption $ mconcat
+        [ long "layout-expr"
         , short 'l'
         , metavar "EXPR"
-        , value $ defaultDhall ()
         , help "Dhall expression to control layout of buttons etc."
+        ]
+    maybeLayoutFile <- optional . strOption $ mconcat
+        [ long "layout-file"
+        , metavar "FILE"
+        , help "Dhall file containing expression to control layout of buttons etc."
         ]
     pure Args{..}
 
@@ -75,7 +81,14 @@ main :: IO ()
 main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    layoutFile <- canonicalizePath $ T.unpack dhallLayout
+    (layoutFile, dhallLayout) <- case (maybeLayoutExpr, maybeLayoutFile) of
+        (Just e, Nothing) -> (,e) <$> canonicalizePath (T.unpack e)
+        (Nothing, Just f) -> (,) <$> canonicalizePath f <*> T.readFile f
+        (Nothing, Nothing) -> pure
+            ( error "cannot use --watch-layout without specifying a layout file" --TODO better handling
+            , defaultDhall ()
+            )
+        _ -> putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
     let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
     evs <- if watchLayout
         then do

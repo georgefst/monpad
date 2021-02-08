@@ -26,24 +26,41 @@ import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as JD
 import Json.Encode as JE
 import List exposing (..)
+import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
 import Ports exposing (..)
 import Set exposing (Set)
 import Svg.Attributes exposing (mode)
+import Task
 import Tuple exposing (..)
 import Util exposing (..)
-import Util.Prog exposing (..)
 
 
-main : Program JD.Value (Result JD.Error Model) Msg
+main : Loadable.Program JD.Value Model Msg JD.Error
 main =
-    prog
-        { init = init
+    Loadable.application
+        { load =
+            \jsonFlags _ _ ->
+                case JD.decodeValue Auto.ElmFlags.decode jsonFlags of
+                    Err e ->
+                        Task.fail e
+
+                    Ok flags ->
+                        Task.succeed <| init flags
         , update = update
         , view = view
         , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
-        , decoder = Auto.ElmFlags.decode
+        , failCmd = Nothing
+        , loadingView = Nothing
+        , errorView =
+            Just <|
+                \e ->
+                    { title = "Whoops"
+                    , body = [ Html.text <| JD.errorToString e ]
+                    }
+        , onUrlRequest = always EmptyMsg
+        , onUrlChange = always EmptyMsg
         }
 
 

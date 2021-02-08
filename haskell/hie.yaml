@@ -12,8 +12,5 @@ cradle:
     - path: ./mac
       component: exe:monpad
 
-    - path: ./windos
+    - path: ./windows
       component: exe:monpad
-
-    - path: ./ext-ws
-      component: exe:monpad-ext-ws

@@ -50,7 +50,7 @@ data Args = Args
 parser :: Parser Args
 parser = do
     quiet <- switch $ short 'q' <> long "quiet"
-    systemDevice <- switch $ long "system-device"
+    systemDevice <- fmap not $ switch $ long "no-system-device"
     watchLayout <- switch $ mconcat
         [ long "watch-layout"
         ]

@@ -40,14 +40,7 @@ import Util exposing (..)
 main : Loadable.Program JD.Value Model Msg JD.Error
 main =
     Loadable.application
-        { load =
-            \jsonFlags _ _ ->
-                case JD.decodeValue Auto.ElmFlags.decode jsonFlags of
-                    Err e ->
-                        Task.fail e
-
-                    Ok flags ->
-                        Task.succeed <| init flags
+        { load = \f _ _ -> load f
         , update = update
         , view = view
         , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
@@ -247,31 +240,37 @@ type Msg
     | EmptyMsg
 
 
-init : ElmFlags -> ( Model, Cmd Msg )
-init flags =
-    let
-        imageToUrl =
-            flags.layout.elements
-                |> filterMap
-                    (\e ->
-                        case e.element of
-                            Image img ->
-                                Just ( e.name, img.url )
+load : JD.Value -> Task.Task JD.Error ( Model, Cmd Msg )
+load jsonFlags =
+    case JD.decodeValue Auto.ElmFlags.decode jsonFlags of
+        Err e ->
+            Task.fail e
 
-                            _ ->
-                                Nothing
-                    )
-                |> Dict.fromList
-    in
-    ( { username = flags.username
-      , layout = flags.layout
-      , stickPos = Dict.empty
-      , pressed = Set.empty
-      , sliderPos = Dict.empty
-      , imageToUrl = imageToUrl
-      }
-    , Cmd.none
-    )
+        Ok flags ->
+            Task.succeed <|
+                let
+                    imageToUrl =
+                        flags.layout.elements
+                            |> filterMap
+                                (\e ->
+                                    case e.element of
+                                        Image img ->
+                                            Just ( e.name, img.url )
+
+                                        _ ->
+                                            Nothing
+                                )
+                            |> Dict.fromList
+                in
+                ( { username = flags.username
+                  , layout = flags.layout
+                  , stickPos = Dict.empty
+                  , pressed = Set.empty
+                  , sliderPos = Dict.empty
+                  , imageToUrl = imageToUrl
+                  }
+                , Cmd.none
+                )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

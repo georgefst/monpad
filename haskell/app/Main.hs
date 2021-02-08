@@ -9,6 +9,7 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
+import Data.Bifunctor
 import Data.Functor
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -40,9 +41,9 @@ data Args = Args
     , watchLayout :: Bool
     , port :: Port
     , imageDir :: Maybe FilePath
-    , maybeLayoutExpr :: Maybe Text
+    , layoutExpr :: Maybe Text
     --TODO this is only really needed due to the fact that Dhall doesn't like absolute paths on Windows
-    , maybeLayoutFile :: Maybe FilePath
+    , layoutFile :: Maybe FilePath
     , externalWS :: Maybe Port
     }
 
@@ -67,13 +68,13 @@ parser = do
         , metavar "DIR"
         , help "Directory from which to serve image files"
         ]
-    maybeLayoutExpr <- optional . strOption $ mconcat
+    layoutExpr <- optional . strOption $ mconcat
         [ long "layout-expr"
         , short 'l'
         , metavar "EXPR"
         , help "Dhall expression to control layout of buttons etc."
         ]
-    maybeLayoutFile <- optional . strOption $ mconcat
+    layoutFile <- optional . strOption $ mconcat
         [ long "layout-file"
         , metavar "FILE"
         , help "Dhall file containing expression to control layout of buttons etc."
@@ -89,40 +90,43 @@ main :: IO ()
 main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    (layoutFile, dhallLayout) <- case (maybeLayoutExpr, maybeLayoutFile) of
-        (Just e, Nothing) -> (,e) <$> canonicalizePath (T.unpack e)
-        (Nothing, Just f) -> (,) <$> canonicalizePath f <*> T.readFile f
+    let checkDhallFile file = doesFileExist file >>= \case
+            True -> Right <$> canonicalizePath file
+            False -> pure $ Left "file does not exist"
+    (dhallFile, dhallLayout) <- case (layoutExpr, layoutFile) of
+        (Just e, Nothing) -> (,e) . first (<> ": maybe expression is not a file import?")
+            <$> checkDhallFile (T.unpack e)
+        (Nothing, Just f) -> (,) <$> checkDhallFile f <*> T.readFile f
         (Nothing, Nothing) -> pure
-            ( error "cannot use --watch-layout without specifying a layout file" --TODO better handling
+            ( Left "no layout file specified"
             , defaultDhall ()
             )
-        _ -> putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
+        (Just _, Just _) -> T.putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
     case externalWS of
         Just wsPort -> serverExtWs port wsPort imageDir =<< layoutFromDhall @() @() dhallLayout
-        Nothing -> do
-            let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
-            evs <- if watchLayout
-                then do
-                    unlessM (doesFileExist layoutFile) do
-                        T.putStrLn "Dhall expression provided is not a file, so can't be watched"
-                        exitFailure
-                    (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
-                    T.putStrLn $ "Watching: " <> T.pack layoutFile
-                    pure $ lastOfGroup es
-                else mempty
-            let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
-                    ServerConfig e s a b -> Layout a b -> IO ()
-                run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
-                  where
-                    scSendLayout = mempty
-                        { updates = serially $
-                            traceStream (const $ T.putStrLn "Sending new layout to client") $
-                            SP.map (const . const . SetLayout) $
-                            SP.mapMaybeM (const $ mkUpdate layoutFile) evs
-                        }
-            if systemDevice
-                then join (run . OS.conf) =<< layoutFromDhall dhallLayout
-                else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
+        Nothing -> if systemDevice
+            then join (run . OS.conf) =<< layoutFromDhall dhallLayout
+            else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
+          where
+            run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
+                ServerConfig e s a b -> Layout a b -> IO ()
+            run sc l = do
+                scSendLayout <- if watchLayout
+                    then case dhallFile of
+                        Right file -> do
+                            (_, es) <- liftIO $ watchDirectory (takeDirectory file) watchPred
+                            T.putStrLn $ "Watching: " <> T.pack file
+                            pure mempty
+                                { updates = serially $
+                                    traceStream (const $ T.putStrLn "Sending new layout to client") $
+                                    SP.map (const . const . SetLayout) $
+                                    SP.mapMaybeM (const $ mkUpdate file) $
+                                    lastOfGroup es
+                                }
+                          where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
+                        Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
+                    else mempty
+                server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty

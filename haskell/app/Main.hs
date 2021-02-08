@@ -32,15 +32,18 @@ import System.Exit
 import System.FilePath
 import Text.Pretty.Simple
 
+type Port = Int
+
 data Args = Args
     { quiet :: Bool
     , systemDevice :: Bool
     , watchLayout :: Bool
-    , port :: Int --TODO 'Port'
+    , port :: Port
     , imageDir :: Maybe FilePath
     , maybeLayoutExpr :: Maybe Text
     --TODO this is only really needed due to the fact that Dhall doesn't like absolute paths on Windows
     , maybeLayoutFile :: Maybe FilePath
+    , externalWS :: Maybe Port
     }
 
 parser :: Parser Args
@@ -75,6 +78,11 @@ parser = do
         , metavar "FILE"
         , help "Dhall file containing expression to control layout of buttons etc."
         ]
+    externalWS <- optional . option auto $ mconcat
+        [ long "ext-ws"
+        , metavar "PORT"
+        , help "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+        ]
     pure Args{..}
 
 main :: IO ()
@@ -89,30 +97,32 @@ main = do
             , defaultDhall ()
             )
         _ -> putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
-    let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
-    evs <- if watchLayout
-        then do
-            unlessM (doesFileExist layoutFile) do
-                T.putStrLn "Dhall expression provided is not a file, so can't be watched"
-                exitFailure
-            (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
-            T.putStrLn $ "Watching: " <> T.pack layoutFile
-            pure $ lastOfGroup es
-        else mempty
-    let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
-            ServerConfig e s a b -> Layout a b -> IO ()
-        run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
-          where
-            scSendLayout = mempty
-                { updates = serially $
-                    traceStream (const $ T.putStrLn "Sending new layout to client") $
-                    SP.map (const . const . SetLayout) $
-                    SP.mapMaybeM (const $ mkUpdate layoutFile) evs
-                }
-    if systemDevice
-        then join (run . OS.conf) =<< layoutFromDhall dhallLayout
-        else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
-    mempty --TODO bizarrely, this saves us from a type error caused by ApplicativeDo
+    case externalWS of
+        Just wsPort -> serverExtWs port wsPort imageDir =<< layoutFromDhall @() @() dhallLayout
+        Nothing -> do
+            let watchPred = isModification `conj` EventPredicate ((== layoutFile) . eventPath)
+            evs <- if watchLayout
+                then do
+                    unlessM (doesFileExist layoutFile) do
+                        T.putStrLn "Dhall expression provided is not a file, so can't be watched"
+                        exitFailure
+                    (_, es) <- liftIO $ watchDirectory (takeDirectory layoutFile) watchPred
+                    T.putStrLn $ "Watching: " <> T.pack layoutFile
+                    pure $ lastOfGroup es
+                else mempty
+            let run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
+                    ServerConfig e s a b -> Layout a b -> IO ()
+                run sc l = server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
+                  where
+                    scSendLayout = mempty
+                        { updates = serially $
+                            traceStream (const $ T.putStrLn "Sending new layout to client") $
+                            SP.map (const . const . SetLayout) $
+                            SP.mapMaybeM (const $ mkUpdate layoutFile) evs
+                        }
+            if systemDevice
+                then join (run . OS.conf) =<< layoutFromDhall dhallLayout
+                else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty

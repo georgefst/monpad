@@ -33,6 +33,7 @@ import Ports exposing (..)
 import Set exposing (Set)
 import Svg.Attributes exposing (mode)
 import Task
+import Time exposing (..)
 import Tuple exposing (..)
 import Util exposing (..)
 
@@ -231,6 +232,7 @@ type alias Model =
     , pressed : Set String
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
+    , startTime : Posix
     }
 
 
@@ -247,30 +249,35 @@ load jsonFlags =
             Task.fail e
 
         Ok flags ->
-            Task.succeed <|
-                let
-                    imageToUrl =
-                        flags.layout.elements
-                            |> filterMap
-                                (\e ->
-                                    case e.element of
-                                        Image img ->
-                                            Just ( e.name, img.url )
+            now
+                |> Task.andThen
+                    (\startTime ->
+                        Task.succeed <|
+                            let
+                                imageToUrl =
+                                    flags.layout.elements
+                                        |> filterMap
+                                            (\e ->
+                                                case e.element of
+                                                    Image img ->
+                                                        Just ( e.name, img.url )
 
-                                        _ ->
-                                            Nothing
-                                )
-                            |> Dict.fromList
-                in
-                ( { username = flags.username
-                  , layout = flags.layout
-                  , stickPos = Dict.empty
-                  , pressed = Set.empty
-                  , sliderPos = Dict.empty
-                  , imageToUrl = imageToUrl
-                  }
-                , Cmd.none
-                )
+                                                    _ ->
+                                                        Nothing
+                                            )
+                                        |> Dict.fromList
+                            in
+                            ( { username = flags.username
+                              , layout = flags.layout
+                              , stickPos = Dict.empty
+                              , pressed = Set.empty
+                              , sliderPos = Dict.empty
+                              , imageToUrl = imageToUrl
+                              , startTime = startTime
+                              }
+                            , Cmd.none
+                            )
+                    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -321,6 +328,7 @@ update msg model =
                       , pressed = Set.remove e model.pressed
                       , sliderPos = Dict.remove e model.sliderPos
                       , imageToUrl = Dict.remove e model.imageToUrl
+                      , startTime = model.startTime
                       , layout =
                             { layout
                                 | elements =

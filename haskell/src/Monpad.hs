@@ -91,6 +91,9 @@ data ServerUpdate a b
     | SetLayout (Layout a b)
     | AddElement (FullElement a b)
     | RemoveElement Text
+    | SetIndicatorHollowness Text Double
+    | SetIndicatorArcStart Text Double
+    | SetIndicatorArcEnd Text Double
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
@@ -100,6 +103,9 @@ instance Bifunctor ServerUpdate where
         AddElement e -> AddElement $ bimap f g e
         SetImageURL i u -> SetImageURL i u
         RemoveElement i -> RemoveElement i
+        SetIndicatorArcStart t x -> SetIndicatorArcStart t x
+        SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
+        SetIndicatorHollowness t x -> SetIndicatorHollowness t x
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -192,6 +198,7 @@ addToElementMaps e = case e.element of
     Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
     Button b -> over #buttonMap $ Map.insert e.name b.buttonData
     Image _ -> id
+    Indicator _ -> id
 
 server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do
@@ -236,13 +243,16 @@ websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
                     s <- gets thd3
                     let update = su e s
                     case update of
-                        SetImageURL _ _ -> pure ()
                         SetLayout l -> put (l, mkElementMaps l.elements, s)
                         AddElement el -> modify . first $ addToElementMaps el
                         RemoveElement el -> modify . first $
                             over #stickMap (Map.delete el)
                                 . over #sliderMap (Map.delete el)
                                 . over #buttonMap (Map.delete el)
+                        SetImageURL{} -> mempty
+                        SetIndicatorHollowness{} -> mempty
+                        SetIndicatorArcStart{} -> mempty
+                        SetIndicatorArcEnd{} -> mempty
                     sendUpdate conn (bimap (const Unit) (const Unit) update)
                     pure True
                 Right (Right u) -> do
@@ -288,6 +298,7 @@ elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
     , Elm.encodedTypes @(Slider ())
     , Elm.encodedTypes @(Button ())
     , Elm.encodedTypes @Image
+    , Elm.encodedTypes @Indicator
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)
     , Elm.encodedTypes @Unit

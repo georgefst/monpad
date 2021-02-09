@@ -33,6 +33,14 @@ let Slider =
 
 let Image = { width : Natural, height : Natural, url : Text }
 
+let Indicator =
+      { hollowness : Double
+      , arcStart : Double
+      , arcEnd : Double
+      , colour : Colour
+      , radius : Natural
+      }
+
 let Element =
       λ(a : Type) →
       λ(b : Type) →
@@ -40,6 +48,7 @@ let Element =
         | Stick : Stick a
         | Slider : Slider a
         | Image : Image
+        | Indicator : Indicator
         >
 
 let FullElement =
@@ -119,6 +128,7 @@ let mapLayout
                                       ⫽ { sliderData = fa slider.sliderData }
                                     )
                             , Image = (Element a1 b1).Image
+                            , Indicator = (Element a1 b1).Indicator
                             }
                             fe.element
                       }

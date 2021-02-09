@@ -24,6 +24,7 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Button b -> [Right b.buttonData]
     Slider s -> [Left s.sliderData]
     Image _ -> []
+    Indicator _ -> []
 
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
@@ -51,6 +52,7 @@ data Element a b
     | Button (Button b)
     | Slider (Slider a)
     | Image Image
+    | Indicator Indicator
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
 deriving via (Elm.Via2 Element) instance ToJSON (Element Unit Unit)
@@ -96,6 +98,19 @@ data Image = Image'
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
+
+data Indicator = Indicator'
+    { hollowness :: Double --TODO ignored by frontend
+    -- ^ 0 to 1
+    , arcStart :: Double
+    -- ^ [0, 2π)
+    , arcEnd :: Double
+    -- ^ [0, arcStart + 2π)
+    , colour :: Colour
+    , radius :: Word
+    }
+    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Indicator
 
 data Shape
     = Circle Word

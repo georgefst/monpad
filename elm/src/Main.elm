@@ -26,6 +26,7 @@ import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as JD
 import Json.Encode as JE
 import List exposing (..)
+import List.Extra exposing (..)
 import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
@@ -220,6 +221,38 @@ viewElement model element =
                         Maybe.withDefault img.url <|
                             Dict.get element.name model.imageToUrl
 
+                Indicator ind ->
+                    let
+                        --TODO higher res? the whole thing is a hack really because of
+                        -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
+                        nPoints =
+                            256
+
+                        a =
+                            ind.arcStart
+
+                        b =
+                            if ind.arcEnd < ind.arcStart then
+                                ind.arcEnd + 2 * pi
+
+                            else
+                                ind.arcEnd
+
+                        -- regular intervals in [0, 4pi)
+                        angles =
+                            range 0 (2 * nPoints - 1) |> List.map (\x -> toFloat x * 2 * pi / nPoints)
+                    in
+                    angles
+                        |> dropWhile (\x -> x < a)
+                        |> (\x -> [ a ] ++ x)
+                        |> takeWhile (\x -> x < b)
+                        |> (\x -> x ++ [ b ])
+                        |> List.map (\t -> ( cos t, sin t ))
+                        |> (\x -> [ ( 0, 0 ) ] ++ x)
+                        |> polygon
+                        |> filled (uniform <| Color.fromRgba ind.colour)
+                        |> scale (toFloat ind.radius)
+
 
 
 {- Model -}
@@ -307,6 +340,25 @@ update msg model =
             let
                 layout =
                     model.layout
+
+                updateIndicator name f =
+                    { layout
+                        | elements =
+                            layout.elements
+                                |> List.map
+                                    (\fe ->
+                                        if fe.name == name then
+                                            case fe.element of
+                                                Indicator ind ->
+                                                    { fe | element = Indicator <| f ind }
+
+                                                _ ->
+                                                    fe
+
+                                        else
+                                            fe
+                                    )
+                    }
             in
             case u of
                 SetImageURL image url ->
@@ -342,6 +394,27 @@ update msg model =
                                                     Just e1
                                             )
                             }
+                      }
+                    , Cmd.none
+                    )
+
+                SetIndicatorHollowness name x ->
+                    ( { model
+                        | layout = updateIndicator name (\e -> { e | hollowness = x })
+                      }
+                    , Cmd.none
+                    )
+
+                SetIndicatorArcStart name x ->
+                    ( { model
+                        | layout = updateIndicator name (\e -> { e | arcStart = x })
+                      }
+                    , Cmd.none
+                    )
+
+                SetIndicatorArcEnd name x ->
+                    ( { model
+                        | layout = updateIndicator name (\e -> { e | arcEnd = x })
                       }
                     , Cmd.none
                     )

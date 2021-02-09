@@ -11,6 +11,9 @@ type ServerUpdate
     | SetLayout Auto.Layout.Layout
     | AddElement Auto.FullElement.FullElement
     | RemoveElement String
+    | SetIndicatorHollowness String Float
+    | SetIndicatorArcStart String Float
+    | SetIndicatorArcEnd String Float
 
 
 decode : Json.Decode.Decoder ServerUpdate
@@ -23,4 +26,13 @@ decode =
     , Json.Decode.succeed AddElement |>
     Json.Decode.Pipeline.required "addElement" Auto.FullElement.decode
     , Json.Decode.succeed RemoveElement |>
-    Json.Decode.Pipeline.required "removeElement" Json.Decode.string ]
+    Json.Decode.Pipeline.required "removeElement" Json.Decode.string
+    , Json.Decode.field "setIndicatorHollowness" (Json.Decode.succeed SetIndicatorHollowness |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
+    , Json.Decode.field "setIndicatorArcStart" (Json.Decode.succeed SetIndicatorArcStart |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
+    , Json.Decode.field "setIndicatorArcEnd" (Json.Decode.succeed SetIndicatorArcEnd |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)) ]

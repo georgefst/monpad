@@ -1,6 +1,4 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE NumericUnderscores #-}
 
 module Main (main) where
 

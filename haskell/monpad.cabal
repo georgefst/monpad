@@ -59,6 +59,7 @@ common common
     default-extensions:
         AllowAmbiguousTypes
         BlockArguments
+        ConstraintKinds
         DataKinds
         DeriveAnyClass
         DeriveFunctor
@@ -72,6 +73,7 @@ common common
         LambdaCase
         MultiParamTypeClasses
         NamedFieldPuns
+        NumericUnderscores
         OverloadedLabels
         OverloadedStrings
         PartialTypeSignatures

@@ -1,10 +1,3 @@
---TODO use Hackage when uinput support is in
-source-repository-package
-  type: git
-  location: git://github.com/georgefst/evdev.git
-  subdir: evdev
-  tag: 497396a312d9ace6e36b60816e5400feee796943
-
 --TODO use Hackage when merged: https://github.com/folq/haskell-to-elm/pull/18
 source-repository-package
   type: git

@@ -11,13 +11,14 @@ import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Numeric (readHex)
 
-import Evdev
+import Evdev hiding (Device, newDevice)
+import Evdev.Uinput
 import Evdev.Codes
 
 import Monpad
 import Orphans.Evdev ()
 
-conf :: Layout AxisInfo Key -> ServerConfig [UDevice] () AxisInfo Key
+conf :: Layout AxisInfo Key -> ServerConfig [Device] () AxisInfo Key
 conf layout = ServerConfig
     { onStart = mempty
     , onNewConnection = \(ClientID clientId) -> do
@@ -35,7 +36,7 @@ conf layout = ServerConfig
                         }
                     )
                 AxisInfo{axis = Rel a} -> Right a
-        dev <- newUDevice (defaultNewUDevice $ "Monpad (" <> encodeUtf8 clientId <> ")")
+        dev <- newDevice ("Monpad (" <> encodeUtf8 clientId <> ")") defaultDeviceOpts
             { keys = bs
             , absAxes = aas
             , relAxes = ras

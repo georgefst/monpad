@@ -11,14 +11,4 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: 33d6076972b4aa753031299692c7ab631ddb780d
 
-allow-newer:
-  active:base
-  diagrams-core:base
-  diagrams-lib:base
-  diagrams-svg:base
-  dual-tree:base
-  monoid-extras:base
-  svg-builder:base
-  servant-lucid:servant
-
 packages: .

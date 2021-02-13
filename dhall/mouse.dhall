@@ -4,23 +4,23 @@ let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
 let Evdev = ./lib/evdev.dhall
 
-let ButtonL = Evdev.Key
-
-let ButtonW = {}
+let Windows = ./lib/windows.dhall
 
 let axis =
-      λ(a : Evdev.RelAxis) →
-      λ(m : Double) →
-        { linux = { axis = Evdev.Axis.Rel a, multiplier = m }
-        , windows = {=}
+      λ(la : Evdev.RelAxis) →
+      λ(wa : Windows.Axis) →
+      λ(wt : Windows.MouseEventType) →
+      λ(multiplier : Double) →
+        { linux = { axis = Evdev.Axis.Rel la, multiplier }
+        , windows = { axis = wa, mouseType = wt, multiplier }
         , mac = {=}
         }
 
 let button =
       λ(x : Integer) →
       λ(y : Integer) →
-      λ(linux : ButtonL) →
-      λ(windows : ButtonW) →
+      λ(linux : Evdev.Key) →
+      λ(windows : Windows.Key) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
         { element =
@@ -34,40 +34,52 @@ let button =
         , showName = False
         }
 
-let layoutAll =
-        { elements =
-          [ button -300 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
-          , button +300 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
-          , { element =
-                monpad.Element.Slider
-                  { radius = 90
-                  , length = 500
-                  , width = 80
-                  , sliderColour = monpad.cols.yellow
-                  , backgroundColour = monpad.cols.white
-                  , vertical = True
-                  , sliderData = axis Evdev.RelAxis.RelWheel 5.0
-                  }
-            , location = { x = +0, y = +1650 }
-            , name = "Slider"
-            , showName = False
-            }
-          , { element =
-                monpad.Element.Stick
-                  { radius = 140
-                  , range = 420
-                  , stickColour = monpad.cols.white
-                  , backgroundColour = monpad.cols.grey
-                  , stickDataX = axis Evdev.RelAxis.RelX 15.0
-                  , stickDataY = axis Evdev.RelAxis.RelY 15.0
-                  }
-            , location = { x = +0, y = +900 }
-            , name = "Stick"
-            , showName = False
-            }
-          ]
-        , viewBox = { x = -500, y = -2000, w = +1000, h = +2000 }
-        }
-      : monpad.Layout
-
-in  layoutAll
+in    { elements =
+        [ button -300 +1650 Evdev.Key.BtnLeft 1 "Blue" monpad.cols.blue
+        , button +300 +1650 Evdev.Key.BtnRight 2 "Red" monpad.cols.red
+        , { element =
+              monpad.Element.Slider
+                { radius = 90
+                , length = 500
+                , width = 80
+                , sliderColour = monpad.cols.yellow
+                , backgroundColour = monpad.cols.white
+                , vertical = True
+                , sliderData =
+                    axis
+                      Evdev.RelAxis.RelWheel
+                      Windows.Axis.Y
+                      Windows.MouseEventType.Wheel
+                      5.0
+                }
+          , location = { x = +0, y = +1650 }
+          , name = "Slider"
+          , showName = False
+          }
+        , { element =
+              monpad.Element.Stick
+                { radius = 140
+                , range = 420
+                , stickColour = monpad.cols.white
+                , backgroundColour = monpad.cols.grey
+                , stickDataX =
+                    axis
+                      Evdev.RelAxis.RelX
+                      Windows.Axis.X
+                      Windows.MouseEventType.Relative
+                      15.0
+                , stickDataY =
+                    axis
+                      Evdev.RelAxis.RelY
+                      Windows.Axis.Y
+                      Windows.MouseEventType.Relative
+                      15.0
+                }
+          , location = { x = +0, y = +900 }
+          , name = "Stick"
+          , showName = False
+          }
+        ]
+      , viewBox = { x = -500, y = -2000, w = +1000, h = +2000 }
+      }
+    : monpad.Layout

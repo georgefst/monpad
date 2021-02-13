@@ -140,6 +140,7 @@ executable monpad
         OS
     if os(windows)
         hs-source-dirs: windows
+        build-depends: Win32 ^>= 2.11.0
     if os(linux)
         hs-source-dirs: linux
         other-modules: Orphans.Evdev

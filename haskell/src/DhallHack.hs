@@ -622,6 +622,23 @@ data B
     | KeyZoomout
     | KeyZoomreset
     deriving (Generic, FromDhall)
+#elif windows_HOST_OS
+type A = Mouse
+data Mouse = Mouse
+    { axis :: Axis
+    , mouseType :: MouseEventType
+    , multiplier :: Double
+    }
+    deriving (Generic, FromDhall)
+data Axis = X | Y
+    deriving (Generic, FromDhall)
+data MouseEventType
+    = Relative
+    | Absolute
+    | Wheel
+    deriving (Generic, FromDhall)
+type B = Key
+type Key = Word16
 #else
 data A = A
     deriving (Generic, FromDhall)

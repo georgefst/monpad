@@ -70,9 +70,4 @@ let layoutAll =
         }
       : monpad.Layout
 
-in  monpad.mapLayout
-      AllOS.AxisLinux
-      AllOS.ButtonLinux
-      (λ(a : AllOS.Axis) → a.linux)
-      (λ(b : AllOS.Button) → b.linux)
-      layoutAll
+in  layoutAll

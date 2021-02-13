@@ -4,6 +4,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Int (Int32)
 import Data.Word (Word16, Word32, Word64)
 import Dhall (FromDhall)
+import Foreign.C.Types (CUIntPtr (..))
 import GHC.Generics (Generic)
 import Text.Pretty.Simple (pPrint)
 

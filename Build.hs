@@ -21,7 +21,6 @@ import Control.Exception.Extra
 import Control.Monad
 import Control.Monad.Extra
 import Data.Function
-import Data.Functor
 import Data.List
 
 import Data.Text (Text, pack)
@@ -151,7 +150,7 @@ needDirExcept except dir =
 
 minifyFileJS :: Partial => FilePath -> IO ()
 minifyFileJS file =
-    readFile file <&> flip JS.parse file >>= \case
+    readFile file >>= \contents -> case JS.parse contents file of
         Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
         Right ast -> TL.writeFile file $ JS.renderToText $ JS.minifyJS ast
 

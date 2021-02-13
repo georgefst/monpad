@@ -144,7 +144,7 @@ executable monpad
     if os(linux)
         hs-source-dirs: linux
         other-modules: Orphans.Evdev
-        build-depends: evdev ^>= 2.1,
+        build-depends: evdev ^>= 2.1
     if os(darwin)
         hs-source-dirs: mac
     hs-source-dirs:

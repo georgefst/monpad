@@ -16,6 +16,7 @@ import System.Win32.Automation.Input.Mouse
 import Monpad
 
 {-TODO
+update Dhall files other than 'mouse.dhall'
 https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput
     work out what to do with 'sendInput' return value - throw exception when 0?
     permssions - do we need to run as admin?
@@ -64,6 +65,7 @@ conf _ = mempty
 
 --TODO use an enum type, as with evdev
 type Key = Word16 -- https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+--TODO wrong name really - this is more an Axis than an event - grep whole project for 'MouseEvent' when renaming
 data MouseEvent = MouseEvent
     { axis :: Axis
     , mouseType :: MouseEventType

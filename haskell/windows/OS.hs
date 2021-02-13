@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module OS (conf) where
 
 import Control.Monad.IO.Class (liftIO)

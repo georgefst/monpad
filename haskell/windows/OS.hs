@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module OS (conf) where
 
@@ -8,10 +9,6 @@ import Dhall (FromDhall)
 import Foreign.C.Types (CUIntPtr (..))
 import GHC.Generics (Generic)
 import Text.Pretty.Simple (pPrint)
-
-import System.Win32.Automation.Input
-import System.Win32.Automation.Input.Key
-import System.Win32.Automation.Input.Mouse
 
 import Monpad
 
@@ -79,3 +76,35 @@ data MouseEventType
     | Absolute
     | Wheel
     deriving (Generic, FromDhall)
+{- in library -}
+
+type DWORD = Word32
+type UINT = Word32
+type WORD = Word16
+type LONG = Int32
+type ULONG_PTR = CUIntPtr
+
+sendInput :: [INPUT] -> IO UINT
+sendInput = undefined
+
+data INPUT
+    = Mouse MOUSEINPUT
+    | Keyboard KEYBDINPUT
+    | OtherHardware ()
+
+data MOUSEINPUT = MOUSEINPUT
+    { dx :: LONG
+    , dy :: LONG
+    , mouseData :: DWORD
+    , dwFlags :: DWORD
+    , time :: DWORD
+    , dwExtraInfo :: ULONG_PTR
+    }
+
+data KEYBDINPUT = KEYBDINPUT
+    { wVk :: WORD
+    , wScan :: WORD
+    , dwFlags :: DWORD
+    , time :: DWORD
+    , dwExtraInfo :: ULONG_PTR
+    }

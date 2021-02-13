@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Monpad (
@@ -29,7 +28,6 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.Aeson as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.Bifunctor.TH (deriveBifunctor)
 import Data.Composition
 import Data.List
 import Data.Map (Map, (!?))
@@ -96,7 +94,12 @@ data ServerUpdate a b
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
-$(deriveBifunctor ''ServerUpdate)
+instance Bifunctor ServerUpdate where
+    bimap f g = \case
+       SetLayout l -> SetLayout $ bimap f g l
+       AddElement e -> AddElement $ bimap f g e
+       SetImageURL i u -> SetImageURL i u
+       RemoveElement i -> RemoveElement i
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags

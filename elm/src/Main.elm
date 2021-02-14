@@ -238,6 +238,9 @@ viewElement model element =
                             else
                                 ind.arcEnd
 
+                        r =
+                            toFloat ind.radius
+
                         -- regular intervals in [0, 4pi)
                         angles =
                             range 0 (2 * nPoints - 1) |> List.map (\x -> toFloat x * 2 * pi / nPoints)
@@ -247,11 +250,10 @@ viewElement model element =
                         |> (\x -> [ a ] ++ x)
                         |> takeWhile (\x -> x < b)
                         |> (\x -> x ++ [ b ])
-                        |> List.map (\t -> ( cos t, sin t ))
+                        |> List.map (\t -> ( r * cos t, r * sin t ))
                         |> (\x -> [ ( 0, 0 ) ] ++ x)
                         |> polygon
-                        |> filled (uniform <| Color.fromRgba ind.colour)
-                        |> scale (toFloat ind.radius)
+                        |> styled ( uniform <| Color.fromRgba ind.colour, defaultLineStyle )
 
 
 

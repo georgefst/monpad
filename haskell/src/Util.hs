@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Util where
 
 import Data.Bifunctor (Bifunctor (bimap))
@@ -37,7 +39,7 @@ listDirectory' d = map (d </>) <$> listDirectory d
 getLocalIp :: IO (Maybe HostAddress)
 getLocalIp = do
     h <- getHostName
-    sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just $ h <> ".local") Nothing
+    sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just h) Nothing
     pure $ flip firstJust sockAddrs \case
         SockAddrInet _ a -> Just a
         _ -> Nothing
@@ -47,3 +49,12 @@ showHostAddress :: HostAddress -> Text
 showHostAddress ip =
     let (u3, u2, u1, u0) = hostAddressToTuple ip
      in T.intercalate "." $ map showT [u3, u2, u1, u0]
+
+--TODO if maintainer doesn't respond to my email fixing this, fork
+getHostName' :: IO HostName
+getHostName' = getHostName <&>
+#if darwin_HOST_OS
+    id
+#else
+    (<> ".local")
+#endif

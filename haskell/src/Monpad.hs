@@ -192,7 +192,7 @@ addToElementMaps e = case e.element of
 server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do
     addr <- fromMaybe (error "Couldn't get local ip") <$> getLocalIp
-    onStart conf $ "http://" <> showHostAddress addr <> "/" <> symbolValT @Root <> ":" <> showT port
+    onStart conf $ "http://" <> showHostAddress addr <> ":" <> showT port <> "/" <> symbolValT @Root
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port imageDir layout :<|> websocketServer layout conf
 

@@ -151,3 +151,6 @@ executable monpad
         app
     build-depends:
         monpad,
+        qrcode-core ^>= 0.9.4,
+        qrcode-juicypixels ^>= 0.8.2,
+        JuicyPixels ^>= 3.3.5,

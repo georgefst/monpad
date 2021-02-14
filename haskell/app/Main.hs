@@ -2,6 +2,9 @@
 
 module Main (main) where
 
+import Codec.Picture
+import qualified Codec.QRCode as QR
+import qualified Codec.QRCode.JuicyPixels as QR
 import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad.Extra
@@ -43,6 +46,7 @@ data Args = Args
     --TODO this is only really needed due to the fact that Dhall doesn't like absolute paths on Windows
     , layoutFile :: Maybe FilePath
     , externalWS :: Maybe Port
+    , qrPath :: Maybe FilePath
     }
 
 parser :: Parser Args
@@ -76,6 +80,11 @@ parser = do
         [ long "layout-file"
         , metavar "FILE"
         , help "Dhall file containing expression to control layout of buttons etc."
+        ]
+    qrPath <- optional . strOption $ mconcat
+        [ long "qr"
+        , metavar "PATH"
+        , help "Write QR encoding of server address as a PNG file"
         ]
     externalWS <- optional . option auto $ mconcat
         [ long "ext-ws"
@@ -124,7 +133,19 @@ main = do
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
                         Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
-                server port imageDir l $ scPrintStuff quiet <> scSendLayout <> sc
+                server port imageDir l $ scPrintStuff quiet <> scSendLayout <> maybe mempty scQR qrPath <> sc
+
+scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
+scQR path0 = mempty
+    { onStart = \url -> case QR.encodeText (QR.defaultQRCodeOptions QR.M) QR.Iso8859_1OrUtf8WithoutECI url of
+        Nothing -> T.putStrLn "Failed to encode URL as QR code"
+        Just qr -> do
+            path <- doesDirectoryExist path0 <&> \case
+                True -> path0 </> "monpad-address-qr.png"
+                False -> path0
+            savePngImage path . ImageY8 $ QR.toImage 4 100 qr
+            T.putStrLn $ "Server address encoded as: " <> T.pack path
+    }
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty

@@ -110,7 +110,8 @@ main = do
             )
         (Just _, Just _) -> T.putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
     case externalWS of
-        Just wsPort -> serverExtWs port wsPort imageDir =<< layoutFromDhall @() @() dhallLayout
+        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort imageDir
+            =<< layoutFromDhall @() @() dhallLayout
         Nothing -> if systemDevice
             then join (run . OS.conf) =<< layoutFromDhall dhallLayout
             else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
@@ -136,16 +137,17 @@ main = do
                 server port imageDir l $ scPrintStuff quiet <> scSendLayout <> maybe mempty scQR qrPath <> sc
 
 scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
-scQR path0 = mempty
-    { onStart = \url -> case QR.encodeText (QR.defaultQRCodeOptions QR.M) QR.Iso8859_1OrUtf8WithoutECI url of
-        Nothing -> T.putStrLn "Failed to encode URL as QR code"
-        Just qr -> do
-            path <- doesDirectoryExist path0 <&> \case
-                True -> path0 </> "monpad-address-qr.png"
-                False -> path0
-            savePngImage path . ImageY8 $ QR.toImage 4 100 qr
-            T.putStrLn $ "Server address encoded as: " <> T.pack path
-    }
+scQR path = mempty{onStart = writeQR path}
+
+writeQR :: FilePath -> Text -> IO ()
+writeQR path0 url = case QR.encodeText (QR.defaultQRCodeOptions QR.M) QR.Iso8859_1OrUtf8WithoutECI url of
+    Nothing -> T.putStrLn "Failed to encode URL as QR code"
+    Just qr -> do
+        path <- doesDirectoryExist path0 <&> \case
+            True -> path0 </> "monpad-address-qr.png"
+            False -> path0
+        savePngImage path . ImageY8 $ QR.toImage 4 100 qr
+        T.putStrLn $ "Server address encoded as: " <> T.pack path
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty

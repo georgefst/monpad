@@ -28,7 +28,6 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.Aeson as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.Composition
 import Data.List
 import Data.Map (Map, (!?))
 import Data.Maybe
@@ -117,6 +116,11 @@ type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = Root :> (CoreApi :<|> ImageApi)
 type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
+serverAddress :: Port -> IO Text
+serverAddress port = do
+    addr <- fromMaybe (error "Couldn't get local ip") <$> getLocalIp
+    pure $ "http://" <> showHostAddress addr <> ":" <> showT port <> "/" <> symbolValT @Root
+
 loginHtml :: Html ()
 loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
     [ title_ "monpad: login"
@@ -191,13 +195,14 @@ addToElementMaps e = case e.element of
 
 server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do
-    addr <- fromMaybe (error "Couldn't get local ip") <$> getLocalIp
-    onStart conf $ "http://" <> showHostAddress addr <> ":" <> showT port <> "/" <> symbolValT @Root
+    onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port imageDir layout :<|> websocketServer layout conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
+    -- | Callback to handle server address
+    (Text -> IO ()) ->
     -- | HTTP port
     Port ->
     -- | WS port
@@ -205,7 +210,9 @@ serverExtWs ::
     Maybe FilePath ->
     Layout a b ->
     IO ()
-serverExtWs httpPort = run httpPort . serve (Proxy @HttpApi) .:. httpServer
+serverExtWs onStart httpPort wsPort path layout = do
+    onStart =<< serverAddress httpPort
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort path layout
 
 httpServer :: Port -> Maybe FilePath -> Layout a b -> Server HttpApi
 httpServer wsPort imageDir layout =
@@ -307,4 +314,4 @@ test = do
         , updates = mempty
         }
 testExt :: IO ()
-testExt = serverExtWs 8000 8001 (Just "../dist/images") =<< defaultSimple
+testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") =<< defaultSimple

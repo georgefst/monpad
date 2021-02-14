@@ -184,10 +184,10 @@ mkElementMaps = foldl' (flip addToElementMaps) $ ElementMaps mempty mempty mempt
 
 addToElementMaps :: FullElement a b -> ElementMaps a b -> ElementMaps a b
 addToElementMaps e = case e.element of
-        Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
-        Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
-        Button b -> over #buttonMap $ Map.insert e.name b.buttonData
-        Image _ -> id
+    Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
+    Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
+    Button b -> over #buttonMap $ Map.insert e.name b.buttonData
+    Image _ -> id
 
 server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do

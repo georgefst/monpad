@@ -128,7 +128,7 @@ main = do
 
 scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
 scPrintStuff quiet = mempty
-    { onStart = T.putStrLn "Monpad server started"
+    { onStart = \url -> T.putStrLn $ "Monpad server started at " <> url
     , onNewConnection = \(ClientID i) -> do
         T.putStrLn $ "New client: " <> i
         mempty

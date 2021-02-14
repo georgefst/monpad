@@ -31,6 +31,7 @@ import Data.Bifunctor
 import Data.Composition
 import Data.List
 import Data.Map (Map, (!?))
+import Data.Maybe
 import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
@@ -159,7 +160,7 @@ getting rid of some 'asyncly', 'serially' boilerplate
 -}
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
-    { onStart :: IO ()
+    { onStart :: Text -> IO () -- takes url
     , onNewConnection :: ClientID -> IO (e, s)
     , onMessage :: Update -> Monpad e s a b ()
     , onAxis :: a -> Double -> Monpad e s a b ()
@@ -190,7 +191,8 @@ addToElementMaps e = case e.element of
 
 server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
 server port imageDir layout conf = do
-    onStart conf
+    addr <- fromMaybe (error "Couldn't get local ip") <$> getLocalIp
+    onStart conf $ "http://" <> showHostAddress addr <> "/" <> symbolValT @Root <> ":" <> showT port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port imageDir layout :<|> websocketServer layout conf
 
@@ -292,7 +294,7 @@ test = do
     server 8000 (Just "../dist/images") layout config
   where
     config = ServerConfig
-        { onStart = putStrLn "started"
+        { onStart = pPrint . ("started" :: Text,)
         , onNewConnection = \c -> do
             pPrint ("connected" :: Text, c)
             pure ((), ())

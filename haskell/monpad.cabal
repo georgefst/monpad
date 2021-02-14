@@ -114,6 +114,7 @@ library
         elm-syntax ^>= 0.3.0,
         generics-sop ^>= 0.5.0,
         haskell-to-elm ^>= 0.3.1,
+        hostname ^>= 1.0,
         http-types ^>= 0.12.3,
         lucid ^>= 2.9.12,
         network ^>= 3.1.1.1,

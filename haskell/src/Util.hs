@@ -1,9 +1,6 @@
-{-# LANGUAGE CPP #-}
-
 module Util where
 
 import Data.Bifunctor (Bifunctor (bimap))
-import Data.Functor ((<&>))
 import Data.List (find)
 import Data.Maybe (mapMaybe)
 import Data.Proxy (Proxy (Proxy))
@@ -48,7 +45,7 @@ listDirectory' d = map (d </>) <$> listDirectory d
 getLocalIp :: IO (Maybe HostAddress)
 getLocalIp = do
     h <- getHostName'
-    sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just h) Nothing
+    sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just $ h <> ".local") Nothing
     pure . find bitOfAHack $ flip mapMaybe sockAddrs \case
         SockAddrInet _ a -> Just a
         _ -> Nothing
@@ -67,9 +64,6 @@ showHostAddress ip =
 
 --TODO if maintainer doesn't respond to my email fixing this, fork
 getHostName' :: IO HostName
-getHostName' = getHostName <&>
-#if darwin_HOST_OS
-    id
-#else
-    (<> ".local")
-#endif
+getHostName' = f <$> getHostName
+  where
+    f x = maybe x T.unpack $ T.stripSuffix ".local" $ T.pack x

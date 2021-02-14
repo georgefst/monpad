@@ -138,11 +138,10 @@ viewElement model element =
                             Vec2.normalize v0 |> Vec2.scale (length / range)
 
                         big =
-                            circle range
-                                |> styled ( uniform <| Color.fromRgba stick.backgroundColour, defaultLineStyle )
+                            circle range |> styled1 stick.backgroundColour
 
                         small =
-                            circle rad |> styled ( uniform <| Color.fromRgba stick.stickColour, defaultLineStyle )
+                            circle rad |> styled1 stick.stickColour
 
                         front =
                             let
@@ -192,11 +191,11 @@ viewElement model element =
 
                         slider =
                             circle rad
-                                |> styled ( uniform <| Color.fromRgba s.sliderColour, defaultLineStyle )
+                                |> styled1 s.sliderColour
 
                         background =
                             roundedRectangle sizeX sizeY (width / 2)
-                                |> styled ( uniform <| Color.fromRgba s.backgroundColour, defaultLineStyle )
+                                |> styled1 s.backgroundColour
 
                         front =
                             let
@@ -253,7 +252,7 @@ viewElement model element =
                         |> List.map (\t -> ( r * cos t, r * sin t ))
                         |> (\x -> [ ( 0, 0 ) ] ++ x)
                         |> polygon
-                        |> styled ( uniform <| Color.fromRgba ind.colour, defaultLineStyle )
+                        |> styled1 ind.colour
 
 
 
@@ -423,3 +422,8 @@ update msg model =
 
         EmptyMsg ->
             ( model, Cmd.none )
+
+
+styled1 : Colour -> Collage.Shape -> Collage msg
+styled1 c =
+    styled ( uniform <| Color.fromRgba c, defaultLineStyle )

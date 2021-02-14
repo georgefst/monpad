@@ -3,13 +3,22 @@
 module Util where
 
 import Data.Bifunctor (Bifunctor (bimap))
-import Data.List.Extra (firstJust)
+import Data.Functor ((<&>))
+import Data.List (find)
+import Data.Maybe (mapMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HostName (getHostName)
-import Network.Socket (AddrInfo (addrAddress), HostAddress, SockAddr (SockAddrInet), getAddrInfo, hostAddressToTuple)
+import Network.Socket (
+    AddrInfo (addrAddress),
+    HostAddress,
+    HostName,
+    SockAddr (SockAddrInet),
+    getAddrInfo,
+    hostAddressToTuple,
+ )
 import System.Directory (listDirectory)
 import System.FilePath ((</>))
 import Type.Reflection (Typeable, typeRep)
@@ -38,11 +47,17 @@ listDirectory' d = map (d </>) <$> listDirectory d
 
 getLocalIp :: IO (Maybe HostAddress)
 getLocalIp = do
-    h <- getHostName
+    h <- getHostName'
     sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just h) Nothing
-    pure $ flip firstJust sockAddrs \case
+    pure . find bitOfAHack $ flip mapMaybe sockAddrs \case
         SockAddrInet _ a -> Just a
         _ -> Nothing
+  where
+    --TODO
+    bitOfAHack = (== 192) . fst4 . hostAddressToTuple
+
+fst4 :: (a, b, c, d) -> a
+fst4 (x, _, _, _) = x
 
 -- adapted from an internal function of the same name in Network.Socket.Info
 showHostAddress :: HostAddress -> Text

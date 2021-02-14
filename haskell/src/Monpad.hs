@@ -96,10 +96,10 @@ data ServerUpdate a b
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
 instance Bifunctor ServerUpdate where
     bimap f g = \case
-       SetLayout l -> SetLayout $ bimap f g l
-       AddElement e -> AddElement $ bimap f g e
-       SetImageURL i u -> SetImageURL i u
-       RemoveElement i -> RemoveElement i
+        SetLayout l -> SetLayout $ bimap f g l
+        AddElement e -> AddElement $ bimap f g e
+        SetImageURL i u -> SetImageURL i u
+        RemoveElement i -> RemoveElement i
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags

@@ -254,8 +254,8 @@ viewElement model element =
                                 |> List.map (\t -> ( r * cos t, r * sin t ))
 
                         inner =
-                            angles
-                                |> List.map (\t -> ( r * ind.hollowness * cos t, r * ind.hollowness * sin t ))
+                            outer
+                                |> List.map (both (\x -> x * ind.hollowness))
                     in
                     (reverse outer ++ inner)
                         |> polygon

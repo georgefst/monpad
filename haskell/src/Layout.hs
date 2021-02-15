@@ -100,7 +100,7 @@ data Image = Image'
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
 
 data Indicator = Indicator'
-    { hollowness :: Double --TODO ignored by frontend
+    { hollowness :: Double
     -- ^ 0 to 1
     , arcStart :: Double
     -- ^ [0, 2π)

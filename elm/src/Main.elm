@@ -242,15 +242,22 @@ viewElement model element =
 
                         -- regular intervals in [0, 4pi)
                         angles =
-                            range 0 (2 * nPoints - 1) |> List.map (\x -> toFloat x * 2 * pi / nPoints)
+                            range 0 (2 * nPoints - 1)
+                                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
+                                |> dropWhile (\x -> x < a)
+                                |> (\x -> [ a ] ++ x)
+                                |> takeWhile (\x -> x < b)
+                                |> (\x -> x ++ [ b ])
+
+                        outer =
+                            angles
+                                |> List.map (\t -> ( r * cos t, r * sin t ))
+
+                        inner =
+                            angles
+                                |> List.map (\t -> ( r * ind.hollowness * cos t, r * ind.hollowness * sin t ))
                     in
-                    angles
-                        |> dropWhile (\x -> x < a)
-                        |> (\x -> [ a ] ++ x)
-                        |> takeWhile (\x -> x < b)
-                        |> (\x -> x ++ [ b ])
-                        |> List.map (\t -> ( r * cos t, r * sin t ))
-                        |> (\x -> [ ( 0, 0 ) ] ++ x)
+                    (reverse outer ++ inner)
                         |> polygon
                         |> styled1 ind.colour
 

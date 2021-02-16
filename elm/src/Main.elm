@@ -73,7 +73,11 @@ app =
         Just <|
             \e ->
                 { title = "Whoops"
-                , body = [ Html.text <| JD.errorToString e ]
+                , body =
+                    [ Html.text "Monpad failed to start. If you're using \"elm reactor\", try Scratch.elm instead."
+                    , div [] []
+                    , Html.text <| JD.errorToString e
+                    ]
                 }
     , onUrlRequest = always EmptyMsg
     , onUrlChange = always EmptyMsg

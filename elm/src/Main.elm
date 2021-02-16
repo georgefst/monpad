@@ -222,7 +222,7 @@ viewElement model element =
 
                 Indicator ind ->
                     let
-                        --TODO higher res? the whole thing is a hack really because of
+                        --TODO higher res? lower for rectangle? the whole thing is a hack really because of
                         -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
                         nPoints =
                             256
@@ -251,7 +251,21 @@ viewElement model element =
 
                         outer =
                             angles
-                                |> List.map (\t -> ( r * cos t, r * sin t ))
+                                |> List.map
+                                    (\t ->
+                                        let
+                                            mod1 x =
+                                                x - toFloat (floor x)
+
+                                            {- there's nothing I can tell you about this function that you can't get
+                                                from typing in to Wolfram Alpha:
+                                               min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
+                                            -}
+                                            f x =
+                                                limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
+                                        in
+                                        ( r * f t, r * f (t - pi / 2) )
+                                    )
 
                         inner =
                             outer

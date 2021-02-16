@@ -266,7 +266,7 @@ viewElement model element =
                                                     f x =
                                                         limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
                                                 in
-                                                ( toFloat v.x * f t, toFloat v.y * f (t - pi / 2) )
+                                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - pi / 2) )
 
                                             Circle r ->
                                                 let

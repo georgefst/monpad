@@ -101,7 +101,7 @@ data Image = Image'
 
 data Indicator = Indicator'
     { hollowness :: Double
-    -- ^ 0 to 1
+    -- ^ [0, 1]
     , arcStart :: Double
     -- ^ [0, 2π)
     , arcEnd :: Double

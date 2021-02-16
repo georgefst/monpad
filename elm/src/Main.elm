@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (..)
 
 import Auto.Colour exposing (..)
 import Auto.Element exposing (..)
@@ -41,22 +41,43 @@ import Util exposing (..)
 
 main : Loadable.Program JD.Value Model Msg JD.Error
 main =
-    Loadable.application
-        { load = \f _ _ -> load f
-        , update = update
-        , view = view
-        , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
-        , failCmd = Nothing
-        , loadingView = Nothing
-        , errorView =
-            Just <|
-                \e ->
-                    { title = "Whoops"
-                    , body = [ Html.text <| JD.errorToString e ]
-                    }
-        , onUrlRequest = always EmptyMsg
-        , onUrlChange = always EmptyMsg
-        }
+    Loadable.application app
+
+
+app :
+    { load : JD.Value -> a -> b -> Task.Task JD.Error ( Model, Cmd Msg )
+    , update : Msg -> Model -> ( Model, Cmd Msg )
+    , view : Model -> Document Msg
+    , subscriptions : Model -> Sub Msg
+    , failCmd : Maybe c
+    , loadingView : Maybe d
+    , errorView : Maybe (JD.Error -> { title : String, body : List (Html msg) })
+    , onUrlRequest : e -> Msg
+    , onUrlChange : f -> Msg
+    }
+app =
+    { load =
+        \f _ _ ->
+            case JD.decodeValue Auto.ElmFlags.decode f of
+                Err e ->
+                    Task.fail e
+
+                Ok flags ->
+                    load flags
+    , update = update
+    , view = view
+    , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
+    , failCmd = Nothing
+    , loadingView = Nothing
+    , errorView =
+        Just <|
+            \e ->
+                { title = "Whoops"
+                , body = [ Html.text <| JD.errorToString e ]
+                }
+    , onUrlRequest = always EmptyMsg
+    , onUrlChange = always EmptyMsg
+    }
 
 
 
@@ -303,42 +324,37 @@ type Msg
     | EmptyMsg
 
 
-load : JD.Value -> Task.Task JD.Error ( Model, Cmd Msg )
-load jsonFlags =
-    case JD.decodeValue Auto.ElmFlags.decode jsonFlags of
-        Err e ->
-            Task.fail e
+load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msg )
+load flags =
+    now
+        |> Task.andThen
+            (\startTime ->
+                Task.succeed <|
+                    let
+                        imageToUrl =
+                            flags.layout.elements
+                                |> filterMap
+                                    (\e ->
+                                        case e.element of
+                                            Image img ->
+                                                Just ( e.name, img.url )
 
-        Ok flags ->
-            now
-                |> Task.andThen
-                    (\startTime ->
-                        Task.succeed <|
-                            let
-                                imageToUrl =
-                                    flags.layout.elements
-                                        |> filterMap
-                                            (\e ->
-                                                case e.element of
-                                                    Image img ->
-                                                        Just ( e.name, img.url )
-
-                                                    _ ->
-                                                        Nothing
-                                            )
-                                        |> Dict.fromList
-                            in
-                            ( { username = flags.username
-                              , layout = flags.layout
-                              , stickPos = Dict.empty
-                              , pressed = Set.empty
-                              , sliderPos = Dict.empty
-                              , imageToUrl = imageToUrl
-                              , startTime = startTime
-                              }
-                            , Cmd.none
-                            )
+                                            _ ->
+                                                Nothing
+                                    )
+                                |> Dict.fromList
+                    in
+                    ( { username = flags.username
+                      , layout = flags.layout
+                      , stickPos = Dict.empty
+                      , pressed = Set.empty
+                      , sliderPos = Dict.empty
+                      , imageToUrl = imageToUrl
+                      , startTime = startTime
+                      }
+                    , Cmd.none
                     )
+            )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

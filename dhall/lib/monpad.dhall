@@ -38,7 +38,7 @@ let Indicator =
       , arcStart : Double
       , arcEnd : Double
       , colour : Colour
-      , radius : Natural
+      , shape : Shape
       }
 
 let Element =

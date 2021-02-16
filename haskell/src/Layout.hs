@@ -107,7 +107,7 @@ data Indicator = Indicator'
     , arcEnd :: Double
     -- ^ [0, arcStart + 2π)
     , colour :: Colour
-    , radius :: Word
+    , shape :: Shape
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Indicator

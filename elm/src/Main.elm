@@ -253,18 +253,27 @@ viewElement model element =
                             angles
                                 |> List.map
                                     (\t ->
-                                        let
-                                            mod1 x =
-                                                x - toFloat (floor x)
+                                        case ind.shape of
+                                            Rectangle v ->
+                                                let
+                                                    mod1 x =
+                                                        x - toFloat (floor x)
 
-                                            {- there's nothing I can tell you about this function that you can't get
-                                                from typing in to Wolfram Alpha:
-                                               min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
-                                            -}
-                                            f x =
-                                                limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
-                                        in
-                                        ( r * f t, r * f (t - pi / 2) )
+                                                    {- there's nothing I can tell you about this function that you can't get
+                                                        from typing in to Wolfram Alpha:
+                                                       min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
+                                                    -}
+                                                    f x =
+                                                        limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
+                                                in
+                                                ( toFloat v.x * f t, toFloat v.y * f (t - pi / 2) )
+
+                                            Circle r ->
+                                                let
+                                                    r1 =
+                                                        toFloat r
+                                                in
+                                                ( toFloat r * cos t, toFloat r * sin t )
                                     )
 
                         inner =

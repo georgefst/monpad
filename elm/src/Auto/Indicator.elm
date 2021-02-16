@@ -1,6 +1,7 @@
 module Auto.Indicator exposing (..)
 
 import Auto.Colour
+import Auto.Shape
 import Json.Decode
 import Json.Decode.Pipeline
 
@@ -10,7 +11,7 @@ type alias Indicator  =
     , arcStart : Float
     , arcEnd : Float
     , colour : Auto.Colour.Colour
-    , radius : Int }
+    , shape : Auto.Shape.Shape }
 
 
 decode : Json.Decode.Decoder Indicator
@@ -20,4 +21,4 @@ decode =
     Json.Decode.Pipeline.required "arcStart" Json.Decode.float |>
     Json.Decode.Pipeline.required "arcEnd" Json.Decode.float |>
     Json.Decode.Pipeline.required "colour" Auto.Colour.decode |>
-    Json.Decode.Pipeline.required "radius" Json.Decode.int
+    Json.Decode.Pipeline.required "shape" Auto.Shape.decode

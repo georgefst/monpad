@@ -237,15 +237,12 @@ viewElement model element =
                             else
                                 ind.arcEnd
 
-                        r =
-                            toFloat ind.radius
-
                         -- regular intervals in [0, 4pi)
                         angles =
                             range 0 (2 * nPoints - 1)
                                 |> List.map (\x -> toFloat x * 2 * pi / nPoints)
                                 |> dropWhile (\x -> x < a)
-                                |> (\x -> [ a ] ++ x)
+                                |> (\x -> a :: x)
                                 |> takeWhile (\x -> x < b)
                                 |> (\x -> x ++ [ b ])
 
@@ -273,7 +270,7 @@ viewElement model element =
                                                     r1 =
                                                         toFloat r
                                                 in
-                                                ( toFloat r * cos t, toFloat r * sin t )
+                                                ( r1 * cos t, r1 * sin t )
                                     )
 
                         inner =

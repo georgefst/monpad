@@ -11,7 +11,7 @@ import Main
 import Time exposing (..)
 
 
-main : Loadable.Program Json.Value Main.Model Main.Msg Json.Error
+main : Loadable.Program Json.Value Main.Model Main.Msgs Json.Error
 main =
     let
         app =
@@ -21,11 +21,12 @@ main =
         { app
             | load = \_ _ _ -> Main.load flags
             , subscriptions =
-                \model ->
-                    Sub.batch
-                        [ sub (\x -> SetIndicatorArcStart "0" <| x * 2 * pi) model
-                        , sub (\x -> SetIndicatorHollowness "0" x) model
+                sub
+                    (\x ->
+                        [ Main.ServerUpdate <| SetIndicatorArcStart "0" <| x * 2 * pi
+                        , Main.ServerUpdate <| SetIndicatorHollowness "0" x
                         ]
+                    )
         }
 
 
@@ -43,7 +44,7 @@ tick =
     30
 
 
-sub : (Float -> ServerUpdate) -> Main.Model -> Sub Main.Msg
+sub : (Float -> Main.Msgs) -> Main.Model -> Sub Main.Msgs
 sub f model =
     every tick <|
         \t ->
@@ -51,10 +52,9 @@ sub f model =
                 tDiff =
                     modBy cycleLength <| posixToMillis t - posixToMillis model.startTime
             in
-            Main.ServerUpdate <|
-                f <|
-                    toFloat tDiff
-                        / cycleLength
+            f <|
+                toFloat tDiff
+                    / cycleLength
 
 
 flags : ElmFlags

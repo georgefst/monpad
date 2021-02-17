@@ -4,7 +4,6 @@ import Auto.Colour exposing (..)
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
-import Auto.IntVec2 as IntVec2 exposing (IntVec2)
 import Auto.Layout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
@@ -24,7 +23,6 @@ import Html.Attributes exposing (style)
 import Html.Events exposing (..)
 import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as JD
-import Json.Encode as JE
 import List exposing (..)
 import List.Extra exposing (..)
 import Loadable
@@ -33,7 +31,6 @@ import Maybe exposing (..)
 import Platform.Cmd as Cmd
 import Ports exposing (..)
 import Set exposing (Set)
-import Svg.Attributes exposing (mode)
 import Task
 import Time exposing (..)
 import Tuple exposing (..)

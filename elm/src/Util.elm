@@ -4,8 +4,6 @@ import Color
 import Color.Interpolate exposing (Space(..), interpolate)
 import Html
 import Html.Attributes as Attr
-import Json.Decode
-import Json.Decode.Pipeline
 import Json.Encode
 import Math.Vector2 as Vec2
 

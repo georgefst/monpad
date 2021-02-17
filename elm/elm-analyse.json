@@ -1,11 +1,6 @@
 {
     "checks": {
         "ExposeAll": false,
-        "ImportAll": false,
-        "MultiLineRecordFormatting": false,
-        "TriggerWords": false,
-        "UnusedImport": false,
-        "UnusedImportAlias": false,
-        "UnusedImportedVariable": false
+        "ImportAll": false
     }
 }

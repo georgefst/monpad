@@ -380,95 +380,86 @@ update msg model =
                         SliderMove t p ->
                             { model | sliderPos = Dict.insert t p model.sliderPos }
             in
-            ( model1
-            , sendUpdate u
-            )
+            ( model1, sendUpdate u )
 
         ServerUpdate u ->
-            let
-                layout =
-                    model.layout
-
-                updateIndicator name f =
-                    { layout
-                        | elements =
-                            layout.elements
-                                |> List.map
-                                    (\fe ->
-                                        if fe.name == name then
-                                            case fe.element of
-                                                Indicator ind ->
-                                                    { fe | element = Indicator <| f ind }
-
-                                                _ ->
-                                                    fe
-
-                                        else
-                                            fe
-                                    )
-                    }
-            in
-            case u of
-                SetImageURL image url ->
-                    ( { model | imageToUrl = Dict.insert image url model.imageToUrl }, Cmd.none )
-
-                SetLayout l ->
-                    ( { model | layout = l }
-                    , Cmd.none
-                    )
-
-                AddElement e ->
-                    ( { model | layout = { layout | elements = e :: layout.elements } }
-                    , Cmd.none
-                    )
-
-                RemoveElement e ->
-                    ( { username = model.username
-                      , stickPos = Dict.remove e model.stickPos
-                      , pressed = Set.remove e model.pressed
-                      , sliderPos = Dict.remove e model.sliderPos
-                      , imageToUrl = Dict.remove e model.imageToUrl
-                      , startTime = model.startTime
-                      , layout =
-                            { layout
-                                | elements =
-                                    layout.elements
-                                        |> List.filterMap
-                                            (\e1 ->
-                                                if e1.name == e then
-                                                    Nothing
-
-                                                else
-                                                    Just e1
-                                            )
-                            }
-                      }
-                    , Cmd.none
-                    )
-
-                SetIndicatorHollowness name x ->
-                    ( { model
-                        | layout = updateIndicator name (\e -> { e | hollowness = x })
-                      }
-                    , Cmd.none
-                    )
-
-                SetIndicatorArcStart name x ->
-                    ( { model
-                        | layout = updateIndicator name (\e -> { e | arcStart = x })
-                      }
-                    , Cmd.none
-                    )
-
-                SetIndicatorArcEnd name x ->
-                    ( { model
-                        | layout = updateIndicator name (\e -> { e | arcEnd = x })
-                      }
-                    , Cmd.none
-                    )
+            ( serverUpdate u model, Cmd.none )
 
         EmptyMsg ->
             ( model, Cmd.none )
+
+
+serverUpdate : ServerUpdate -> Model -> Model
+serverUpdate u model =
+    let
+        layout =
+            model.layout
+
+        updateIndicator name f =
+            { layout
+                | elements =
+                    layout.elements
+                        |> List.map
+                            (\fe ->
+                                if fe.name == name then
+                                    case fe.element of
+                                        Indicator ind ->
+                                            { fe | element = Indicator <| f ind }
+
+                                        _ ->
+                                            fe
+
+                                else
+                                    fe
+                            )
+            }
+    in
+    case u of
+        SetImageURL image url ->
+            { model | imageToUrl = Dict.insert image url model.imageToUrl }
+
+        SetLayout l ->
+            { model | layout = l }
+
+        AddElement e ->
+            { model | layout = { layout | elements = e :: layout.elements } }
+
+        RemoveElement e ->
+            { username = model.username
+            , stickPos = Dict.remove e model.stickPos
+            , pressed = Set.remove e model.pressed
+            , sliderPos = Dict.remove e model.sliderPos
+            , imageToUrl = Dict.remove e model.imageToUrl
+            , startTime = model.startTime
+            , layout =
+                { layout
+                    | elements =
+                        layout.elements
+                            |> List.filterMap
+                                (\e1 ->
+                                    if e1.name == e then
+                                        Nothing
+
+                                    else
+                                        Just e1
+                                )
+                }
+            }
+
+        SetIndicatorHollowness name x ->
+            { model
+                | layout = updateIndicator name (\e -> { e | hollowness = x })
+            }
+
+        SetIndicatorArcStart name x ->
+            { model
+                | layout = updateIndicator name (\e -> { e | arcStart = x })
+            }
+
+        SetIndicatorArcEnd name x ->
+            { model
+                | layout = updateIndicator name (\e -> { e | arcEnd = x })
+            }
 
 
 styled1 : Colour -> Collage.Shape -> Collage msg

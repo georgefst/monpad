@@ -30,6 +30,7 @@ import List.Extra exposing (..)
 import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
+import Platform.Cmd as Cmd
 import Ports exposing (..)
 import Set exposing (Set)
 import Svg.Attributes exposing (mode)
@@ -39,21 +40,21 @@ import Tuple exposing (..)
 import Util exposing (..)
 
 
-main : Loadable.Program JD.Value Model Msg JD.Error
+main : Loadable.Program JD.Value Model Msgs JD.Error
 main =
     Loadable.application app
 
 
 app :
-    { load : JD.Value -> a -> b -> Task.Task JD.Error ( Model, Cmd Msg )
-    , update : Msg -> Model -> ( Model, Cmd Msg )
-    , view : Model -> Document Msg
-    , subscriptions : Model -> Sub Msg
+    { load : JD.Value -> a -> b -> Task.Task JD.Error ( Model, Cmd Msgs )
+    , update : Msgs -> Model -> ( Model, Cmd Msgs )
+    , view : Model -> Document Msgs
+    , subscriptions : Model -> Sub Msgs
     , failCmd : Maybe c
     , loadingView : Maybe d
     , errorView : Maybe (JD.Error -> { title : String, body : List (Html msg) })
-    , onUrlRequest : e -> Msg
-    , onUrlChange : f -> Msg
+    , onUrlRequest : e -> Msgs
+    , onUrlChange : f -> Msgs
     }
 app =
     { load =
@@ -64,9 +65,20 @@ app =
 
                 Ok flags ->
                     load flags
-    , update = update
+    , update =
+        \msgs model0 ->
+            foldr
+                (\msg ( model, cmd ) ->
+                    let
+                        ( m, c ) =
+                            update msg model
+                    in
+                    ( m, Cmd.batch [ c, cmd ] )
+                )
+                ( model0, Cmd.none )
+                msgs
     , view = view
-    , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdates) receiveUpdates
+    , subscriptions = always <| Sub.map (maybe [] (List.map ServerUpdate)) receiveUpdates
     , failCmd = Nothing
     , loadingView = Nothing
     , errorView =
@@ -79,8 +91,8 @@ app =
                     , Html.text <| JD.errorToString e
                     ]
                 }
-    , onUrlRequest = always EmptyMsg
-    , onUrlChange = always EmptyMsg
+    , onUrlRequest = always []
+    , onUrlChange = always []
     }
 
 
@@ -88,7 +100,7 @@ app =
 {- View -}
 
 
-view : Model -> Document Msg
+view : Model -> Document Msgs
 view model =
     { title = "monpad"
     , body =
@@ -116,7 +128,7 @@ showName name =
         |> Collage.rendered
 
 
-viewElement : Model -> FullElement -> Collage Msg
+viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
     shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|
@@ -138,8 +150,8 @@ viewElement model element =
                                     Color.fromRgba b.colour
                             , solid thick <| uniform black
                             )
-                        |> Collage.on "pointerdown" (JD.succeed <| Update <| ButtonDown element.name)
-                        |> Collage.on "pointerout" (JD.succeed <| Update <| ButtonUp element.name)
+                        |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown element.name ])
+                        |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp element.name ])
 
                 Stick stick ->
                     let
@@ -178,9 +190,9 @@ viewElement model element =
                             -- used to extrude envelope to cover everywhere 'small' might go
                             circle rFront
                                 |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove" decode
-                                |> Collage.on "pointerdown" decode
-                                |> Collage.on "pointerout" (JD.succeed <| Update <| StickMove element.name <| zeroVec2)
+                                |> Collage.on "pointermove" (JD.map List.singleton decode)
+                                |> Collage.on "pointerdown" (JD.map List.singleton decode)
+                                |> Collage.on "pointerout" (JD.succeed [ Update <| StickMove element.name <| zeroVec2 ])
 
                         pos =
                             withDefault zeroVec2 <| Dict.get element.name model.stickPos
@@ -231,9 +243,9 @@ viewElement model element =
                             -- as with Stick, represents movement area
                             rectangle (sizeX + diam) (sizeY + diam)
                                 |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove" decode
-                                |> Collage.on "pointerdown" decode
-                                |> Collage.on "pointerout" (JD.succeed <| Update <| SliderMove element.name 0)
+                                |> Collage.on "pointermove" (JD.map List.singleton decode)
+                                |> Collage.on "pointerdown" (JD.map List.singleton decode)
+                                |> Collage.on "pointerout" (JD.succeed [ Update <| SliderMove element.name 0 ])
 
                         pos =
                             withDefault 0 <| Dict.get element.name model.sliderPos
@@ -322,13 +334,16 @@ type alias Model =
     }
 
 
+type alias Msgs =
+    List Msg
+
+
 type Msg
     = Update Update
-    | ServerUpdates (List ServerUpdate)
-    | EmptyMsg
+    | ServerUpdate ServerUpdate
 
 
-load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msg )
+load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
 load flags =
     now
         |> Task.andThen
@@ -361,7 +376,7 @@ load flags =
             )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msgs )
 update msg model =
     case msg of
         Update u ->
@@ -382,11 +397,8 @@ update msg model =
             in
             ( model1, sendUpdate u )
 
-        ServerUpdates us ->
-            ( foldr serverUpdate model us, Cmd.none )
-
-        EmptyMsg ->
-            ( model, Cmd.none )
+        ServerUpdate u ->
+            ( serverUpdate u model, Cmd.none )
 
 
 serverUpdate : ServerUpdate -> Model -> Model

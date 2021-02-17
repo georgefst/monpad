@@ -94,6 +94,7 @@ data ServerUpdate a b
     | SetIndicatorHollowness Text Double
     | SetIndicatorArcStart Text Double
     | SetIndicatorArcEnd Text Double
+    | SetIndicatorShape Text Shape
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
@@ -106,6 +107,7 @@ instance Bifunctor ServerUpdate where
         SetIndicatorArcStart t x -> SetIndicatorArcStart t x
         SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
         SetIndicatorHollowness t x -> SetIndicatorHollowness t x
+        SetIndicatorShape t x -> SetIndicatorShape t x
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -253,6 +255,7 @@ websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
                         SetIndicatorHollowness{} -> mempty
                         SetIndicatorArcStart{} -> mempty
                         SetIndicatorArcEnd{} -> mempty
+                        SetIndicatorShape{} -> mempty
                     sendUpdate conn (bimap (const Unit) (const Unit) update)
                     pure True
                 Right (Right u) -> do

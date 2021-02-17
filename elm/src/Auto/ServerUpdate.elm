@@ -2,6 +2,7 @@ module Auto.ServerUpdate exposing (..)
 
 import Auto.FullElement
 import Auto.Layout
+import Auto.Shape
 import Json.Decode
 import Json.Decode.Pipeline
 
@@ -14,6 +15,7 @@ type ServerUpdate
     | SetIndicatorHollowness String Float
     | SetIndicatorArcStart String Float
     | SetIndicatorArcEnd String Float
+    | SetIndicatorShape String Auto.Shape.Shape
 
 
 decode : Json.Decode.Decoder ServerUpdate
@@ -35,4 +37,7 @@ decode =
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
     , Json.Decode.field "setIndicatorArcEnd" (Json.Decode.succeed SetIndicatorArcEnd |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
-    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float)) ]
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
+    , Json.Decode.field "setIndicatorShape" (Json.Decode.succeed SetIndicatorShape |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Shape.decode)) ]

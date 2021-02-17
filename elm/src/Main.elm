@@ -461,6 +461,11 @@ serverUpdate u model =
                 | layout = updateIndicator name (\e -> { e | arcEnd = x })
             }
 
+        SetIndicatorShape name x ->
+            { model
+                | layout = updateIndicator name (\e -> { e | shape = x })
+            }
+
 
 styled1 : Colour -> Collage.Shape -> Collage msg
 styled1 c =

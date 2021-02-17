@@ -63,17 +63,12 @@ app =
                 Ok flags ->
                     load flags
     , update =
-        \msgs model0 ->
-            foldr
-                (\msg ( model, cmd ) ->
-                    let
-                        ( m, c ) =
-                            update msg model
-                    in
-                    ( m, Cmd.batch [ c, cmd ] )
-                )
-                ( model0, Cmd.none )
-                msgs
+        flip <|
+            \model ->
+                mapSecond Cmd.batch
+                    << foldr
+                        (\msg ( m, cs ) -> mapSecond (\c -> c :: cs) (update msg m))
+                        ( model, [] )
     , view = view
     , subscriptions = always <| Sub.map (maybe [] (List.map ServerUpdate)) receiveUpdates
     , failCmd = Nothing

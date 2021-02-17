@@ -270,6 +270,7 @@ websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
                         Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t
                 Right (Left err) -> onDroppedConnection err >> pure False
       where
+        --TODO seeing as the Elm decoder is capable of taking a JSON list of updates, we should enable that here
         sendUpdate conn = liftIO . WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err

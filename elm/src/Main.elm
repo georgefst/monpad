@@ -66,7 +66,7 @@ app =
                     load flags
     , update = update
     , view = view
-    , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdate) receiveUpdate
+    , subscriptions = always <| Sub.map (maybe EmptyMsg ServerUpdates) receiveUpdates
     , failCmd = Nothing
     , loadingView = Nothing
     , errorView =
@@ -324,7 +324,7 @@ type alias Model =
 
 type Msg
     = Update Update
-    | ServerUpdate ServerUpdate
+    | ServerUpdates (List ServerUpdate)
     | EmptyMsg
 
 
@@ -382,8 +382,8 @@ update msg model =
             in
             ( model1, sendUpdate u )
 
-        ServerUpdate u ->
-            ( serverUpdate u model, Cmd.none )
+        ServerUpdates us ->
+            ( foldr serverUpdate model us, Cmd.none )
 
         EmptyMsg ->
             ( model, Cmd.none )

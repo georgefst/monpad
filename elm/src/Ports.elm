@@ -1,4 +1,4 @@
-port module Ports exposing (receiveUpdate, sendUpdate)
+port module Ports exposing (receiveUpdates, sendUpdate)
 
 {-| Provide safe interfaces to any ports
 -}
@@ -19,16 +19,24 @@ port sendUpdatePort :
     -> Cmd msg
 
 
-receiveUpdate : Sub (Maybe ServerUpdate)
-receiveUpdate =
+receiveUpdates : Sub (Maybe (List ServerUpdate))
+receiveUpdates =
     receiveUpdatePort <|
         \val ->
-            case JD.decodeValue Auto.ServerUpdate.decode val of
+            case JD.decodeValue decodeUpdates val of
                 Ok v ->
                     Just v
 
                 Err _ ->
                     Nothing
+
+
+decodeUpdates : JD.Decoder (List ServerUpdate)
+decodeUpdates =
+    JD.oneOf
+        [ Auto.ServerUpdate.decode |> JD.map List.singleton
+        , JD.list Auto.ServerUpdate.decode
+        ]
 
 
 port receiveUpdatePort :

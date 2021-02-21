@@ -79,22 +79,22 @@ newtype ClientID = ClientID Text
 
 -- | A message sent by a client.
 data Update
-    = ButtonUp Text
-    | ButtonDown Text
-    | StickMove Text (V2 Double) -- always a vector within the unit circle
-    | SliderMove Text Double -- abs <= 1
+    = ButtonUp ElementID
+    | ButtonDown ElementID
+    | StickMove ElementID (V2 Double) -- always a vector within the unit circle
+    | SliderMove ElementID Double -- abs <= 1
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 data ServerUpdate a b
-    = SetImageURL Text Text
+    = SetImageURL ElementID Text
     | SetLayout (Layout a b)
     | AddElement (FullElement a b)
-    | RemoveElement Text
-    | SetIndicatorHollowness Text Double
-    | SetIndicatorArcStart Text Double
-    | SetIndicatorArcEnd Text Double
-    | SetIndicatorShape Text Shape
+    | RemoveElement ElementID
+    | SetIndicatorHollowness ElementID Double
+    | SetIndicatorArcStart ElementID Double
+    | SetIndicatorArcEnd ElementID Double
+    | SetIndicatorShape ElementID Shape
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
@@ -185,9 +185,9 @@ data ServerConfig e s a b = ServerConfig
 
 -- | Maps of element names to axes and buttons.
 data ElementMaps a b = ElementMaps
-    { stickMap :: Map Text (a, a)
-    , sliderMap :: Map Text a
-    , buttonMap :: Map Text b
+    { stickMap :: Map ElementID (a, a)
+    , sliderMap :: Map ElementID a
+    , buttonMap :: Map ElementID b
     }
     deriving (Show, Generic)
 
@@ -270,7 +270,7 @@ websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
                   where
                     lookup' m t f = case m !? t of
                         Just b -> f b
-                        Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t
+                        Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t.unwrap
                 Right (Left err) -> onDroppedConnection err >> pure False
       where
         --TODO seeing as the Elm decoder is capable of taking a JSON list of updates, we should enable that here

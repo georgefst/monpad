@@ -28,6 +28,7 @@ import List.Extra exposing (..)
 import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
+import Maybe.Extra as Maybe
 import Platform.Cmd as Cmd
 import Ports exposing (..)
 import Set exposing (Set)
@@ -103,6 +104,12 @@ view model =
               in
               viewBox x y w h
             , style "touch-action" "none"
+            , Pointer.onMove <|
+                \event -> Maybe.toList <| Maybe.map (\x -> x.onMove event) <| Dict.get event.pointerId model.stickId
+            , Pointer.onUp <|
+                \event ->
+                    PointerUp event.pointerId
+                        :: (Maybe.toList <| Maybe.map (\x -> x.onRelease) <| Dict.get event.pointerId model.stickId)
             ]
           <|
             stack <|
@@ -158,8 +165,16 @@ viewElement model element =
 
                         getOffset event =
                             let
+                                --TODO magic numbers (get from viewbox) and the scaling is only needed on mobile
                                 v0 =
-                                    uncurry vec2 <| both (\t -> t - rFront) event.pointer.offsetPos
+                                    flip Vec2.sub
+                                        (vec2
+                                            (1000 + toFloat element.location.x)
+                                            (500 + toFloat element.location.y)
+                                        )
+                                    <|
+                                        Vec2.scale 2 <|
+                                            uncurry vec2 event.pointer.pagePos
 
                                 length =
                                     min range <| Vec2.length v0
@@ -175,16 +190,21 @@ viewElement model element =
                         front =
                             let
                                 decode =
-                                    JD.map (Update << StickMove element.name << getOffset)
-                                        Pointer.eventDecoder
+                                    Pointer.eventDecoder
+                                        |> JD.map
+                                            (\x ->
+                                                [ PointerDown x.pointerId
+                                                    { onMove = \event -> Update <| StickMove element.name <| getOffset event
+                                                    , onRelease = Update <| StickMove element.name <| vec2 0 0
+                                                    }
+                                                ]
+                                            )
                             in
                             -- invisible - area in which touches are registered
                             -- used to extrude envelope to cover everywhere 'small' might go
                             circle rFront
                                 |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove" (JD.map List.singleton decode)
-                                |> Collage.on "pointerdown" (JD.map List.singleton decode)
-                                |> Collage.on "pointerout" (JD.succeed [ Update <| StickMove element.name <| zeroVec2 ])
+                                |> Collage.on "pointerdown" decode
 
                         pos =
                             withDefault zeroVec2 <| Dict.get element.name model.stickPos
@@ -319,6 +339,7 @@ type alias Model =
     { username : String
     , layout : Layout
     , stickPos : Dict String Vec2
+    , stickId : Dict Int { onMove : Pointer.Event -> Msg, onRelease : Msg } -- pointer id to event callbacks
     , pressed : Set String
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
@@ -333,6 +354,8 @@ type alias Msgs =
 type Msg
     = Update Update
     | ServerUpdate ServerUpdate
+    | PointerDown Int { onMove : Pointer.Event -> Msg, onRelease : Msg }
+    | PointerUp Int
 
 
 load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
@@ -358,6 +381,7 @@ load flags =
                     ( { username = flags.username
                       , layout = flags.layout
                       , stickPos = Dict.empty
+                      , stickId = Dict.empty
                       , pressed = Set.empty
                       , sliderPos = Dict.empty
                       , imageToUrl = imageToUrl
@@ -391,6 +415,12 @@ update msg model =
 
         ServerUpdate u ->
             ( serverUpdate u model, Cmd.none )
+
+        PointerDown pid callbacks ->
+            ( { model | stickId = Dict.insert pid callbacks model.stickId }, Cmd.none )
+
+        PointerUp pid ->
+            ( { model | stickId = Dict.remove pid model.stickId }, Cmd.none )
 
 
 serverUpdate : ServerUpdate -> Model -> Model
@@ -431,6 +461,7 @@ serverUpdate u model =
         RemoveElement e ->
             { username = model.username
             , stickPos = Dict.remove e model.stickPos
+            , stickId = model.stickId
             , pressed = Set.remove e model.pressed
             , sliderPos = Dict.remove e model.sliderPos
             , imageToUrl = Dict.remove e model.imageToUrl

@@ -22,6 +22,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Data.Function
 import Data.List
+import System.IO.Error
 
 import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
@@ -70,8 +71,15 @@ rules = do
 
     forM_ linkedAssets \(file, link) ->
         link %> \_ -> do
+            let copy = liftIO $ Dir.copyFile file link
             need [file]
-            liftIO $ unlessM (Dir.doesFileExist link) $ Dir.createFileLink (".." </> ".." </> file) link
+            liftIO (Dir.doesFileExist link) >>= \case
+                True -> unlessM (liftIO $ Dir.pathIsSymbolicLink link) copy
+                False -> do
+                    noLinkPermission <- liftIO do
+                        (Dir.createFileLink (".." </> ".." </> file) link >> pure False)
+                            `catchPermissionError` \_ -> pure True
+                    when noLinkPermission $ putWarn "No permission to create symbolic links - copying instead" >> copy
 
     -- executables e.g. 'dist/monpad-ext-ws'
     (distDir </> "*") %> \f -> do
@@ -156,3 +164,6 @@ minifyFileJS file =
 
 bracketed :: Text -> Text
 bracketed t = pack "(" <> t <> pack ")"
+
+catchPermissionError :: IO a -> (IOError -> IO a) -> IO a
+catchPermissionError = catchBool isPermissionError

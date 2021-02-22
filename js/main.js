@@ -27,6 +27,7 @@ ws.onopen = event => {
     const app = Elm.Main.init({
         flags: { username, layout }
     })
+    app.ports.debugLogPort.subscribe(message => console.log(message))
     app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
     ws.addEventListener("message", event =>
         app.ports.receiveUpdatePort.send(JSON.parse(event.data))

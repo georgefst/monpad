@@ -344,6 +344,9 @@ type alias Model =
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
     , startTime : Posix
+    , logger :
+        String
+        -> Cmd Msgs --TODO we want `forall a. String -> a -> Cmd msg` - another argument for Purescript
     }
 
 
@@ -386,6 +389,7 @@ load flags =
                       , sliderPos = Dict.empty
                       , imageToUrl = imageToUrl
                       , startTime = startTime
+                      , logger = debugLog
                       }
                     , Cmd.none
                     )
@@ -466,6 +470,7 @@ serverUpdate u model =
             , sliderPos = Dict.remove e model.sliderPos
             , imageToUrl = Dict.remove e model.imageToUrl
             , startTime = model.startTime
+            , logger = model.logger
             , layout =
                 { layout
                     | elements =

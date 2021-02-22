@@ -7,7 +7,9 @@ import Auto.Shape exposing (..)
 import Json.Decode as Json
 import Loadable
 import Main
+import Task
 import Time exposing (..)
+import Tuple exposing (..)
 
 
 main : Loadable.Program Json.Value Main.Model Main.Msgs Json.Error
@@ -18,7 +20,11 @@ main =
     in
     Loadable.application
         { app
-            | load = \_ _ _ -> Main.load flags
+            | load =
+                \_ _ _ ->
+                    Main.load flags
+                        |> Task.map
+                            (mapFirst <| \m -> { m | logger = \s -> Debug.log s Cmd.none })
             , subscriptions =
                 sub
                     (\x ->

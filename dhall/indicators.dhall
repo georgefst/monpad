@@ -1,4 +1,9 @@
-let monpad = ./lib/monpad.dhall {} {}
+let AllOS = ./lib/all-os.dhall
+
+let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
+
+let buttonData =
+      { linux = AllOS.ButtonLinux.KeyUnknown, windows = {=}, mac = {=} }
 
 in    { elements =
         [ { element =
@@ -16,7 +21,7 @@ in    { elements =
         , { element =
               monpad.Element.Button
                 { colour = monpad.cols.red
-                , buttonData = {=}
+                , buttonData
                 , shape = monpad.Shape.Circle 100
                 }
           , location = { x = -800, y = +0 }
@@ -74,7 +79,7 @@ in    { elements =
         , { element =
               monpad.Element.Button
                 { colour = monpad.cols.red
-                , buttonData = {=}
+                , buttonData
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
                 }
           , location = { x = +800, y = +0 }

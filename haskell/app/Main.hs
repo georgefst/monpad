@@ -128,7 +128,7 @@ main = do
                                 { updates = serially $
                                     traceStream (const $ T.putStrLn "Sending new layout to client") $
                                     SP.map (const . const . SetLayout) $
-                                    SP.mapMaybeM (const $ mkUpdate file) $
+                                    SP.mapMaybeM (const $ mkLayout file) $
                                     lastOfGroup es
                                 }
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
@@ -165,8 +165,8 @@ scPrintStuff quiet = mempty
         liftIO $ T.putStrLn $ "Client disconnected: " <> i
     }
 
-mkUpdate :: (FromDhall a, FromDhall b) => FilePath -> IO (Maybe (Layout a b))
-mkUpdate file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
+mkLayout :: (FromDhall a, FromDhall b) => FilePath -> IO (Maybe (Layout a b))
+mkLayout file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
   where
     {-TODO this may well be incomplete
         anyway, if there isn't a better way of doing this, report to 'dhall-haskell'

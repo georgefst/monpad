@@ -1,12 +1,18 @@
 module Main exposing (..)
 
+import Auto.Button exposing (..)
 import Auto.Colour exposing (..)
-import Auto.Element exposing (..)
+import Auto.Element as Element
 import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
+import Auto.Image exposing (..)
+import Auto.Indicator exposing (..)
+import Auto.IntVec2 exposing (..)
 import Auto.Layout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
+import Auto.Slider exposing (..)
+import Auto.Stick exposing (..)
 import Auto.Update exposing (..)
 import Basics exposing (..)
 import Basics.Extra exposing (..)
@@ -132,203 +138,220 @@ viewElement model element =
     shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|
             case element.element of
-                Button b ->
-                    let
-                        shape =
-                            case b.shape of
-                                Circle r ->
-                                    circle <| toFloat r
+                Element.Button x ->
+                    viewButton element.name x <| Set.member element.name model.pressed
 
-                                Rectangle v ->
-                                    rectangle (Basics.toFloat v.x) (Basics.toFloat v.y)
-                    in
-                    shape
-                        |> styled
-                            ( uniform <|
-                                applyWhen (Set.member element.name model.pressed) darkColor <|
-                                    Color.fromRgba b.colour
-                            , solid thick <| uniform black
+                Element.Stick x ->
+                    viewStick element.name x element.location <|
+                        withDefault zeroVec2 <|
+                            Dict.get element.name model.stickPos
+
+                Element.Slider x ->
+                    viewSlider element.name x <| withDefault 0 <| Dict.get element.name model.sliderPos
+
+                Element.Image x ->
+                    viewImage element.name x <| Maybe.withDefault x.url <| Dict.get element.name model.imageToUrl
+
+                Element.Indicator x ->
+                    viewIndicator element.name x
+
+
+viewButton : String -> Button -> Bool -> Collage Msgs
+viewButton name button pressed =
+    let
+        shape =
+            case button.shape of
+                Circle r ->
+                    circle <| toFloat r
+
+                Rectangle v ->
+                    rectangle (Basics.toFloat v.x) (Basics.toFloat v.y)
+    in
+    shape
+        |> styled
+            ( uniform <| applyWhen pressed darkColor <| Color.fromRgba button.colour
+            , solid thick <| uniform black
+            )
+        |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown name ])
+        |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
+
+
+viewStick : String -> Stick -> IntVec2 -> Vec2 -> Collage Msgs
+viewStick name stick location stickPos =
+    let
+        range =
+            toFloat stick.range
+
+        rad =
+            toFloat stick.radius
+
+        rFront =
+            range + rad
+
+        getOffset event =
+            let
+                --TODO magic numbers (get from viewbox) and the scaling is only needed on mobile
+                v0 =
+                    flip Vec2.sub
+                        (vec2
+                            (1000 + toFloat location.x)
+                            (500 + toFloat location.y)
+                        )
+                    <|
+                        Vec2.scale 2 <|
+                            uncurry vec2 event.pointer.pagePos
+
+                length =
+                    min range <| Vec2.length v0
+            in
+            Vec2.normalize v0 |> Vec2.scale (length / range)
+
+        big =
+            circle range |> styled1 stick.backgroundColour
+
+        small =
+            circle rad |> styled1 stick.stickColour
+
+        front =
+            let
+                decode =
+                    Pointer.eventDecoder
+                        |> JD.map
+                            (\x ->
+                                [ PointerDown x.pointerId
+                                    { onMove = \event -> Update <| StickMove name <| getOffset event
+                                    , onRelease = Update <| StickMove name <| vec2 0 0
+                                    }
+                                ]
                             )
-                        |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown element.name ])
-                        |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp element.name ])
+            in
+            -- invisible - area in which touches are registered
+            -- used to extrude envelope to cover everywhere 'small' might go
+            circle rFront
+                |> filled (uniform <| hsla 0 0 0 0)
+                |> Collage.on "pointerdown" decode
+    in
+    stack [ front, small |> shift (mapSecond negate <| unVec2 <| Vec2.scale range stickPos), big ]
 
-                Stick stick ->
-                    let
-                        range =
-                            toFloat stick.range
 
-                        rad =
-                            toFloat stick.radius
+viewSlider : String -> Slider -> Float -> Collage Msgs
+viewSlider name slider pos =
+    let
+        length =
+            toFloat slider.length
 
-                        rFront =
-                            range + rad
+        width =
+            toFloat slider.width
 
-                        getOffset event =
-                            let
-                                --TODO magic numbers (get from viewbox) and the scaling is only needed on mobile
-                                v0 =
-                                    flip Vec2.sub
-                                        (vec2
-                                            (1000 + toFloat element.location.x)
-                                            (500 + toFloat element.location.y)
-                                        )
-                                    <|
-                                        Vec2.scale 2 <|
-                                            uncurry vec2 event.pointer.pagePos
+        rad =
+            toFloat slider.radius
 
-                                length =
-                                    min range <| Vec2.length v0
-                            in
-                            Vec2.normalize v0 |> Vec2.scale (length / range)
+        ( getCoord, shiftSlider, ( sizeX, sizeY ) ) =
+            if slider.vertical then
+                ( second, shiftY, ( width, length ) )
 
-                        big =
-                            circle range |> styled1 stick.backgroundColour
+            else
+                ( first, shiftX, ( length, width ) )
 
-                        small =
-                            circle rad |> styled1 stick.stickColour
+        diam =
+            2 * rad
 
-                        front =
-                            let
-                                decode =
-                                    Pointer.eventDecoder
-                                        |> JD.map
-                                            (\x ->
-                                                [ PointerDown x.pointerId
-                                                    { onMove = \event -> Update <| StickMove element.name <| getOffset event
-                                                    , onRelease = Update <| StickMove element.name <| vec2 0 0
-                                                    }
-                                                ]
-                                            )
-                            in
-                            -- invisible - area in which touches are registered
-                            -- used to extrude envelope to cover everywhere 'small' might go
-                            circle rFront
-                                |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointerdown" decode
+        getOffset event =
+            applyWhen slider.vertical negate <|
+                limit ( 0, 1 ) ((getCoord event.pointer.offsetPos - rad) / length)
+                    * 2
+                    - 1
 
-                        pos =
-                            withDefault zeroVec2 <| Dict.get element.name model.stickPos
-                    in
-                    stack [ front, small |> shift (mapSecond negate <| unVec2 <| Vec2.scale range pos), big ]
+        stick =
+            circle rad
+                |> styled1 slider.sliderColour
 
-                Slider s ->
-                    let
-                        length =
-                            toFloat s.length
+        background =
+            roundedRectangle sizeX sizeY (width / 2)
+                |> styled1 slider.backgroundColour
 
-                        width =
-                            toFloat s.width
+        front =
+            let
+                decode =
+                    JD.map (Update << SliderMove name << getOffset)
+                        Pointer.eventDecoder
+            in
+            -- as with Stick, represents movement area
+            rectangle (sizeX + diam) (sizeY + diam)
+                |> filled (uniform <| hsla 0 0 0 0)
+                |> Collage.on "pointermove" (JD.map List.singleton decode)
+                |> Collage.on "pointerdown" (JD.map List.singleton decode)
+                |> Collage.on "pointerout" (JD.succeed [ Update <| SliderMove name 0 ])
+    in
+    stack [ front, stick |> shiftSlider (pos * length / 2), background ]
 
-                        rad =
-                            toFloat s.radius
 
-                        ( getCoord, shiftSlider, ( sizeX, sizeY ) ) =
-                            if s.vertical then
-                                ( second, shiftY, ( width, length ) )
+viewImage : String -> Image -> String -> Collage Msgs
+viewImage _ img url =
+    image (both toFloat ( img.width, img.height )) url
 
-                            else
-                                ( first, shiftX, ( length, width ) )
 
-                        diam =
-                            2 * rad
+viewIndicator : String -> Indicator -> Collage Msgs
+viewIndicator _ ind =
+    let
+        --TODO higher res? lower for rectangle? the whole thing is a hack really because of
+        -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
+        nPoints =
+            256
 
-                        getOffset event =
-                            applyWhen s.vertical negate <|
-                                limit ( 0, 1 ) ((getCoord event.pointer.offsetPos - rad) / length)
-                                    * 2
-                                    - 1
+        a =
+            ind.arcStart
 
-                        slider =
-                            circle rad
-                                |> styled1 s.sliderColour
+        b =
+            if ind.arcEnd < ind.arcStart then
+                ind.arcEnd + 2 * pi
 
-                        background =
-                            roundedRectangle sizeX sizeY (width / 2)
-                                |> styled1 s.backgroundColour
+            else
+                ind.arcEnd
 
-                        front =
-                            let
-                                decode =
-                                    JD.map (Update << SliderMove element.name << getOffset)
-                                        Pointer.eventDecoder
-                            in
-                            -- as with Stick, represents movement area
-                            rectangle (sizeX + diam) (sizeY + diam)
-                                |> filled (uniform <| hsla 0 0 0 0)
-                                |> Collage.on "pointermove" (JD.map List.singleton decode)
-                                |> Collage.on "pointerdown" (JD.map List.singleton decode)
-                                |> Collage.on "pointerout" (JD.succeed [ Update <| SliderMove element.name 0 ])
+        -- regular intervals in [0, 4pi)
+        angles =
+            range 0 (2 * nPoints - 1)
+                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
+                |> dropWhile (\x -> x < a)
+                |> (\x -> a :: x)
+                |> takeWhile (\x -> x < b)
+                |> (\x -> x ++ [ b ])
 
-                        pos =
-                            withDefault 0 <| Dict.get element.name model.sliderPos
-                    in
-                    stack [ front, slider |> shiftSlider (pos * length / 2), background ]
+        outer =
+            angles
+                |> List.map
+                    (\t ->
+                        case ind.shape of
+                            Rectangle v ->
+                                let
+                                    mod1 x =
+                                        x - toFloat (floor x)
 
-                Image img ->
-                    image (both toFloat ( img.width, img.height )) <|
-                        Maybe.withDefault img.url <|
-                            Dict.get element.name model.imageToUrl
+                                    {- there's nothing I can tell you about this function that you can't get
+                                        from typing in to Wolfram Alpha:
+                                       min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
+                                    -}
+                                    f x =
+                                        limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
+                                in
+                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - pi / 2) )
 
-                Indicator ind ->
-                    let
-                        --TODO higher res? lower for rectangle? the whole thing is a hack really because of
-                        -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
-                        nPoints =
-                            256
+                            Circle r ->
+                                let
+                                    r1 =
+                                        toFloat r
+                                in
+                                ( r1 * cos t, r1 * sin t )
+                    )
 
-                        a =
-                            ind.arcStart
-
-                        b =
-                            if ind.arcEnd < ind.arcStart then
-                                ind.arcEnd + 2 * pi
-
-                            else
-                                ind.arcEnd
-
-                        -- regular intervals in [0, 4pi)
-                        angles =
-                            range 0 (2 * nPoints - 1)
-                                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
-                                |> dropWhile (\x -> x < a)
-                                |> (\x -> a :: x)
-                                |> takeWhile (\x -> x < b)
-                                |> (\x -> x ++ [ b ])
-
-                        outer =
-                            angles
-                                |> List.map
-                                    (\t ->
-                                        case ind.shape of
-                                            Rectangle v ->
-                                                let
-                                                    mod1 x =
-                                                        x - toFloat (floor x)
-
-                                                    {- there's nothing I can tell you about this function that you can't get
-                                                        from typing in to Wolfram Alpha:
-                                                       min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
-                                                    -}
-                                                    f x =
-                                                        limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
-                                                in
-                                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - pi / 2) )
-
-                                            Circle r ->
-                                                let
-                                                    r1 =
-                                                        toFloat r
-                                                in
-                                                ( r1 * cos t, r1 * sin t )
-                                    )
-
-                        inner =
-                            outer
-                                |> List.map (both (\x -> x * ind.hollowness))
-                    in
-                    (reverse outer ++ inner)
-                        |> polygon
-                        |> styled1 ind.colour
+        inner =
+            outer
+                |> List.map (both (\x -> x * ind.hollowness))
+    in
+    (reverse outer ++ inner)
+        |> polygon
+        |> styled1 ind.colour
 
 
 
@@ -370,7 +393,7 @@ load flags =
                                 |> filterMap
                                     (\e ->
                                         case e.element of
-                                            Image img ->
+                                            Element.Image img ->
                                                 Just ( e.name, img.url )
 
                                             _ ->
@@ -437,8 +460,8 @@ serverUpdate u model =
                             (\fe ->
                                 if fe.name == name then
                                     case fe.element of
-                                        Indicator ind ->
-                                            { fe | element = Indicator <| f ind }
+                                        Element.Indicator ind ->
+                                            { fe | element = Element.Indicator <| f ind }
 
                                         _ ->
                                             fe

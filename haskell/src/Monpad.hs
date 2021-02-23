@@ -91,6 +91,7 @@ data ServerUpdate a b
     | SetLayout (Layout a b)
     | AddElement (FullElement a b)
     | RemoveElement ElementID
+    | SetBackgroundColour Colour
     | SetIndicatorHollowness ElementID Double
     | SetIndicatorArcStart ElementID Double
     | SetIndicatorArcEnd ElementID Double
@@ -104,6 +105,7 @@ instance Bifunctor ServerUpdate where
         AddElement e -> AddElement $ bimap f g e
         SetImageURL i u -> SetImageURL i u
         RemoveElement i -> RemoveElement i
+        SetBackgroundColour x -> SetBackgroundColour x
         SetIndicatorArcStart t x -> SetIndicatorArcStart t x
         SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
         SetIndicatorHollowness t x -> SetIndicatorHollowness t x
@@ -251,6 +253,7 @@ websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
                             over #stickMap (Map.delete el)
                                 . over #sliderMap (Map.delete el)
                                 . over #buttonMap (Map.delete el)
+                        SetBackgroundColour{} -> mempty
                         SetImageURL{} -> mempty
                         SetIndicatorHollowness{} -> mempty
                         SetIndicatorArcStart{} -> mempty

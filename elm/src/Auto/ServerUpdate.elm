@@ -1,5 +1,6 @@
 module Auto.ServerUpdate exposing (..)
 
+import Auto.Colour
 import Auto.FullElement
 import Auto.Layout
 import Auto.Shape
@@ -12,6 +13,7 @@ type ServerUpdate
     | SetLayout Auto.Layout.Layout
     | AddElement Auto.FullElement.FullElement
     | RemoveElement String
+    | SetBackgroundColour Auto.Colour.Colour
     | SetIndicatorHollowness String Float
     | SetIndicatorArcStart String Float
     | SetIndicatorArcEnd String Float
@@ -29,6 +31,8 @@ decode =
     Json.Decode.Pipeline.required "addElement" Auto.FullElement.decode
     , Json.Decode.succeed RemoveElement |>
     Json.Decode.Pipeline.required "removeElement" Json.Decode.string
+    , Json.Decode.succeed SetBackgroundColour |>
+    Json.Decode.Pipeline.required "setBackgroundColour" Auto.Colour.decode
     , Json.Decode.field "setIndicatorHollowness" (Json.Decode.succeed SetIndicatorHollowness |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))

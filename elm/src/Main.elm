@@ -508,6 +508,11 @@ serverUpdate u model =
                 }
             }
 
+        SetBackgroundColour c ->
+            { model
+                | layout = { layout | backgroundColour = c }
+            }
+
         SetIndicatorHollowness name x ->
             { model
                 | layout = updateIndicator name (\e -> { e | hollowness = x })

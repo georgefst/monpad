@@ -33,6 +33,7 @@ layoutFromDhall = input auto
 data Layout a b = Layout
     { elements :: [FullElement a b]
     , viewBox :: ViewBox
+    , backgroundColour :: Colour
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout

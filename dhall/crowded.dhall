@@ -108,5 +108,6 @@ in    { elements =
         , button2 +640 +400 ButtonL.BtnTr "RB" False
         ]
       , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }
+      , backgroundColour = monpad.cols.pastelBlue
       }
     : monpad.Layout

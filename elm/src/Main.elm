@@ -103,23 +103,27 @@ view : Model -> Document Msgs
 view model =
     { title = "monpad"
     , body =
-        [ svgExplicit
-            [ let
-                { x, y, w, h } =
-                    model.layout.viewBox
-              in
-              viewBox x y w h
-            , style "touch-action" "none"
-            , Pointer.onMove <|
-                \event -> Maybe.toList <| Maybe.map (\x -> x.onMove event) <| Dict.get event.pointerId model.stickId
-            , Pointer.onUp <|
-                \event ->
-                    PointerUp event.pointerId
-                        :: (Maybe.toList <| Maybe.map (\x -> x.onRelease) <| Dict.get event.pointerId model.stickId)
+        [ div
+            [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour
             ]
-          <|
-            stack <|
-                List.map (viewElement model) model.layout.elements
+            [ svgExplicit
+                [ let
+                    { x, y, w, h } =
+                        model.layout.viewBox
+                  in
+                  viewBox x y w h
+                , style "touch-action" "none"
+                , Pointer.onMove <|
+                    \event -> Maybe.toList <| Maybe.map (\x -> x.onMove event) <| Dict.get event.pointerId model.stickId
+                , Pointer.onUp <|
+                    \event ->
+                        PointerUp event.pointerId
+                            :: (Maybe.toList <| Maybe.map (\x -> x.onRelease) <| Dict.get event.pointerId model.stickId)
+                ]
+              <|
+                stack <|
+                    List.map (viewElement model) model.layout.elements
+            ]
         ]
     }
 

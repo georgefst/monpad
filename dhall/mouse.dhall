@@ -67,6 +67,7 @@ let layoutAll =
             }
           ]
         , viewBox = { x = -500, y = -2000, w = +1000, h = +2000 }
+        , backgroundColour = monpad.cols.pastelBlue
         }
       : monpad.Layout
 

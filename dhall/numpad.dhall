@@ -33,5 +33,6 @@ in    { elements =
         , button +600 +700 ButtonL.Key9 "9"
         ]
       , viewBox = { x = +0, y = -800, w = +800, h = +800 }
+      , backgroundColour = monpad.cols.pastelBlue
       }
     : monpad.Layout

@@ -414,7 +414,7 @@ load flags =
     now
         |> Task.andThen
             (\startTime ->
-                getViewport
+                getViewportSize
                     |> Task.andThen
                         (\viewport ->
                             Task.succeed <|
@@ -434,8 +434,7 @@ load flags =
                                 in
                                 ( { username = flags.username
                                   , layout = flags.layout
-                                  , windowSize =
-                                        { x = round viewport.viewport.width, y = round viewport.viewport.height }
+                                  , windowSize = viewport
                                   , stickPos = Dict.empty
                                   , stickId = Dict.empty
                                   , pressed = Set.empty

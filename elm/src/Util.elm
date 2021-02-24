@@ -1,11 +1,14 @@
 module Util exposing (..)
 
+import Auto.IntVec2 exposing (IntVec2)
+import Browser.Dom exposing (getViewport)
 import Color
 import Color.Interpolate exposing (Space(..), interpolate)
 import Html
 import Html.Attributes as Attr
 import Json.Encode
 import Math.Vector2 as Vec2
+import Task exposing (Task)
 
 
 both : (a -> b) -> ( a, a ) -> ( b, b )
@@ -62,3 +65,8 @@ applyWhen b f x =
 
     else
         x
+
+
+getViewportSize : Task x IntVec2
+getViewportSize =
+    getViewport |> Task.map (\viewport -> { x = round viewport.viewport.width, y = round viewport.viewport.height })

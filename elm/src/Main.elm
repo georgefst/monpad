@@ -17,6 +17,8 @@ import Auto.Update exposing (..)
 import Basics exposing (..)
 import Basics.Extra exposing (..)
 import Browser exposing (..)
+import Browser.Dom exposing (..)
+import Browser.Events exposing (..)
 import Collage exposing (..)
 import Collage.Events as Collage
 import Collage.Layout exposing (..)
@@ -77,7 +79,12 @@ app =
                         (\msg ( m, cs ) -> mapSecond (\c -> c :: cs) (update msg m))
                         ( model, [] )
     , view = view
-    , subscriptions = always <| Sub.map (maybe [] (List.map ServerUpdate)) receiveUpdates
+    , subscriptions =
+        always <|
+            Sub.batch
+                [ Sub.map (maybe [] (List.map ServerUpdate)) receiveUpdates
+                , onResize (\w h -> [ Resized { x = w, y = h } ])
+                ]
     , failCmd = Nothing
     , loadingView = Nothing
     , errorView =
@@ -146,7 +153,7 @@ viewElement model element =
                     viewButton element.name x <| Set.member element.name model.pressed
 
                 Element.Stick x ->
-                    viewStick element.name x element.location <|
+                    viewStick element.name x element.location model.windowSize <|
                         withDefault zeroVec2 <|
                             Dict.get element.name model.stickPos
 
@@ -180,8 +187,8 @@ viewButton name button pressed =
         |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
 
 
-viewStick : String -> Stick -> IntVec2 -> Vec2 -> Collage Msgs
-viewStick name stick location stickPos =
+viewStick : String -> Stick -> IntVec2 -> IntVec2 -> Vec2 -> Collage Msgs
+viewStick name stick location windowSize stickPos =
     let
         range =
             toFloat stick.range
@@ -194,12 +201,11 @@ viewStick name stick location stickPos =
 
         getOffset event =
             let
-                --TODO magic numbers (get from viewbox) and the scaling is only needed on mobile
                 v0 =
                     flip Vec2.sub
                         (vec2
-                            (1000 + toFloat location.x)
-                            (500 + toFloat location.y)
+                            (toFloat windowSize.x + toFloat location.x)
+                            (toFloat windowSize.y + toFloat location.y)
                         )
                     <|
                         Vec2.scale 2 <|
@@ -365,6 +371,7 @@ viewIndicator _ ind =
 type alias Model =
     { username : String
     , layout : Layout
+    , windowSize : IntVec2
     , stickPos : Dict String Vec2
     , stickId : Dict Int { onMove : Pointer.Event -> Msg, onRelease : Msg } -- pointer id to event callbacks
     , pressed : Set String
@@ -383,6 +390,7 @@ type Msg
     | ServerUpdate ServerUpdate
     | PointerDown Int { onMove : Pointer.Event -> Msg, onRelease : Msg }
     | PointerUp Int
+    | Resized IntVec2
 
 
 load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
@@ -390,32 +398,38 @@ load flags =
     now
         |> Task.andThen
             (\startTime ->
-                Task.succeed <|
-                    let
-                        imageToUrl =
-                            flags.layout.elements
-                                |> filterMap
-                                    (\e ->
-                                        case e.element of
-                                            Element.Image img ->
-                                                Just ( e.name, img.url )
+                getViewport
+                    |> Task.andThen
+                        (\viewport ->
+                            Task.succeed <|
+                                let
+                                    imageToUrl =
+                                        flags.layout.elements
+                                            |> filterMap
+                                                (\e ->
+                                                    case e.element of
+                                                        Element.Image img ->
+                                                            Just ( e.name, img.url )
 
-                                            _ ->
-                                                Nothing
-                                    )
-                                |> Dict.fromList
-                    in
-                    ( { username = flags.username
-                      , layout = flags.layout
-                      , stickPos = Dict.empty
-                      , stickId = Dict.empty
-                      , pressed = Set.empty
-                      , sliderPos = Dict.empty
-                      , imageToUrl = imageToUrl
-                      , startTime = startTime
-                      }
-                    , Cmd.none
-                    )
+                                                        _ ->
+                                                            Nothing
+                                                )
+                                            |> Dict.fromList
+                                in
+                                ( { username = flags.username
+                                  , layout = flags.layout
+                                  , windowSize =
+                                        { x = round viewport.viewport.width, y = round viewport.viewport.height }
+                                  , stickPos = Dict.empty
+                                  , stickId = Dict.empty
+                                  , pressed = Set.empty
+                                  , sliderPos = Dict.empty
+                                  , imageToUrl = imageToUrl
+                                  , startTime = startTime
+                                  }
+                                , Cmd.none
+                                )
+                        )
             )
 
 
@@ -448,6 +462,9 @@ update msg model =
 
         PointerUp pid ->
             ( { model | stickId = Dict.remove pid model.stickId }, Cmd.none )
+
+        Resized v ->
+            ( { model | windowSize = v }, Cmd.none )
 
 
 serverUpdate : ServerUpdate -> Model -> Model
@@ -487,6 +504,7 @@ serverUpdate u model =
 
         RemoveElement e ->
             { username = model.username
+            , windowSize = model.windowSize
             , stickPos = Dict.remove e model.stickPos
             , stickId = model.stickId
             , pressed = Set.remove e model.pressed

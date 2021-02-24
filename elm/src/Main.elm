@@ -115,7 +115,7 @@ view model =
                 , style "touch-action" "none"
                 , Pointer.onMove <|
                     \event -> Maybe.toList <| Maybe.map (\x -> x.onMove event) <| Dict.get event.pointerId model.stickId
-                , Pointer.onUp <|
+                , Pointer.onLeave <|
                     \event ->
                         PointerUp event.pointerId
                             :: (Maybe.toList <| Maybe.map (\x -> x.onRelease) <| Dict.get event.pointerId model.stickId)

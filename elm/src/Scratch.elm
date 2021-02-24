@@ -20,12 +20,17 @@ main =
         { app
             | load = \_ _ _ -> Main.load flags
             , subscriptions =
-                sub
-                    (\x ->
-                        [ Main.ServerUpdate <| SetIndicatorArcStart "0" <| x * 2 * pi
-                        , Main.ServerUpdate <| SetIndicatorHollowness "0" x
+                \model ->
+                    Sub.batch
+                        [ sub
+                            (\x ->
+                                [ Main.ServerUpdate <| SetIndicatorArcStart "0" <| x * 2 * pi
+                                , Main.ServerUpdate <| SetIndicatorHollowness "0" x
+                                ]
+                            )
+                            model
+                        , app.subscriptions model
                         ]
-                    )
         }
 
 

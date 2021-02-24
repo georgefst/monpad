@@ -110,26 +110,41 @@ view : Model -> Document Msgs
 view model =
     { title = "monpad"
     , body =
+        let
+            { x, y, w, h } =
+                model.layout.viewBox
+
+            fullscreenButton =
+                let
+                    -- how much of the screen to cover
+                    scale =
+                        1 / 10
+
+                    size =
+                        toFloat (min w h) * scale
+                in
+                rectangle size size
+                    |> styled1 (toRgba orange)
+                    |> shift ( -(toFloat w - size) / 2, (toFloat h - size) / 2 )
+                    |> Collage.on "pointerdown" (JD.succeed [ Fullscreen ])
+        in
         [ div
             [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour
             ]
             [ svgExplicit
-                [ let
-                    { x, y, w, h } =
-                        model.layout.viewBox
-                  in
-                  viewBox x y w h
+                [ viewBox x y w h
                 , style "touch-action" "none"
                 , Pointer.onMove <|
-                    \event -> Maybe.toList <| Maybe.map (\x -> x.onMove event) <| Dict.get event.pointerId model.stickId
+                    \event -> Maybe.toList <| Maybe.map (\c -> c.onMove event) <| Dict.get event.pointerId model.stickId
                 , Pointer.onLeave <|
                     \event ->
                         PointerUp event.pointerId
-                            :: (Maybe.toList <| Maybe.map (\x -> x.onRelease) <| Dict.get event.pointerId model.stickId)
+                            :: (Maybe.toList <| Maybe.map (\c -> c.onRelease) <| Dict.get event.pointerId model.stickId)
                 ]
               <|
                 stack <|
-                    List.map (viewElement model) model.layout.elements
+                    fullscreenButton
+                        :: List.map (viewElement model) model.layout.elements
             ]
         ]
     }
@@ -391,6 +406,7 @@ type Msg
     | PointerDown Int { onMove : Pointer.Event -> Msg, onRelease : Msg }
     | PointerUp Int
     | Resized IntVec2
+    | Fullscreen
 
 
 load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
@@ -465,6 +481,9 @@ update msg model =
 
         Resized v ->
             ( { model | windowSize = v }, Cmd.none )
+
+        Fullscreen ->
+            ( model, toggleFullscreen )
 
 
 serverUpdate : ServerUpdate -> Model -> Model

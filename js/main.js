@@ -1,17 +1,3 @@
-// use fullscreen when in landscape
-window.screen.orientation.onchange = () => {
-    console.log(this.type)
-    switch (this.type) {
-        case "landscape-primary":
-        case "landscape-secondary":
-            document.documentElement.requestFullscreen()
-            break
-        default:
-            document.exitFullscreen()
-            break
-    }
-}
-
 const attr = s => document.currentScript.attributes.getNamedItem(s).value
 
 const username = attr("username")
@@ -26,6 +12,13 @@ window.onbeforeunload = () => ws.close()
 ws.onopen = event => {
     const app = Elm.Main.init({
         flags: { username, layout }
+    })
+    app.ports.fullscreenPort.subscribe(message => {
+        if (document.fullscreenElement == null) {
+            document.documentElement.requestFullscreen()
+        } else {
+            document.exitFullscreen()
+        }
     })
     app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
     ws.addEventListener("message", event =>

@@ -1,4 +1,4 @@
-port module Ports exposing (receiveUpdates, sendUpdate)
+port module Ports exposing (receiveUpdates, toggleFullscreen, sendUpdate)
 
 {-| Provide safe interfaces to any ports
 -}
@@ -7,6 +7,14 @@ import Auto.ServerUpdate exposing (ServerUpdate)
 import Auto.Update exposing (Update)
 import Json.Decode as JD
 import Json.Encode as JE
+
+
+toggleFullscreen : Cmd msg
+toggleFullscreen =
+    fullscreenPort ()
+
+
+port fullscreenPort : () -> Cmd msg
 
 
 sendUpdate : Update -> Cmd msg

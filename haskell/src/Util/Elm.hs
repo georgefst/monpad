@@ -15,23 +15,23 @@ module Util.Elm (
 import Control.Monad (forM_)
 import Data.Aeson as JSON
 import Data.Char (toLower)
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Dhall (FromDhall)
 import GHC.Generics (Generic, Rep)
-import qualified Generics.SOP as SOP
+import Generics.SOP qualified as SOP
 import Language.Elm.Definition (Definition)
-import qualified Language.Elm.Expression as Expr
+import Language.Elm.Expression qualified as Expr
 import Language.Elm.Name (Qualified (Qualified))
-import qualified Language.Elm.Name as Name
-import qualified Language.Elm.Pretty as Pretty
+import Language.Elm.Name qualified as Name
+import Language.Elm.Pretty qualified as Pretty
 import Language.Elm.Simplification (simplifyDefinition)
-import qualified Language.Elm.Type as Type
+import Language.Elm.Type qualified as Type
 import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))

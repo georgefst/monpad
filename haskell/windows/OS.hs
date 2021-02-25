@@ -1,6 +1,6 @@
 module OS where
 
-import qualified Debug.Trace as Debug
+import Debug.Trace qualified as Debug
 import Monpad
 
 type E = ()

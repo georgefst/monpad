@@ -5,7 +5,7 @@ import Data.List (find)
 import Data.Maybe (mapMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HostName (getHostName)
 import Network.Socket (

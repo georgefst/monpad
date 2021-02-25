@@ -14,7 +14,7 @@ import Data.Text.Encoding (decodeUtf8)
 -- useful hack to allow assets to be loaded dynamically - the extra `()` is a tad awkward, but it works
 #define GET_FILE(FILE) unsafePerformIO . T.readFile $ FILE
 module Embed where
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import System.IO.Unsafe (unsafePerformIO)
 
 #endif

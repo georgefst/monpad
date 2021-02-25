@@ -25,39 +25,38 @@ import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
-import qualified Data.Aeson as J
+import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.List
 import Data.Map (Map, (!?))
+import Data.Map qualified as Map
 import Data.Maybe
-import qualified Data.Map as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Text.IO as T
-import qualified Data.Text.Lazy as TL
+import Data.Text.IO qualified as T
+import Data.Text.Lazy qualified as TL
 import Data.Tuple.Extra (snd3, thd3)
-import Generic.Data (Generically(..))
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (setLocaleEncoding)
-import qualified Generics.SOP as SOP
+import Generic.Data (Generically (..))
+import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Lens.Micro
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
 import Network.HTTP.Types.Status
-import Network.Wai.Handler.Warp
 import Network.Wai
-import qualified Network.WebSockets as WS
-import Servant.API.WebSocket
+import Network.Wai.Handler.Warp
+import Network.WebSockets qualified as WS
 import Servant hiding (layout)
+import Servant.API.WebSocket
 import Servant.HTML.Lucid
 import Streamly
-import qualified Streamly.Prelude as SP
-import qualified Streamly.Internal.Prelude as SP
+import Streamly.Internal.Prelude qualified as SP
 import System.FilePath
 import System.IO
 import Text.Pretty.Simple
@@ -70,8 +69,8 @@ import Embed
 import Layout
 import Orphans.V2 ()
 import Util
-import Util.Elm (Unit(Unit))
-import qualified Util.Elm as Elm
+import Util.Elm (Unit (Unit))
+import Util.Elm qualified as Elm
 
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)

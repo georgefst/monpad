@@ -5,20 +5,20 @@
 module Orphans.V2 () where
 
 import Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Aeson as J
+import Data.Aeson qualified as J
 import Dhall (FromDhall (autoWith))
 import GHC.Generics (Generic)
-import qualified Generics.SOP as SOP
-import qualified Language.Elm.Expression as Expr
-import qualified Language.Elm.Name as Name
-import qualified Language.Elm.Type as Type
+import Generics.SOP qualified as SOP
+import Language.Elm.Expression qualified as Expr
+import Language.Elm.Name qualified as Name
+import Language.Elm.Type qualified as Type
 import Language.Haskell.To.Elm (
     HasElmDecoder (..),
     HasElmEncoder (..),
     HasElmType (..),
  )
 import Linear.V2 (V2 (V2))
-import qualified Util.Elm as Elm
+import Util.Elm qualified as Elm
 
 -- NB we can decode but encoding would be unsafe
 instance HasElmType Word where

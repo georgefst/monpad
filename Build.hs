@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -25,16 +26,16 @@ import Data.List
 import System.IO.Error
 
 import Data.Text (Text, pack)
-import qualified Data.Text.IO as T
-import qualified Data.Text.Lazy.IO as TL
-import qualified Dhall.Core as Dhall
-import qualified Dhall.Import as Dhall
-import qualified Dhall.Parser as Dhall
-import qualified Dhall.TypeCheck as Dhall
+import Data.Text.IO qualified as T
+import Data.Text.Lazy.IO qualified as TL
+import Dhall.Core qualified as Dhall
+import Dhall.Import qualified as Dhall
+import Dhall.Parser qualified as Dhall
+import Dhall.TypeCheck qualified as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import qualified Language.JavaScript.Parser as JS
-import qualified Language.JavaScript.Process.Minify as JS
-import qualified System.Directory as Dir
+import Language.JavaScript.Parser qualified as JS
+import Language.JavaScript.Process.Minify qualified as JS
+import System.Directory qualified as Dir
 
 import Development.Shake
 import Development.Shake.Dhall

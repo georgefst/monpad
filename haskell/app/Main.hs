@@ -3,8 +3,8 @@
 module Main (main) where
 
 import Codec.Picture
-import qualified Codec.QRCode as QR
-import qualified Codec.QRCode.JuicyPixels as QR
+import Codec.QRCode qualified as QR
+import Codec.QRCode.JuicyPixels qualified as QR
 import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad.Extra
@@ -13,22 +13,22 @@ import Control.Monad.Reader (asks)
 import Data.Bifunctor
 import Data.Functor
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import Data.Time (diffUTCTime, getCurrentTime)
 import Data.Void (Void)
 import Dhall (FromDhall)
-import qualified Dhall.Core as Dhall
-import qualified Dhall.Import as Dhall
-import qualified Dhall.Parser as Dhall
-import qualified Dhall.TypeCheck as Dhall
+import Dhall.Core qualified as Dhall
+import Dhall.Import qualified as Dhall
+import Dhall.Parser qualified as Dhall
+import Dhall.TypeCheck qualified as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Monpad
-import qualified OS
+import OS qualified
 import Options.Applicative
 import Streamly (Async, Serial, asyncly, serially)
 import Streamly.FSNotify
-import qualified Streamly.Prelude as SP
+import Streamly.Prelude qualified as SP
 import System.Directory
 import System.Exit
 import System.FilePath

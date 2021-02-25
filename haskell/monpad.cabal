@@ -102,11 +102,7 @@ library
     hs-source-dirs:
         src
     if flag(release)
-        other-extensions:
-            TemplateHaskell
-        build-depends:
-            template-haskell >= 2.15,
-            file-embed ^>= 0.0.11.2,
+        build-depends: file-embed ^>= 0.0.11.2
     build-depends:
         aeson ^>= 1.4.7,
         bifunctors ^>= 5.5.7,

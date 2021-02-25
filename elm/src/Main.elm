@@ -339,12 +339,10 @@ viewIndicator _ ind =
             range 0 (2 * nPoints - 1)
                 |> List.map (\x -> toFloat x * 2 * pi / nPoints)
                 |> dropWhile (\x -> x < a)
-                |> (\x -> a :: x)
                 |> takeWhile (\x -> x < b)
-                |> (\x -> x ++ [ b ])
 
         outer =
-            angles
+            (a :: angles ++ [ b ])
                 |> List.map
                     (\t ->
                         case ind.shape of

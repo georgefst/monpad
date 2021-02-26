@@ -17,6 +17,7 @@ import Linear.V2 (V2)
 import Orphans.V2 ()
 import Util.Elm (Unit, Via (..))
 import Util.Elm qualified as Elm
+import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])
@@ -50,8 +51,9 @@ data FullElement a b = FullElement
 deriving via (Elm.Via2 FullElement) instance ToJSON (FullElement Unit Unit)
 
 newtype ElementID = ElementID {unwrap :: Text}
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord)
     deriving newtype (FromDhall, ToJSON, FromJSON, HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value)
+    deriving Show via (ShowNewtypeWithoutRecord "ElementID" Text)
 
 data Element a b
     = Stick (Stick a)

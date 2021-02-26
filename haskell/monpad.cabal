@@ -99,6 +99,7 @@ library
         Orphans.V2
         Util
         Util.Elm
+        Util.ShowNewtype
     hs-source-dirs:
         src
     if flag(release)

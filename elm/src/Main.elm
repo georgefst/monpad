@@ -195,7 +195,7 @@ viewButton name button pressed =
     in
     shape
         |> styled
-            ( uniform <| applyWhen pressed darkColor <| Color.fromRgba button.colour
+            ( uniform <| applyWhen pressed darkColor <| fromRgba button.colour
             , solid thick <| uniform black
             )
         |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown name ])
@@ -577,4 +577,4 @@ serverUpdate u model =
 
 styled1 : Colour -> Collage.Shape -> Collage msg
 styled1 c =
-    styled ( uniform <| Color.fromRgba c, defaultLineStyle )
+    styled ( uniform <| fromRgba c, defaultLineStyle )

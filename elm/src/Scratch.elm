@@ -1,5 +1,8 @@
 module Scratch exposing (..)
 
+{-| Useful for playing with in `elm reactor`.
+-}
+
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.ServerUpdate exposing (..)

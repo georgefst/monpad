@@ -325,7 +325,7 @@ test = do
             pure ((), ())
         , onMessage = \u -> do
             c <- asks snd
-            pPrint (c, u)
+            pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
         , onAxis = mempty
         , onButton = mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)

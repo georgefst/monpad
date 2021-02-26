@@ -319,11 +319,6 @@ viewImage _ img url =
 viewIndicator : String -> Indicator -> Collage Msgs
 viewIndicator _ ind =
     let
-        --TODO higher res? lower for rectangle? the whole thing is a hack really because of
-        -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
-        nPoints =
-            256
-
         a =
             ind.arcStart
 
@@ -334,12 +329,24 @@ viewIndicator _ ind =
             else
                 ind.arcEnd
 
-        -- regular intervals in [0, 4pi)
+        -- values in [0, 4pi) where we need a vertex
         angles =
-            range 0 (2 * nPoints - 1)
-                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
-                |> dropWhile (\x -> x < a)
-                |> takeWhile (\x -> x < b)
+            takeWhile (\x -> x < b) <|
+                dropWhile (\x -> x < a) <|
+                    case ind.shape of
+                        Rectangle _ ->
+                            range 0 7
+                                |> List.map (\x -> (2 * toFloat x + 1) * pi / 4)
+
+                        Circle _ ->
+                            let
+                                --TODO higher res? the whole thing is a hack really because of
+                                -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
+                                nPoints =
+                                    256
+                            in
+                            range 0 (2 * nPoints - 1)
+                                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
 
         outer =
             (a :: angles ++ [ b ])

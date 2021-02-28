@@ -218,15 +218,37 @@ viewStick name stick location windowSize stickPos =
 
         getOffset event =
             let
+                --TODO this assumes that the SVG fills the screen - i.e. layout has precisely the right aspect ratio
+                pageToSvg v =
+                    let
+                        w0 =
+                            toFloat windowSize.x
+
+                        h0 =
+                            toFloat windowSize.y
+
+                        w1 =
+                            2000
+
+                        h1 =
+                            1000
+
+                        x0 =
+                            Vec2.getX v
+
+                        y0 =
+                            Vec2.getY v
+
+                        x1 =
+                            x0 * w1 / w0 - (w1 / 2)
+
+                        y1 =
+                            -y0 * h1 / h0 + (h1 / 2)
+                    in
+                    vec2 x1 y1
+
                 v0 =
-                    flip Vec2.sub
-                        (vec2
-                            (toFloat windowSize.x + toFloat location.x)
-                            (toFloat windowSize.y + toFloat location.y)
-                        )
-                    <|
-                        Vec2.scale 2 <|
-                            uncurry vec2 event.pointer.pagePos
+                    Vec2.sub (pageToSvg <| uncurry vec2 <| event.pointer.pagePos) (vec2 (toFloat location.x) (toFloat location.y))
 
                 length =
                     min range <| Vec2.length v0
@@ -258,7 +280,7 @@ viewStick name stick location windowSize stickPos =
                 |> filled (uniform <| hsla 0 0 0 0)
                 |> Collage.on "pointerdown" decode
     in
-    stack [ front, small |> shift (mapSecond negate <| unVec2 <| Vec2.scale range stickPos), big ]
+    stack [ front, small |> shift (unVec2 <| Vec2.scale range stickPos), big ]
 
 
 viewSlider : String -> Slider -> Float -> Collage Msgs

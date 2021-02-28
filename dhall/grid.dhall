@@ -54,7 +54,7 @@ in    { elements =
             (Prelude.List.generate grid.y (List monpad.FullElement) row)
       , viewBox =
         { x = +0
-        , y = Integer/negate (Natural/toInteger (grid.y * 50))
+        , y = +0
         , w = Natural/toInteger (grid.x * rect.x)
         , h = Natural/toInteger (grid.y * rect.y)
         }

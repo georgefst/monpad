@@ -132,7 +132,7 @@ view model =
             [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour
             ]
             [ svgExplicit
-                [ viewBox x y w h
+                [ viewBox x -(h + y) w h
                 , style "touch-action" "none"
                 , style "width" (String.fromInt model.windowSize.x ++ "px")
                 , style "height" (String.fromInt model.windowSize.y ++ "px")

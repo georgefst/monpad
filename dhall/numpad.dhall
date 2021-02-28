@@ -32,7 +32,7 @@ in    { elements =
         , button +400 +700 ButtonL.Key8 "8"
         , button +600 +700 ButtonL.Key9 "9"
         ]
-      , viewBox = { x = +0, y = -800, w = +800, h = +800 }
+      , viewBox = { x = +0, y = +0, w = +800, h = +800 }
       , backgroundColour = monpad.cols.pastelBlue
       }
     : monpad.Layout

@@ -125,7 +125,7 @@ view model =
                 in
                 rectangle size size
                     |> styled1 (toRgba orange)
-                    |> shift ( -(toFloat w - size) / 2, (toFloat h - size) / 2 )
+                    |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
                     |> Collage.on "pointerdown" (JD.succeed [ Fullscreen ])
         in
         [ div

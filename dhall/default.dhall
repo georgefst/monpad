@@ -10,7 +10,8 @@ let ButtonW = {}
 
 let axis =
       λ(a : Evdev.AbsAxis) →
-        { linux = { axis = Evdev.Axis.Abs a, multiplier = 255.0 }
+      λ(multiplier : Double) →
+        { linux = { axis = Evdev.Axis.Abs a, multiplier }
         , windows = {=}
         , mac = {=}
         }
@@ -55,8 +56,8 @@ in    { elements =
                 , range = 320
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
-                , stickDataX = axis Evdev.AbsAxis.AbsX
-                , stickDataY = axis Evdev.AbsAxis.AbsY
+                , stickDataX = axis Evdev.AbsAxis.AbsX 255.0
+                , stickDataY = axis Evdev.AbsAxis.AbsY -255.0
                 }
           , location = { x = -500, y = +0 }
           , name = "Stick"

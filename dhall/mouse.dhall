@@ -59,7 +59,7 @@ let layoutAll =
                   , stickColour = monpad.cols.white
                   , backgroundColour = monpad.cols.grey
                   , stickDataX = axis Evdev.RelAxis.RelX 15.0
-                  , stickDataY = axis Evdev.RelAxis.RelY 15.0
+                  , stickDataY = axis Evdev.RelAxis.RelY -15.0
                   }
             , location = { x = +0, y = +900 }
             , name = "Stick"

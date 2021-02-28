@@ -170,7 +170,7 @@ viewElement model element =
                     viewButton element.name x <| Set.member element.name model.pressed
 
                 Element.Stick x ->
-                    viewStick element.name x element.location model.windowSize <|
+                    viewStick element.name x element.location model.windowSize model.layout.viewBox <|
                         withDefault zeroVec2 <|
                             Dict.get element.name model.stickPos
 
@@ -204,8 +204,8 @@ viewButton name button pressed =
         |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
 
 
-viewStick : String -> Stick -> IntVec2 -> IntVec2 -> Vec2 -> Collage Msgs
-viewStick name stick location windowSize stickPos =
+viewStick : String -> Stick -> IntVec2 -> IntVec2 -> ViewBox -> Vec2 -> Collage Msgs
+viewStick name stick location windowSize viewBox stickPos =
     let
         range =
             toFloat stick.range
@@ -228,10 +228,10 @@ viewStick name stick location windowSize stickPos =
                             toFloat windowSize.y
 
                         w1 =
-                            2000
+                            toFloat viewBox.w
 
                         h1 =
-                            1000
+                            toFloat viewBox.h
 
                         x0 =
                             Vec2.getX v

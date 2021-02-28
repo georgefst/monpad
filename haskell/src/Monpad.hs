@@ -145,7 +145,7 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
 mainHtml :: Layout a b -> Port -> ClientID -> Html ()
 mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
     [ style_ (mainCSS ())
-    , style_ "body { margin: 0 }" --TODO this is ugly but Elm doesn't let us set attributes on 'body' directly
+    , style_ "body { padding: 0; margin: 0; }" -- this just makes things consistent with elm-reactor
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript

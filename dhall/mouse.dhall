@@ -41,14 +41,14 @@ let layoutAll =
           , { element =
                 monpad.Element.Slider
                   { radius = 90
-                  , length = 500
+                  , length = 600
                   , width = 80
                   , sliderColour = monpad.cols.yellow
                   , backgroundColour = monpad.cols.white
                   , vertical = True
                   , sliderData = axis Evdev.RelAxis.RelWheel 5.0
                   }
-            , location = { x = +0, y = +1650 }
+            , location = { x = +0, y = +1600 }
             , name = "Slider"
             , showName = False
             }
@@ -61,7 +61,7 @@ let layoutAll =
                   , stickDataX = axis Evdev.RelAxis.RelX 15.0
                   , stickDataY = axis Evdev.RelAxis.RelY -15.0
                   }
-            , location = { x = +0, y = +900 }
+            , location = { x = +0, y = +650 }
             , name = "Stick"
             , showName = False
             }

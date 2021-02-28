@@ -248,7 +248,9 @@ viewStick name stick location windowSize viewBox stickPos =
                     vec2 x1 y1
 
                 v0 =
-                    Vec2.sub (pageToSvg <| uncurry vec2 <| event.pointer.pagePos) (vec2 (toFloat location.x) (toFloat location.y))
+                    Vec2.sub
+                        (pageToSvg <| uncurry vec2 <| event.pointer.pagePos)
+                        (vec2 (toFloat location.x) (toFloat location.y))
 
                 length =
                     min range <| Vec2.length v0

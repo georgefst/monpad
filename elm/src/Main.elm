@@ -134,14 +134,16 @@ view model =
             [ svgExplicit
                 [ viewBox x -(h + y) w h
                 , style "touch-action" "none"
-                , style "width" (String.fromInt model.windowSize.x ++ "px")
-                , style "height" (String.fromInt model.windowSize.y ++ "px")
                 , Pointer.onMove <|
                     \event -> Maybe.toList <| Maybe.map (\c -> c.onMove event) <| Dict.get event.pointerId model.stickId
                 , Pointer.onLeave <|
                     \event ->
                         PointerUp event.pointerId
                             :: (Maybe.toList <| Maybe.map (\c -> c.onRelease) <| Dict.get event.pointerId model.stickId)
+
+                --TODO reading and reacting to changes seems ugly - is there no native API for "fill screen"?
+                , style "width" (String.fromInt model.windowSize.x ++ "px")
+                , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]
               <|
                 stack <|

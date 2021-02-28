@@ -240,10 +240,10 @@ viewStick name stick location windowSize viewBox stickPos =
                             Vec2.getY v
 
                         x1 =
-                            x0 * w1 / w0 - (w1 / 2)
+                            x0 * w1 / w0 + toFloat viewBox.x
 
                         y1 =
-                            -y0 * h1 / h0 + (h1 / 2)
+                            -y0 * h1 / h0 + toFloat viewBox.y + h1
                     in
                     vec2 x1 y1
 

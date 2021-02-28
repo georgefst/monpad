@@ -134,6 +134,8 @@ view model =
             [ svgExplicit
                 [ viewBox x y w h
                 , style "touch-action" "none"
+                , style "width" (String.fromInt model.windowSize.x ++ "px")
+                , style "height" (String.fromInt model.windowSize.y ++ "px")
                 , Pointer.onMove <|
                     \event -> Maybe.toList <| Maybe.map (\c -> c.onMove event) <| Dict.get event.pointerId model.stickId
                 , Pointer.onLeave <|

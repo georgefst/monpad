@@ -7,7 +7,7 @@ import Color.Interpolate exposing (Space(..), interpolate)
 import Html
 import Html.Attributes as Attr
 import Json.Encode
-import Math.Vector2 as Vec2
+import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 import Task exposing (Task)
 
 
@@ -31,21 +31,21 @@ limit ( l, u ) =
     max l << min u
 
 
-unVec2 : Vec2.Vec2 -> ( Float, Float )
+unVec2 : Vec2 -> ( Float, Float )
 unVec2 v =
-    ( Vec2.getX v, Vec2.getY v )
+    ( getX v, getY v )
 
 
-encodeVec2 : Vec2.Vec2 -> Json.Encode.Value
+encodeVec2 : Vec2 -> Json.Encode.Value
 encodeVec2 v =
     case unVec2 v of
         ( x, y ) ->
             Json.Encode.list identity [ Json.Encode.float x, Json.Encode.float y ]
 
 
-zeroVec2 : Vec2.Vec2
+zeroVec2 : Vec2
 zeroVec2 =
-    Vec2.vec2 0 0
+    vec2 0 0
 
 
 {-| Similar to 'Vec2.fromRecord'.

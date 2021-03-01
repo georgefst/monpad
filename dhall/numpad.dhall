@@ -21,18 +21,18 @@ let button =
         }
 
 in    { elements =
-        [ button +400 +100 ButtonL.Key0 "0"
-        , button +200 +300 ButtonL.Key1 "1"
-        , button +400 +300 ButtonL.Key2 "2"
-        , button +600 +300 ButtonL.Key3 "3"
-        , button +200 +500 ButtonL.Key4 "4"
-        , button +400 +500 ButtonL.Key5 "5"
-        , button +600 +500 ButtonL.Key6 "6"
-        , button +200 +700 ButtonL.Key7 "7"
-        , button +400 +700 ButtonL.Key8 "8"
-        , button +600 +700 ButtonL.Key9 "9"
+        [ button +300 +100 ButtonL.Key0 "0"
+        , button +100 +300 ButtonL.Key1 "1"
+        , button +300 +300 ButtonL.Key2 "2"
+        , button +500 +300 ButtonL.Key3 "3"
+        , button +100 +500 ButtonL.Key4 "4"
+        , button +300 +500 ButtonL.Key5 "5"
+        , button +500 +500 ButtonL.Key6 "6"
+        , button +100 +700 ButtonL.Key7 "7"
+        , button +300 +700 ButtonL.Key8 "8"
+        , button +500 +700 ButtonL.Key9 "9"
         ]
-      , viewBox = { x = +0, y = +0, w = +800, h = +800 }
+      , viewBox = { x = +0, y = +0, w = +600, h = +800 }
       , backgroundColour = monpad.cols.pastelBlue
       }
     : monpad.Layout

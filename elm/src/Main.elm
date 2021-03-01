@@ -167,7 +167,6 @@ showName name =
 viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
     let
-        --TODO this assumes that the SVG fills the screen - i.e. layout has precisely the right aspect ratio
         pageToSvg v =
             let
                 w0 =

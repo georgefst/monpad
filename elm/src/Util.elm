@@ -48,6 +48,13 @@ zeroVec2 =
     Vec2.vec2 0 0
 
 
+{-| Similar to 'Vec2.fromRecord'.
+-}
+vec2FromIntRecord : { a | x : Int, y : Int } -> Vec2
+vec2FromIntRecord v =
+    vec2 (toFloat v.x) (toFloat v.y)
+
+
 darkColor : Color.Color -> Color.Color
 darkColor c =
     interpolate RGB c Color.black 0.6

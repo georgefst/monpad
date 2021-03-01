@@ -166,6 +166,36 @@ showName name =
 
 viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
+    let
+        --TODO this assumes that the SVG fills the screen - i.e. layout has precisely the right aspect ratio
+        pageToSvg v =
+            let
+                w0 =
+                    toFloat model.windowSize.x
+
+                h0 =
+                    toFloat model.windowSize.y
+
+                w1 =
+                    toFloat model.layout.viewBox.w
+
+                h1 =
+                    toFloat model.layout.viewBox.h
+
+                x0 =
+                    Vec2.getX v
+
+                y0 =
+                    Vec2.getY v
+
+                x1 =
+                    x0 * w1 / w0 + toFloat model.layout.viewBox.x
+
+                y1 =
+                    -y0 * h1 / h0 + toFloat model.layout.viewBox.y + h1
+            in
+            vec2 x1 y1
+    in
     shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|
             case element.element of
@@ -173,9 +203,10 @@ viewElement model element =
                     viewButton element.name x <| Set.member element.name model.pressed
 
                 Element.Stick x ->
-                    viewStick element.name x element.location model.windowSize model.layout.viewBox <|
-                        withDefault zeroVec2 <|
-                            Dict.get element.name model.stickPos
+                    viewStick element.name
+                        x
+                        (flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg)
+                        (withDefault zeroVec2 <| Dict.get element.name model.stickPos)
 
                 Element.Slider x ->
                     viewSlider element.name x <| withDefault 0 <| Dict.get element.name model.sliderPos
@@ -207,8 +238,8 @@ viewButton name button pressed =
         |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
 
 
-viewStick : String -> Stick -> IntVec2 -> IntVec2 -> ViewBox -> Vec2 -> Collage Msgs
-viewStick name stick location windowSize viewBox stickPos =
+viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> Collage Msgs
+viewStick name stick toOffset stickPos =
     let
         range =
             toFloat stick.range
@@ -221,39 +252,8 @@ viewStick name stick location windowSize viewBox stickPos =
 
         getOffset event =
             let
-                --TODO this assumes that the SVG fills the screen - i.e. layout has precisely the right aspect ratio
-                pageToSvg v =
-                    let
-                        w0 =
-                            toFloat windowSize.x
-
-                        h0 =
-                            toFloat windowSize.y
-
-                        w1 =
-                            toFloat viewBox.w
-
-                        h1 =
-                            toFloat viewBox.h
-
-                        x0 =
-                            Vec2.getX v
-
-                        y0 =
-                            Vec2.getY v
-
-                        x1 =
-                            x0 * w1 / w0 + toFloat viewBox.x
-
-                        y1 =
-                            -y0 * h1 / h0 + toFloat viewBox.y + h1
-                    in
-                    vec2 x1 y1
-
                 v0 =
-                    Vec2.sub
-                        (pageToSvg <| uncurry vec2 <| event.pointer.pagePos)
-                        (vec2 (toFloat location.x) (toFloat location.y))
+                    toOffset <| uncurry vec2 <| event.pointer.pagePos
 
                 length =
                     min range <| Vec2.length v0

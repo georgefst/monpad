@@ -7,6 +7,7 @@ import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
+import Color exposing (..)
 import Json.Decode as Json
 import Loadable
 import Main
@@ -69,7 +70,7 @@ flags =
     { username = "GT"
     , layout =
         { elements =
-            [ { location = { x = 0, y = 0 }
+            [ { location = { x = -500, y = 0 }
               , name = "0"
               , showName = False
               , element =
@@ -79,6 +80,19 @@ flags =
                         , arcEnd = 4 * pi / 3
                         , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
                         , shape = Circle 350
+                        }
+              }
+            , { location = { x = 500, y = 0 }
+              , name = "0"
+              , showName = False
+              , element =
+                    Stick
+                        { radius = 150
+                        , range = 400
+                        , backgroundColour = toRgba blue
+                        , stickColour = toRgba white
+                        , stickDataX = ()
+                        , stickDataY = ()
                         }
               }
             ]

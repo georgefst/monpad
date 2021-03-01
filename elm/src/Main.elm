@@ -167,33 +167,17 @@ showName name =
 viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
     let
-        pageToSvg v =
+        pageToSvg =
             let
-                w0 =
-                    toFloat model.windowSize.x
-
-                h0 =
-                    toFloat model.windowSize.y
-
-                w1 =
-                    toFloat model.layout.viewBox.w
-
-                h1 =
-                    toFloat model.layout.viewBox.h
-
-                x0 =
-                    Vec2.getX v
-
-                y0 =
-                    Vec2.getY v
-
-                x1 =
-                    x0 * w1 / w0 + toFloat model.layout.viewBox.x
-
-                y1 =
-                    -y0 * h1 / h0 + toFloat model.layout.viewBox.y + h1
+                bottomLeft =
+                    vec2FromIntRecord model.layout.viewBox
             in
-            vec2 x1 y1
+            scaleVec2
+                { sfX = toFloat model.layout.viewBox.w / toFloat model.windowSize.x
+                , sfY = -(toFloat model.layout.viewBox.h / toFloat model.windowSize.y)
+                }
+                >> Vec2.add bottomLeft
+                >> Vec2.add (vec2 0 <| toFloat model.layout.viewBox.h)
     in
     shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|

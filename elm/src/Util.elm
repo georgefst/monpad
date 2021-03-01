@@ -77,3 +77,8 @@ applyWhen b f x =
 getViewportSize : Task x IntVec2
 getViewportSize =
     getViewport |> Task.map (\viewport -> { x = round viewport.viewport.width, y = round viewport.viewport.height })
+
+
+scaleVec2 : { a | sfX : Float, sfY : Float } -> Vec2 -> Vec2
+scaleVec2 factors v =
+    vec2 (factors.sfX * getX v) (factors.sfY * getY v)

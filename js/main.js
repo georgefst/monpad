@@ -24,4 +24,5 @@ ws.onopen = event => {
     ws.addEventListener("message", event =>
         app.ports.receiveUpdatePort.send(JSON.parse(event.data))
     )
+    app.ports.logPort.subscribe(message => console.log(message))
 }

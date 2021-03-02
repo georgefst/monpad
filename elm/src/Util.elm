@@ -26,6 +26,16 @@ maybe e f x =
             e
 
 
+either : (x -> r) -> (a -> r) -> Result x a -> r
+either f g x =
+    case x of
+        Err x1 ->
+            f x1
+
+        Ok x1 ->
+            g x1
+
+
 limit : ( comparable, comparable ) -> comparable -> comparable
 limit ( l, u ) =
     max l << min u

@@ -1,4 +1,4 @@
-port module Ports exposing (receiveUpdates, sendUpdate, toggleFullscreen)
+port module Ports exposing (consoleLog, receiveUpdates, sendUpdate, toggleFullscreen)
 
 {-| Provide safe interfaces to any ports
 -}
@@ -27,16 +27,10 @@ port sendUpdatePort :
     -> Cmd msg
 
 
-receiveUpdates : Sub (Maybe (List ServerUpdate))
+receiveUpdates : Sub (Result JD.Error (List ServerUpdate))
 receiveUpdates =
     receiveUpdatePort <|
-        \val ->
-            case JD.decodeValue decodeUpdates val of
-                Ok v ->
-                    Just v
-
-                Err _ ->
-                    Nothing
+        JD.decodeValue decodeUpdates
 
 
 decodeUpdates : JD.Decoder (List ServerUpdate)
@@ -50,3 +44,13 @@ decodeUpdates =
 port receiveUpdatePort :
     (JD.Value -> msg)
     -> Sub msg
+
+
+consoleLog : String -> Cmd msg
+consoleLog =
+    logPort
+
+
+port logPort :
+    String
+    -> Cmd msg

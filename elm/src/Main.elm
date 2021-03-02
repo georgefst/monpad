@@ -83,7 +83,12 @@ app =
     , subscriptions =
         always <|
             Sub.batch
-                [ Sub.map (maybe [] (List.map ServerUpdate)) receiveUpdates
+                [ Sub.map
+                    (either
+                        (\err -> [ ConsoleLog <| "Failed to decode update message: " ++ JD.errorToString err ])
+                        (List.map ServerUpdate)
+                    )
+                    receiveUpdates
                 , onResize (\w h -> [ Resized { x = w, y = h } ])
                 ]
     , failCmd = Nothing
@@ -424,6 +429,7 @@ type Msg
     | PointerUp Int
     | Resized IntVec2
     | Fullscreen
+    | ConsoleLog String
 
 
 load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
@@ -500,6 +506,9 @@ update msg model =
 
         Fullscreen ->
             ( model, toggleFullscreen )
+
+        ConsoleLog s ->
+            ( model, consoleLog s )
 
 
 serverUpdate : ServerUpdate -> Model -> Model

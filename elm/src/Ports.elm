@@ -1,4 +1,4 @@
-port module Ports exposing (receiveUpdates, toggleFullscreen, sendUpdate)
+port module Ports exposing (receiveUpdates, sendUpdate, toggleFullscreen)
 
 {-| Provide safe interfaces to any ports
 -}

@@ -31,7 +31,6 @@ import Data.Bifunctor
 import Data.List
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
-import Data.Maybe
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
@@ -127,8 +126,8 @@ type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do
-    addr <- fromMaybe (error "Couldn't get local ip") <$> getLocalIp
-    pure $ "http://" <> showHostAddress addr <> ":" <> showT port <> "/" <> symbolValT @Root
+    addr <- maybe "localhost" showHostAddress <$> getLocalIp
+    pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
 loginHtml :: Html ()
 loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat

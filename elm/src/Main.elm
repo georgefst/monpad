@@ -148,6 +148,7 @@ view model =
                             :: (Maybe.toList <| Maybe.map (\c -> c.onRelease) <| Dict.get event.pointerId model.stickId)
 
                 --TODO reading and reacting to changes seems ugly - is there no native API for "fill screen"?
+                -- if there is, we may not need "overflow: hidden" in app.css
                 , style "width" (String.fromInt model.windowSize.x ++ "px")
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]

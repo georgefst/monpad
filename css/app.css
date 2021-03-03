@@ -1,5 +1,7 @@
 body {
     /* TODO these comments are actually sent - use a CSS minifier (conflicts a little with using symlinks in build) */
+    /* no scrollbars */
+    overflow: hidden;
     /* these make things consistent with elm-reactor */
     padding: 0;
     margin: 0;

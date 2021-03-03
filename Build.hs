@@ -131,7 +131,7 @@ elm = rscDir </> "elm" <.> "js"
 linkedAssets :: [(FilePath, FilePath)]
 linkedAssets =
     [ (file, rscDir </> takeFileName file)
-    | file <- ["dist" </> "dhall" </> "default.dhall", "js" </> "main.js", "css" </> "main.css"]
+    | file <- ["dist" </> "dhall" </> "default.dhall", "js" </> "main.js", "css" </> "common.css", "css" </> "app.css"]
     ]
 
 assets :: [FilePath]

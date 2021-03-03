@@ -132,7 +132,7 @@ serverAddress port = do
 loginHtml :: Html ()
 loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
     [ title_ "monpad: login"
-    , style_ (mainCSS ())
+    , style_ (commonCSS ())
     , label_ [for_ nameBoxId] "Username:"
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
@@ -143,8 +143,8 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
 
 mainHtml :: Layout a b -> Port -> ClientID -> Html ()
 mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
-    [ style_ (mainCSS ())
-    , style_ "body { padding: 0; margin: 0; }" -- this just makes things consistent with elm-reactor
+    [ style_ (commonCSS ())
+    , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript

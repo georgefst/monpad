@@ -22,12 +22,14 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.Text (Text)
 import System.FilePath ((</>))
 
-{-# NOINLINE mainCSS #-}
+{-# NOINLINE commonCSS #-}
+{-# NOINLINE appCSS #-}
 {-# NOINLINE elmJS #-}
 {-# NOINLINE jsJS #-}
 {-# NOINLINE defaultDhall #-}
-mainCSS, elmJS, jsJS, defaultDhall :: () -> Text
-mainCSS () = GET_FILE("rsc" </> "main.css")
+commonCSS, appCSS, elmJS, jsJS, defaultDhall :: () -> Text
+commonCSS () = GET_FILE("rsc" </> "common.css")
+appCSS () = GET_FILE("rsc" </> "app.css")
 elmJS () = GET_FILE("rsc" </> "elm.js")
 jsJS () = GET_FILE("rsc" </> "main.js")
 defaultDhall () = bracketed $ GET_FILE("rsc" </> "default.dhall")

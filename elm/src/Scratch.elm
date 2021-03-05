@@ -83,7 +83,7 @@ flags =
                         }
               }
             , { location = { x = 500, y = 0 }
-              , name = "0"
+              , name = "1"
               , showName = False
               , element =
                     Stick

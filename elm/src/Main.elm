@@ -285,19 +285,13 @@ viewSlider name slider toOffset pos =
         v =
             vec2FromIntRecord slider.offset
 
-        a =
-            toFloat slider.offset.x
-
-        b =
-            toFloat slider.offset.y
-
         getOffset event =
             let
                 { x, y } =
                     Vec2.toRecord <| toOffset <| uncurry vec2 <| event.pointer.pagePos
             in
-            (a * x + b * y)
-                / (a ^ 2 + b ^ 2)
+            (Vec2.getX v * x + Vec2.getY v * y)
+                / Vec2.lengthSquared v
                 |> clamp 0 1
 
         stick =
@@ -307,10 +301,10 @@ viewSlider name slider toOffset pos =
         background =
             roundedRectangle width (Vec2.length v) (width / 2)
                 |> styled1 slider.backgroundColour
-                |> rotate -(atan (a / b))
+                |> rotate (angleVec2 v - pi / 2)
                 |> shift (unVec2 <| Vec2.scale (1 / 2) v)
     in
-    stack [ stick |> shift ( pos * a, pos * b ), background ]
+    stack [ stick |> shift (unVec2 <| Vec2.scale pos v), background ]
         |> Collage.on "pointerdown"
             (Pointer.eventDecoder
                 |> JD.map

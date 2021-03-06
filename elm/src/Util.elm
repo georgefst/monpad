@@ -92,3 +92,8 @@ getViewportSize =
 scaleVec2 : { a | sfX : Float, sfY : Float } -> Vec2 -> Vec2
 scaleVec2 factors v =
     vec2 (factors.sfX * getX v) (factors.sfY * getY v)
+
+
+angleVec2 : Vec2 -> Float
+angleVec2 v =
+    atan (getY v / getX v)

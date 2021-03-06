@@ -236,9 +236,6 @@ viewStick name stick toOffset stickPos =
         rad =
             toFloat stick.radius
 
-        rFront =
-            range + rad
-
         getOffset event =
             let
                 v0 =
@@ -254,28 +251,20 @@ viewStick name stick toOffset stickPos =
 
         small =
             circle rad |> styled1 stick.stickColour
-
-        front =
-            let
-                decode =
-                    Pointer.eventDecoder
-                        |> JD.map
-                            (\x ->
-                                [ PointerDown x.pointerId
-                                    { onMove = \event -> Update <| StickMove name <| getOffset event
-                                    , onRelease = Update <| StickMove name <| vec2 0 0
-                                    }
-                                , Update <| StickMove name <| getOffset x
-                                ]
-                            )
-            in
-            -- invisible - area in which touches are registered
-            -- used to extrude envelope to cover everywhere 'small' might go
-            circle rFront
-                |> filled (uniform <| hsla 0 0 0 0)
-                |> Collage.on "pointerdown" decode
     in
-    stack [ front, small |> shift (unVec2 <| Vec2.scale range stickPos), big ]
+    stack [ small |> shift (unVec2 <| Vec2.scale range stickPos), big ]
+        |> Collage.on "pointerdown"
+            (Pointer.eventDecoder
+                |> JD.map
+                    (\x ->
+                        [ PointerDown x.pointerId
+                            { onMove = \event -> Update <| StickMove name <| getOffset event
+                            , onRelease = Update <| StickMove name <| vec2 0 0
+                            }
+                        , Update <| StickMove name <| getOffset x
+                        ]
+                    )
+            )
 
 
 viewSlider : String -> Slider -> Float -> Collage Msgs

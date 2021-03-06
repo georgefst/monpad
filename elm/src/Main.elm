@@ -201,7 +201,7 @@ viewElement model element =
                     viewSlider element.name x <| withDefault 0 <| Dict.get element.name model.sliderPos
 
                 Element.Image x ->
-                    viewImage element.name x <| Maybe.withDefault x.url <| Dict.get element.name model.imageToUrl
+                    viewImage element.name x <| withDefault x.url <| Dict.get element.name model.imageToUrl
 
                 Element.Indicator x ->
                     viewIndicator element.name x

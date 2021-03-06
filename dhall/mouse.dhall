@@ -39,7 +39,7 @@ let layoutAll =
           [ button -300 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
           , button +300 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
           , { element =
-                monpad.Element.Slider
+                monpad.simpleSlider
                   { radius = 90
                   , length = 600
                   , width = 80
@@ -48,7 +48,7 @@ let layoutAll =
                   , vertical = True
                   , sliderData = axis Evdev.RelAxis.RelWheel 5.0
                   }
-            , location = { x = +0, y = +1600 }
+            , location = { x = +0, y = +1300 }
             , name = "Slider"
             , showName = False
             }

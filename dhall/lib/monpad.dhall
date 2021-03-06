@@ -23,11 +23,12 @@ let Stick =
 let Slider =
       λ(a : Type) →
         { radius : Natural
-        , length : Natural
+        , offset : V2 Integer
         , width : Natural
+        , initialPosition : Double
+        , resetOnRelease : Bool
         , sliderColour : Colour
         , backgroundColour : Colour
-        , vertical : Bool
         , sliderData : a
         }
 
@@ -140,6 +141,34 @@ let mapLayout
                 e.elements
           }
 
+let simpleSlider =
+      λ(a : Type) →
+      λ(b : Type) →
+      λ ( s
+        : { radius : Natural
+          , length : Natural
+          , width : Natural
+          , sliderColour : Colour
+          , backgroundColour : Colour
+          , vertical : Bool
+          , sliderData : a
+          }
+        ) →
+          (Element a b).Slider
+            { radius = s.radius
+            , offset =
+                if    s.vertical
+                then  { x = +0, y = Natural/toInteger s.length }
+                else  { x = Natural/toInteger s.length, y = +0 }
+            , width = s.width
+            , initialPosition = 0.5
+            , resetOnRelease = True
+            , sliderColour = s.sliderColour
+            , backgroundColour = s.backgroundColour
+            , sliderData = s.sliderData
+            }
+        : Element a b
+
 in  λ(a : Type) →
     λ(b : Type) →
       { Colour
@@ -150,4 +179,5 @@ in  λ(a : Type) →
       , FullElement = FullElement a b
       , Layout = Layout a b
       , mapLayout = mapLayout a b
+      , simpleSlider = simpleSlider a b
       }

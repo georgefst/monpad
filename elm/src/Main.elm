@@ -141,11 +141,13 @@ view model =
                 [ viewBox x -(h + y) w h
                 , style "touch-action" "none"
                 , Pointer.onMove <|
-                    \event -> Maybe.toList <| Maybe.map (\c -> c.onMove event) <| Dict.get event.pointerId model.stickId
+                    \event ->
+                        maybe [] (\c -> c.onMove event) <|
+                            Dict.get event.pointerId model.pointerCallbacks
                 , Pointer.onLeave <|
                     \event ->
                         PointerUp event.pointerId
-                            :: (Maybe.toList <| Maybe.map (\c -> c.onRelease) <| Dict.get event.pointerId model.stickId)
+                            :: (maybe [] (\c -> c.onRelease) <| Dict.get event.pointerId model.pointerCallbacks)
 
                 --TODO reading and reacting to changes seems ugly - is there no native API for "fill screen"?
                 -- if there is, we may not need "overflow: hidden" in app.css
@@ -173,17 +175,20 @@ showName name =
 viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
     let
-        pageToSvg =
+        toOffset =
             let
                 bottomLeft =
                     vec2FromIntRecord model.layout.viewBox
+
+                pageToSvg =
+                    scaleVec2
+                        { sfX = toFloat model.layout.viewBox.w / toFloat model.windowSize.x
+                        , sfY = -(toFloat model.layout.viewBox.h / toFloat model.windowSize.y)
+                        }
+                        >> Vec2.add bottomLeft
+                        >> Vec2.add (vec2 0 <| toFloat model.layout.viewBox.h)
             in
-            scaleVec2
-                { sfX = toFloat model.layout.viewBox.w / toFloat model.windowSize.x
-                , sfY = -(toFloat model.layout.viewBox.h / toFloat model.windowSize.y)
-                }
-                >> Vec2.add bottomLeft
-                >> Vec2.add (vec2 0 <| toFloat model.layout.viewBox.h)
+            flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
     in
     shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
         applyWhen element.showName (impose <| showName element.name) <|
@@ -192,13 +197,14 @@ viewElement model element =
                     viewButton element.name x <| Set.member element.name model.pressed
 
                 Element.Stick x ->
-                    viewStick element.name
-                        x
-                        (flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg)
-                        (withDefault zeroVec2 <| Dict.get element.name model.stickPos)
+                    viewStick element.name x toOffset <|
+                        withDefault zeroVec2 <|
+                            Dict.get element.name model.stickPos
 
                 Element.Slider x ->
-                    viewSlider element.name x <| withDefault 0 <| Dict.get element.name model.sliderPos
+                    viewSlider element.name x toOffset <|
+                        withDefault x.initialPosition <|
+                            Dict.get element.name model.sliderPos
 
                 Element.Image x ->
                     viewImage element.name x <| withDefault x.url <| Dict.get element.name model.imageToUrl
@@ -258,8 +264,8 @@ viewStick name stick toOffset stickPos =
                 |> JD.map
                     (\x ->
                         [ PointerDown x.pointerId
-                            { onMove = \event -> Update <| StickMove name <| getOffset event
-                            , onRelease = Update <| StickMove name <| vec2 0 0
+                            { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
+                            , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
                             }
                         , Update <| StickMove name <| getOffset x
                         ]
@@ -267,56 +273,61 @@ viewStick name stick toOffset stickPos =
             )
 
 
-viewSlider : String -> Slider -> Float -> Collage Msgs
-viewSlider name slider pos =
+viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> Collage Msgs
+viewSlider name slider toOffset pos =
     let
-        length =
-            toFloat slider.length
-
         width =
             toFloat slider.width
 
         rad =
             toFloat slider.radius
 
-        ( getCoord, shiftSlider, ( sizeX, sizeY ) ) =
-            if slider.vertical then
-                ( second, shiftY, ( width, length ) )
+        v =
+            vec2FromIntRecord slider.offset
 
-            else
-                ( first, shiftX, ( length, width ) )
+        a =
+            toFloat slider.offset.x
 
-        diam =
-            2 * rad
+        b =
+            toFloat slider.offset.y
 
         getOffset event =
-            applyWhen slider.vertical negate <|
-                limit ( 0, 1 ) ((getCoord event.pointer.offsetPos - rad) / length)
-                    * 2
-                    - 1
+            let
+                { x, y } =
+                    Vec2.toRecord <| toOffset <| uncurry vec2 <| event.pointer.pagePos
+            in
+            (a * x + b * y)
+                / (a ^ 2 + b ^ 2)
+                |> clamp 0 1
 
         stick =
             circle rad
                 |> styled1 slider.sliderColour
 
         background =
-            roundedRectangle sizeX sizeY (width / 2)
+            roundedRectangle width (Vec2.length v) (width / 2)
                 |> styled1 slider.backgroundColour
-
-        front =
-            let
-                decode =
-                    JD.map (Update << SliderMove name << getOffset)
-                        Pointer.eventDecoder
-            in
-            -- as with Stick, represents movement area
-            rectangle (sizeX + diam) (sizeY + diam)
-                |> filled (uniform <| hsla 0 0 0 0)
-                |> Collage.on "pointermove" (JD.map List.singleton decode)
-                |> Collage.on "pointerdown" (JD.map List.singleton decode)
-                |> Collage.on "pointerout" (JD.succeed [ Update <| SliderMove name 0 ])
+                |> rotate -(atan (a / b))
+                |> shift (unVec2 <| Vec2.scale (1 / 2) v)
     in
-    stack [ front, stick |> shiftSlider (pos * length / 2), background ]
+    stack [ stick |> shift ( pos * a, pos * b ), background ]
+        |> Collage.on "pointerdown"
+            (Pointer.eventDecoder
+                |> JD.map
+                    (\x ->
+                        [ PointerDown x.pointerId
+                            { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
+                            , onRelease =
+                                if slider.resetOnRelease then
+                                    [ Update <| SliderMove name <| slider.initialPosition ]
+
+                                else
+                                    []
+                            }
+                        , Update <| SliderMove name <| getOffset x
+                        ]
+                    )
+            )
 
 
 viewImage : String -> Image -> String -> Collage Msgs
@@ -401,7 +412,7 @@ type alias Model =
     , layout : Layout
     , windowSize : IntVec2
     , stickPos : Dict String Vec2
-    , stickId : Dict Int { onMove : Pointer.Event -> Msg, onRelease : Msg } -- pointer id to event callbacks
+    , pointerCallbacks : Dict Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs } -- keyed by pointer id
     , pressed : Set String
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
@@ -416,7 +427,7 @@ type alias Msgs =
 type Msg
     = Update Update
     | ServerUpdate ServerUpdate
-    | PointerDown Int { onMove : Pointer.Event -> Msg, onRelease : Msg }
+    | PointerDown Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs }
     | PointerUp Int
     | Resized IntVec2
     | Fullscreen
@@ -450,7 +461,7 @@ load flags =
                                   , layout = flags.layout
                                   , windowSize = viewport
                                   , stickPos = Dict.empty
-                                  , stickId = Dict.empty
+                                  , pointerCallbacks = Dict.empty
                                   , pressed = Set.empty
                                   , sliderPos = Dict.empty
                                   , imageToUrl = imageToUrl
@@ -487,10 +498,10 @@ update msg model =
             ( serverUpdate u model, Cmd.none )
 
         PointerDown pid callbacks ->
-            ( { model | stickId = Dict.insert pid callbacks model.stickId }, Cmd.none )
+            ( { model | pointerCallbacks = Dict.insert pid callbacks model.pointerCallbacks }, Cmd.none )
 
         PointerUp pid ->
-            ( { model | stickId = Dict.remove pid model.stickId }, Cmd.none )
+            ( { model | pointerCallbacks = Dict.remove pid model.pointerCallbacks }, Cmd.none )
 
         Resized v ->
             ( { model | windowSize = v }, Cmd.none )
@@ -541,7 +552,7 @@ serverUpdate u model =
             { username = model.username
             , windowSize = model.windowSize
             , stickPos = Dict.remove e model.stickPos
-            , stickId = model.stickId
+            , pointerCallbacks = model.pointerCallbacks
             , pressed = Set.remove e model.pressed
             , sliderPos = Dict.remove e model.sliderPos
             , imageToUrl = Dict.remove e model.imageToUrl

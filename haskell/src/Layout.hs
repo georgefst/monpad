@@ -88,11 +88,14 @@ deriving via (Elm.Via1 Button) instance ToJSON (Button Unit)
 
 data Slider a = Slider'
     { radius :: Word
-    , length :: Word
+    , offset :: V2 Int
+    -- ^ where the slider ends (it starts at the element's location)
     , width :: Word
+    , initialPosition :: Double
+    -- ^ 0 (start) to 1 (end)
+    , resetOnRelease :: Bool
     , sliderColour :: Colour
     , backgroundColour :: Colour
-    , vertical :: Bool
     , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)

@@ -264,6 +264,7 @@ viewStick name stick toOffset stickPos =
                                     { onMove = \event -> Update <| StickMove name <| getOffset event
                                     , onRelease = Update <| StickMove name <| vec2 0 0
                                     }
+                                , Update <| StickMove name <| getOffset x
                                 ]
                             )
             in

@@ -299,7 +299,7 @@ viewSlider name slider toOffset pos =
                 |> styled1 slider.sliderColour
 
         background =
-            roundedRectangle width (Vec2.length v) (width / 2)
+            roundedRectangle width (Vec2.length v + width) (width / 2)
                 |> styled1 slider.backgroundColour
                 |> rotate (angleVec2 v - pi / 2)
                 |> shift (unVec2 <| Vec2.scale (1 / 2) v)

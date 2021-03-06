@@ -376,7 +376,7 @@ viewIndicator _ ind =
                                        min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
                                     -}
                                     f x =
-                                        limit ( -1, 1 ) <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
+                                        clamp -1 1 <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
                                 in
                                 ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - pi / 2) )
 

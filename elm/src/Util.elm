@@ -36,11 +36,6 @@ either f g x =
             g x1
 
 
-limit : ( comparable, comparable ) -> comparable -> comparable
-limit ( l, u ) =
-    max l << min u
-
-
 unVec2 : Vec2 -> ( Float, Float )
 unVec2 v =
     ( getX v, getY v )

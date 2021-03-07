@@ -155,18 +155,15 @@ let simpleSlider =
           }
         ) →
           (Element a b).Slider
-            { radius = s.radius
-            , offset =
-                if    s.vertical
-                then  { x = +0, y = Natural/toInteger s.length }
-                else  { x = Natural/toInteger s.length, y = +0 }
-            , width = s.width
-            , initialPosition = 0.5
-            , resetOnRelease = True
-            , sliderColour = s.sliderColour
-            , backgroundColour = s.backgroundColour
-            , sliderData = s.sliderData
-            }
+            (   s
+              ∧ { offset =
+                    if    s.vertical
+                    then  { x = +0, y = Natural/toInteger s.length }
+                    else  { x = Natural/toInteger s.length, y = +0 }
+                , initialPosition = 0.5
+                , resetOnRelease = True
+                }
+            ).(Slider a)
         : Element a b
 
 in  λ(a : Type) →

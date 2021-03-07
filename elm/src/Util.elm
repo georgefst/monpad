@@ -79,6 +79,11 @@ applyWhen b f x =
         x
 
 
+performCmd : a -> Cmd a
+performCmd =
+    Task.perform identity << Task.succeed
+
+
 getViewportSize : Task x IntVec2
 getViewportSize =
     getViewport |> Task.map (\viewport -> { x = round viewport.viewport.width, y = round viewport.viewport.height })

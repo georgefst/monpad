@@ -514,7 +514,7 @@ update msg model =
             ( model1, sendUpdate u )
 
         ServerUpdate u ->
-            ( serverUpdate u model, Cmd.none )
+            serverUpdate u model
 
         PointerDown pid callbacks ->
             ( { model | pointerCallbacks = Dict.insert pid callbacks model.pointerCallbacks }, Cmd.none )
@@ -532,7 +532,7 @@ update msg model =
             ( model, consoleLog s )
 
 
-serverUpdate : ServerUpdate -> Model -> Model
+serverUpdate : ServerUpdate -> Model -> ( Model, Cmd Msgs )
 serverUpdate u model =
     let
         layout =
@@ -559,19 +559,32 @@ serverUpdate u model =
     in
     case u of
         SetImageURL image url ->
-            { model | imageToUrl = Dict.insert image url model.imageToUrl }
+            ( { model | imageToUrl = Dict.insert image url model.imageToUrl }
+            , Cmd.none
+            )
 
         SetLayout l ->
-            { model | layout = l }
+            ( { model | layout = l }
+            , Cmd.none
+            )
 
-        SwitchLayout l ->
-            { model | layout = withDefault layout <| Dict.get l model.layouts }
+        SwitchLayout id ->
+            case Dict.get id model.layouts of
+                Just l ->
+                    ( { model | layout = l }
+                    , Cmd.none
+                    )
+
+                Nothing ->
+                    ( model, performCmd [ ConsoleLog <| "Unknown layout: " ++ id ] )
 
         AddElement e ->
-            { model | layout = { layout | elements = e :: layout.elements } }
+            ( { model | layout = { layout | elements = e :: layout.elements } }
+            , Cmd.none
+            )
 
         RemoveElement e ->
-            { model
+            ( { model
                 | pressed = Set.remove e model.pressed
                 , sliderPos = Dict.remove e model.sliderPos
                 , imageToUrl = Dict.remove e model.imageToUrl
@@ -588,32 +601,34 @@ serverUpdate u model =
                                             Just e1
                                     )
                     }
-            }
+              }
+            , Cmd.none
+            )
 
         SetBackgroundColour c ->
-            { model
-                | layout = { layout | backgroundColour = c }
-            }
+            ( { model | layout = { layout | backgroundColour = c } }
+            , Cmd.none
+            )
 
         SetIndicatorHollowness name x ->
-            { model
-                | layout = updateIndicator name (\e -> { e | hollowness = x })
-            }
+            ( { model | layout = updateIndicator name (\e -> { e | hollowness = x }) }
+            , Cmd.none
+            )
 
         SetIndicatorArcStart name x ->
-            { model
-                | layout = updateIndicator name (\e -> { e | arcStart = x })
-            }
+            ( { model | layout = updateIndicator name (\e -> { e | arcStart = x }) }
+            , Cmd.none
+            )
 
         SetIndicatorArcEnd name x ->
-            { model
-                | layout = updateIndicator name (\e -> { e | arcEnd = x })
-            }
+            ( { model | layout = updateIndicator name (\e -> { e | arcEnd = x }) }
+            , Cmd.none
+            )
 
         SetIndicatorShape name x ->
-            { model
-                | layout = updateIndicator name (\e -> { e | shape = x })
-            }
+            ( { model | layout = updateIndicator name (\e -> { e | shape = x }) }
+            , Cmd.none
+            )
 
 
 styled1 : Colour -> Collage.Shape -> Collage msg

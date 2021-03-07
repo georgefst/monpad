@@ -124,7 +124,7 @@ view model =
     , body =
         let
             { x, y, w, h } =
-                model.layout.viewBox
+                model.layout.layout.viewBox
 
             fullscreenButton =
                 let
@@ -144,17 +144,17 @@ view model =
                 ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
         [ div
-            [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour ]
+            [ style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour ]
             [ svgExplicit
                 [ viewBox x -(h + y) w h
                 , style "touch-action" "none"
                 , Pointer.onMove <|
                     \event ->
-                        Dict.get event.pointerId model.pointerCallbacks
+                        Dict.get event.pointerId model.layout.pointerCallbacks
                             |> maybe [ unknownIdMsg event ] (\c -> c.onMove event)
                 , Pointer.onLeave <|
                     \event ->
-                        Dict.get event.pointerId model.pointerCallbacks
+                        Dict.get event.pointerId model.layout.pointerCallbacks
                             |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
                             |> (\msgs -> PointerUp event.pointerId :: msgs)
 
@@ -166,7 +166,7 @@ view model =
               <|
                 stack <|
                     fullscreenButton
-                        :: List.map (viewElement model) model.layout.elements
+                        :: List.map (viewElement model) model.layout.layout.elements
             ]
         ]
     }
@@ -187,15 +187,15 @@ viewElement model element =
         toOffset =
             let
                 bottomLeft =
-                    vec2FromIntRecord model.layout.viewBox
+                    vec2FromIntRecord model.layout.layout.viewBox
 
                 pageToSvg =
                     scaleVec2
-                        { sfX = toFloat model.layout.viewBox.w / toFloat model.windowSize.x
-                        , sfY = -(toFloat model.layout.viewBox.h / toFloat model.windowSize.y)
+                        { sfX = toFloat model.layout.layout.viewBox.w / toFloat model.windowSize.x
+                        , sfY = -(toFloat model.layout.layout.viewBox.h / toFloat model.windowSize.y)
                         }
                         >> Vec2.add bottomLeft
-                        >> Vec2.add (vec2 0 <| toFloat model.layout.viewBox.h)
+                        >> Vec2.add (vec2 0 <| toFloat model.layout.layout.viewBox.h)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
     in
@@ -203,20 +203,20 @@ viewElement model element =
         applyWhen element.showName (impose <| showName element.name) <|
             case element.element of
                 Element.Button x ->
-                    viewButton element.name x <| Set.member element.name model.pressed
+                    viewButton element.name x <| Set.member element.name model.layout.pressed
 
                 Element.Stick x ->
                     viewStick element.name x toOffset <|
                         withDefault zeroVec2 <|
-                            Dict.get element.name model.stickPos
+                            Dict.get element.name model.layout.stickPos
 
                 Element.Slider x ->
                     viewSlider element.name x toOffset <|
                         withDefault x.initialPosition <|
-                            Dict.get element.name model.sliderPos
+                            Dict.get element.name model.layout.sliderPos
 
                 Element.Image x ->
-                    viewImage element.name x <| withDefault x.url <| Dict.get element.name model.imageToUrl
+                    viewImage element.name x <| withDefault x.url <| Dict.get element.name model.layout.imageToUrl
 
                 Element.Indicator x ->
                     viewIndicator element.name x
@@ -412,15 +412,20 @@ viewIndicator _ ind =
 
 type alias Model =
     { username : String
-    , layout : Layout
     , windowSize : IntVec2
+    , startTime : Posix
+    , layout : LayoutState -- the active layout
+    , layouts : Dict String LayoutState -- NB. the active layout doesn't get updated here until we switch out of it
+    }
+
+
+type alias LayoutState =
+    { layout : Layout
     , stickPos : Dict String Vec2
     , pointerCallbacks : Dict Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs } -- keyed by pointer id
     , pressed : Set String
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
-    , startTime : Posix
-    , layouts : Dict String Layout
     }
 
 
@@ -457,32 +462,13 @@ load flags =
 
                                 layout :: layouts ->
                                     Task.succeed <|
-                                        let
-                                            imageToUrl =
-                                                layout.elements
-                                                    |> filterMap
-                                                        (\e ->
-                                                            case e.element of
-                                                                Element.Image img ->
-                                                                    Just ( e.name, img.url )
-
-                                                                _ ->
-                                                                    Nothing
-                                                        )
-                                                    |> Dict.fromList
-                                        in
                                         ( { username = flags.username
-                                          , layout = layout
+                                          , layout = loadLayout layout
                                           , windowSize = viewport
-                                          , stickPos = Dict.empty
-                                          , pointerCallbacks = Dict.empty
-                                          , pressed = Set.empty
-                                          , sliderPos = Dict.empty
-                                          , imageToUrl = imageToUrl
                                           , startTime = startTime
                                           , layouts =
                                                 (layout :: layouts)
-                                                    |> List.map (\x -> ( x.name, x ))
+                                                    |> List.map (\x -> ( x.name, loadLayout x ))
                                                     |> Dict.fromList
                                           }
                                         , Cmd.none
@@ -491,24 +477,50 @@ load flags =
             )
 
 
+loadLayout : Layout -> LayoutState
+loadLayout layout =
+    { layout = layout
+    , stickPos = Dict.empty
+    , pointerCallbacks = Dict.empty
+    , pressed = Set.empty
+    , sliderPos = Dict.empty
+    , imageToUrl =
+        layout.elements
+            |> filterMap
+                (\e ->
+                    case e.element of
+                        Element.Image img ->
+                            Just ( e.name, img.url )
+
+                        _ ->
+                            Nothing
+                )
+            |> Dict.fromList
+    }
+
+
 update : Msg -> Model -> ( Model, Cmd Msgs )
 update msg model =
+    let
+        layoutState =
+            model.layout
+    in
     case msg of
         Update u ->
             let
                 model1 =
                     case u of
                         ButtonUp b ->
-                            { model | pressed = Set.remove b model.pressed }
+                            { model | layout = { layoutState | pressed = Set.remove b layoutState.pressed } }
 
                         ButtonDown b ->
-                            { model | pressed = Set.insert b model.pressed }
+                            { model | layout = { layoutState | pressed = Set.insert b layoutState.pressed } }
 
                         StickMove t p ->
-                            { model | stickPos = Dict.insert t p model.stickPos }
+                            { model | layout = { layoutState | stickPos = Dict.insert t p layoutState.stickPos } }
 
                         SliderMove t p ->
-                            { model | sliderPos = Dict.insert t p model.sliderPos }
+                            { model | layout = { layoutState | sliderPos = Dict.insert t p layoutState.sliderPos } }
             in
             ( model1, sendUpdate u )
 
@@ -516,10 +528,14 @@ update msg model =
             serverUpdate u model
 
         PointerDown pid callbacks ->
-            ( { model | pointerCallbacks = Dict.insert pid callbacks model.pointerCallbacks }, Cmd.none )
+            ( { model | layout = { layoutState | pointerCallbacks = Dict.insert pid callbacks layoutState.pointerCallbacks } }
+            , Cmd.none
+            )
 
         PointerUp pid ->
-            ( { model | pointerCallbacks = Dict.remove pid model.pointerCallbacks }, Cmd.none )
+            ( { model | layout = { layoutState | pointerCallbacks = Dict.remove pid layoutState.pointerCallbacks } }
+            , Cmd.none
+            )
 
         Resized v ->
             ( { model | windowSize = v }, Cmd.none )
@@ -534,8 +550,11 @@ update msg model =
 serverUpdate : ServerUpdate -> Model -> ( Model, Cmd Msgs )
 serverUpdate u model =
     let
-        layout =
+        layoutState =
             model.layout
+
+        layout =
+            layoutState.layout
 
         updateIndicator name f =
             { layout
@@ -558,19 +577,19 @@ serverUpdate u model =
     in
     case u of
         SetImageURL image url ->
-            ( { model | imageToUrl = Dict.insert image url model.imageToUrl }
+            ( { model | layout = { layoutState | imageToUrl = Dict.insert image url layoutState.imageToUrl } }
             , Cmd.none
             )
 
         SetLayout l ->
-            ( { model | layout = l }
+            ( { model | layout = loadLayout l }
             , Cmd.none
             )
 
         SwitchLayout id ->
             case Dict.get id model.layouts of
                 Just l ->
-                    ( { model | layout = l }
+                    ( { model | layout = l, layouts = Dict.insert model.layout.layout.name model.layout model.layouts }
                     , Cmd.none
                     )
 
@@ -578,54 +597,57 @@ serverUpdate u model =
                     ( model, performCmd [ ConsoleLog <| "Unknown layout: " ++ id ] )
 
         AddElement e ->
-            ( { model | layout = { layout | elements = e :: layout.elements } }
+            ( { model | layout = { layoutState | layout = { layout | elements = e :: layout.elements } } }
             , Cmd.none
             )
 
         RemoveElement e ->
             ( { model
-                | pressed = Set.remove e model.pressed
-                , sliderPos = Dict.remove e model.sliderPos
-                , imageToUrl = Dict.remove e model.imageToUrl
-                , layout =
-                    { layout
-                        | elements =
-                            layout.elements
-                                |> List.filterMap
-                                    (\e1 ->
-                                        if e1.name == e then
-                                            Nothing
+                | layout =
+                    { layoutState
+                        | pressed = Set.remove e layoutState.pressed
+                        , sliderPos = Dict.remove e layoutState.sliderPos
+                        , imageToUrl = Dict.remove e layoutState.imageToUrl
+                        , layout =
+                            { layout
+                                | elements =
+                                    layout.elements
+                                        |> List.filterMap
+                                            (\e1 ->
+                                                if e1.name == e then
+                                                    Nothing
 
-                                        else
-                                            Just e1
-                                    )
+                                                else
+                                                    Just e1
+                                            )
+                            }
                     }
               }
             , Cmd.none
             )
 
         SetBackgroundColour c ->
-            ( { model | layout = { layout | backgroundColour = c } }
+            ( { model | layout = { layoutState | layout = { layout | backgroundColour = c } } }
             , Cmd.none
             )
 
         SetIndicatorHollowness name x ->
-            ( { model | layout = updateIndicator name (\e -> { e | hollowness = x }) }
+            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | hollowness = x }) } }
             , Cmd.none
             )
 
         SetIndicatorArcStart name x ->
-            ( { model | layout = updateIndicator name (\e -> { e | arcStart = x }) }
+            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | arcStart = x }) } }
             , Cmd.none
             )
 
         SetIndicatorArcEnd name x ->
-            ( { model | layout = updateIndicator name (\e -> { e | arcEnd = x }) }
+            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | arcEnd = x }) } }
             , Cmd.none
             )
 
         SetIndicatorShape name x ->
-            ( { model | layout = updateIndicator name (\e -> { e | shape = x }) }
+            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | shape = x }) } }
             , Cmd.none
             )
 

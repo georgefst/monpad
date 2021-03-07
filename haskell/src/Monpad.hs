@@ -43,7 +43,6 @@ import GHC.IO.Encoding (setLocaleEncoding)
 import Generic.Data (Generically (..))
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
-import Lens.Micro
 import Linear
 import Lucid
 import Lucid.Base (makeAttribute)
@@ -51,6 +50,7 @@ import Network.HTTP.Types.Status
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
+import Optics
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
@@ -59,9 +59,6 @@ import Streamly.Internal.Prelude qualified as SP
 import System.FilePath
 import System.IO
 import Text.Pretty.Simple
-
---TODO shouldn't really use this in library code
-import Data.Generics.Labels ()
 
 import DhallHack
 import Embed

@@ -89,6 +89,7 @@ library
     other-modules:
         Embed
         DhallHack
+        Orphans.Elm
         Orphans.V2
         Util
         Util.Elm

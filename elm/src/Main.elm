@@ -47,19 +47,19 @@ import Tuple exposing (..)
 import Util exposing (..)
 
 
-main : Loadable.Program JD.Value Model Msgs JD.Error
+main : Loadable.Program JD.Value Model Msgs Error
 main =
     Loadable.application app
 
 
 app :
-    { load : JD.Value -> a -> b -> Task.Task JD.Error ( Model, Cmd Msgs )
+    { load : JD.Value -> a -> b -> Task.Task Error ( Model, Cmd Msgs )
     , update : Msgs -> Model -> ( Model, Cmd Msgs )
     , view : Model -> Document Msgs
     , subscriptions : Model -> Sub Msgs
     , failCmd : Maybe c
     , loadingView : Maybe d
-    , errorView : Maybe (JD.Error -> { title : String, body : List (Html msg) })
+    , errorView : Maybe (Error -> { title : String, body : List (Html msg) })
     , onUrlRequest : e -> Msgs
     , onUrlChange : f -> Msgs
     }
@@ -68,7 +68,7 @@ app =
         \f _ _ ->
             case JD.decodeValue Auto.ElmFlags.decode f of
                 Err e ->
-                    Task.fail e
+                    Task.fail <| JsonError e
 
                 Ok flags ->
                     load flags
@@ -100,7 +100,13 @@ app =
                 , body =
                     [ Html.text "Monpad failed to start. If you're using \"elm reactor\", try Scratch.elm instead."
                     , div [] []
-                    , Html.text <| JD.errorToString e
+                    , Html.text <|
+                        case e of
+                            JsonError err ->
+                                JD.errorToString err
+
+                            OtherError s ->
+                                s
                     ]
                 }
     , onUrlRequest = always []
@@ -415,6 +421,7 @@ type alias Model =
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
     , startTime : Posix
+    , layouts : Dict String Layout
     }
 
 
@@ -432,7 +439,12 @@ type Msg
     | ConsoleLog String
 
 
-load : ElmFlags -> Task.Task JD.Error ( Model, Cmd Msgs )
+type Error
+    = JsonError JD.Error
+    | OtherError String
+
+
+load : ElmFlags -> Task.Task Error ( Model, Cmd Msgs )
 load flags =
     now
         |> Task.andThen
@@ -440,33 +452,42 @@ load flags =
                 getViewportSize
                     |> Task.andThen
                         (\viewport ->
-                            Task.succeed <|
-                                let
-                                    imageToUrl =
-                                        flags.layout.elements
-                                            |> filterMap
-                                                (\e ->
-                                                    case e.element of
-                                                        Element.Image img ->
-                                                            Just ( e.name, img.url )
+                            case flags.layouts of
+                                [] ->
+                                    Task.fail <| OtherError "layout list is empty"
 
-                                                        _ ->
-                                                            Nothing
-                                                )
-                                            |> Dict.fromList
-                                in
-                                ( { username = flags.username
-                                  , layout = flags.layout
-                                  , windowSize = viewport
-                                  , stickPos = Dict.empty
-                                  , pointerCallbacks = Dict.empty
-                                  , pressed = Set.empty
-                                  , sliderPos = Dict.empty
-                                  , imageToUrl = imageToUrl
-                                  , startTime = startTime
-                                  }
-                                , Cmd.none
-                                )
+                                layout :: layouts ->
+                                    Task.succeed <|
+                                        let
+                                            imageToUrl =
+                                                layout.elements
+                                                    |> filterMap
+                                                        (\e ->
+                                                            case e.element of
+                                                                Element.Image img ->
+                                                                    Just ( e.name, img.url )
+
+                                                                _ ->
+                                                                    Nothing
+                                                        )
+                                                    |> Dict.fromList
+                                        in
+                                        ( { username = flags.username
+                                          , layout = layout
+                                          , windowSize = viewport
+                                          , stickPos = Dict.empty
+                                          , pointerCallbacks = Dict.empty
+                                          , pressed = Set.empty
+                                          , sliderPos = Dict.empty
+                                          , imageToUrl = imageToUrl
+                                          , startTime = startTime
+                                          , layouts =
+                                                (layout :: layouts)
+                                                    |> List.map (\x -> ( x.name, x ))
+                                                    |> Dict.fromList
+                                          }
+                                        , Cmd.none
+                                        )
                         )
             )
 
@@ -542,6 +563,9 @@ serverUpdate u model =
 
         SetLayout l ->
             { model | layout = l }
+
+        SwitchLayout l ->
+            { model | layout = withDefault layout <| Dict.get l model.layouts }
 
         AddElement e ->
             { model | layout = { layout | elements = e :: layout.elements } }

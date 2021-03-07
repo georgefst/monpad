@@ -5,13 +5,13 @@ const username = attr("username")
 const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + new URLSearchParams({ username })
 const ws = new WebSocket(wsAddress)
 
-const layout = JSON.parse(attr("layout"))
+const layouts = JSON.parse(attr("layouts"))
 
 window.onbeforeunload = () => ws.close()
 
 ws.onopen = event => {
     const app = Elm.Main.init({
-        flags: { username, layout }
+        flags: { username, layouts }
     })
     app.ports.fullscreenPort.subscribe(message => {
         if (document.fullscreenElement == null) {

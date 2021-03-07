@@ -34,5 +34,6 @@ in    { elements =
         ]
       , viewBox = { x = +0, y = +0, w = +600, h = +800 }
       , backgroundColour = monpad.cols.pastelBlue
+      , name = "numpad"
       }
     : monpad.Layout

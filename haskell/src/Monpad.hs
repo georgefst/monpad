@@ -29,6 +29,7 @@ import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.List
+import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Proxy
@@ -37,7 +38,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
-import Data.Tuple.Extra (snd3, thd3)
+import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (setLocaleEncoding)
 import Generic.Data (Generically (..))
@@ -63,6 +64,7 @@ import Text.Pretty.Simple
 import DhallHack
 import Embed
 import Layout
+import Orphans.Elm ()
 import Orphans.V2 ()
 import Util
 import Util.Elm (Unit (Unit))
@@ -84,6 +86,7 @@ data Update
 data ServerUpdate a b
     = SetImageURL ElementID Text
     | SetLayout (Layout a b)
+    | SwitchLayout LayoutID
     | AddElement (FullElement a b)
     | RemoveElement ElementID
     | SetBackgroundColour Colour
@@ -97,6 +100,7 @@ deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
 instance Bifunctor ServerUpdate where
     bimap f g = \case
         SetLayout l -> SetLayout $ bimap f g l
+        SwitchLayout l -> SwitchLayout l
         AddElement e -> AddElement $ bimap f g e
         SetImageURL i u -> SetImageURL i u
         RemoveElement i -> RemoveElement i
@@ -108,7 +112,7 @@ instance Bifunctor ServerUpdate where
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
-    { layout :: Layout Unit Unit
+    { layouts :: Layouts Unit Unit
     , username :: Text
     }
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
@@ -138,14 +142,15 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
   where
     nameBoxId = "name"
 
-mainHtml :: Layout a b -> Port -> ClientID -> Html ()
-mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
+mainHtml :: Layouts a b -> Port -> ClientID -> Html ()
+mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
     [ style_ (commonCSS ())
     , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
-        , makeAttribute "layout" . TL.toStrict $ encodeToLazyText $ bimap (const Unit) (const Unit) layout
+        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $
+            bimap (const Unit) (const Unit) <$> layouts
         , makeAttribute "wsPort" $ showT wsPort
         , makeAttribute "username" username
         ]
@@ -156,12 +161,14 @@ mainHtml layout wsPort (ClientID username) = doctypehtml_ $ mconcat
 
 --TODO use dedicated record types for State and Reader, and expose a cleaner interface
 -- | The Monpad monad
-newtype Monpad e s a b x = Monpad {unMonpad :: StateT (Layout a b, ElementMaps a b, s) (ReaderT (e, ClientID) IO) x}
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (e, ClientID), MonadState (Layout a b, ElementMaps a b, s))
+newtype Monpad e s a b x = Monpad {unMonpad :: StateT (Layout a b, ElementMaps a b, s) (ReaderT (Map LayoutID (Layout a b), e, ClientID) IO) x}
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (Map LayoutID (Layout a b), e, ClientID), MonadState (Layout a b, ElementMaps a b, s))
 deriving via Action (Monpad e s a b) instance (Semigroup (Monpad e s a b ()))
 deriving via Action (Monpad e s a b) instance (Monoid (Monpad e s a b ()))
-runMonpad :: Layout a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
-runMonpad l c e s mon = runReaderT (evalStateT (unMonpad mon) (l, mkElementMaps l.elements, s)) (e, c)
+runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
+runMonpad ls c e s mon = runReaderT (evalStateT (unMonpad mon) (l, mkElementMaps l.elements, s))
+    (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)
+  where l = NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
@@ -200,11 +207,11 @@ addToElementMaps e = case e.element of
     Image _ -> id
     Indicator _ -> id
 
-server :: Port -> Maybe FilePath -> Layout a b -> ServerConfig e s a b -> IO ()
-server port imageDir layout conf = do
+server :: Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
+server port imageDir layouts conf = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port imageDir layout :<|> websocketServer layout conf
+        httpServer port imageDir layouts :<|> websocketServer layouts conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -215,35 +222,39 @@ serverExtWs ::
     -- | WS port
     Port ->
     Maybe FilePath ->
-    Layout a b ->
+    Layouts a b ->
     IO ()
-serverExtWs onStart httpPort wsPort path layout = do
+serverExtWs onStart httpPort wsPort path layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort path layout
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort path layouts
 
-httpServer :: Port -> Maybe FilePath -> Layout a b -> Server HttpApi
-httpServer wsPort imageDir layout =
-    (pure . maybe loginHtml (mainHtml layout wsPort))
+httpServer :: Port -> Maybe FilePath -> Layouts a b -> Server HttpApi
+httpServer wsPort imageDir layouts =
+    (pure . maybe loginHtml (mainHtml layouts wsPort))
         :<|> maybe
             (pure $ const ($ responseLBS status404 [] "no image directory specified"))
             serveDirectoryWebApp
             imageDir
 
-websocketServer :: Layout a b -> ServerConfig e s a b -> Server WsApi
-websocketServer layout ServerConfig{..} mu pending = liftIO case mu of
+websocketServer :: Layouts a b -> ServerConfig e s a b -> Server WsApi
+websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
     Just clientId -> do
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
         let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-        WS.withPingThread conn 30 mempty . runMonpad layout clientId e s0 . SP.drain $
+        WS.withPingThread conn 30 mempty . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left su -> do
                     s <- gets thd3
                     let update = su e s
                     case update of
                         SetLayout l -> put (l, mkElementMaps l.elements, s)
+                        SwitchLayout i -> do
+                            asks ((!? i) . fst3) >>= \case
+                                Just l -> put (l, mkElementMaps l.elements, s)
+                                Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: layout id not found: " <> i.unwrap
                         AddElement el -> modify . first $ addToElementMaps el
                         RemoveElement el -> modify . first $
                             over #stickMap (Map.delete el)
@@ -312,7 +323,7 @@ test :: IO ()
 test = do
     setLocaleEncoding utf8
     layout <- defaultSimple
-    server 8000 (Just "../dist/images") layout config
+    server 8000 (Just "../dist/images") (pure layout) config
   where
     config = ServerConfig
         { onStart = pPrint . ("started" :: Text,)
@@ -320,7 +331,7 @@ test = do
             pPrint ("connected" :: Text, c)
             pure ((), ())
         , onMessage = \u -> do
-            c <- asks snd
+            c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
         , onAxis = mempty
         , onButton = mempty
@@ -328,4 +339,4 @@ test = do
         , updates = mempty
         }
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") =<< defaultSimple
+testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") . pure =<< defaultSimple

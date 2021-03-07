@@ -67,6 +67,7 @@ let Layout =
         { elements : List (FullElement a b)
         , viewBox : ViewBox
         , backgroundColour : Colour
+        , name : Text
         }
 
 let col =

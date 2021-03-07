@@ -59,5 +59,6 @@ in    { elements =
         , h = Natural/toInteger (grid.y * rect.y)
         }
       , backgroundColour = monpad.cols.pastelBlue
+      , name = "grid"
       }
     : monpad.Layout

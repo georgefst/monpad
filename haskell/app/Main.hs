@@ -10,12 +10,15 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
-import Data.Bifunctor
+import Data.Either.Extra
 import Data.Functor
+import Data.List.NonEmpty (nonEmpty)
+import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Time (diffUTCTime, getCurrentTime)
+import Data.Tuple.Extra
 import Data.Void (Void)
 import Dhall (FromDhall)
 import Dhall.Core qualified as Dhall
@@ -23,6 +26,7 @@ import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
 import Dhall.TypeCheck qualified as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import Layout
 import Monpad
 import OS qualified
 import Options.Applicative
@@ -42,9 +46,7 @@ data Args = Args
     , watchLayout :: Bool
     , port :: Port
     , imageDir :: Maybe FilePath
-    , layoutExpr :: Maybe Text
-    --TODO this is only really needed due to the fact that Dhall doesn't like absolute paths on Windows
-    , layoutFile :: Maybe FilePath
+    , layoutExprs :: [Text]
     , externalWS :: Maybe Port
     , qrPath :: Maybe FilePath
     }
@@ -62,29 +64,24 @@ parser = do
         , metavar "INT"
         , value 8000
         , showDefault
-        , help "Port number for the server to listen on"
+        , help "Port number for the server to listen on."
         ]
     imageDir <- optional . strOption $ mconcat
         [ long "images"
         , short 'i'
         , metavar "DIR"
-        , help "Directory from which to serve image files"
+        , help "Directory from which to serve image files."
         ]
-    layoutExpr <- optional . strOption $ mconcat
-        [ long "layout-expr"
+    layoutExprs <- many . strOption $ mconcat
+        [ long "layout"
         , short 'l'
         , metavar "EXPR"
-        , help "Dhall expression to control layout of buttons etc."
-        ]
-    layoutFile <- optional . strOption $ mconcat
-        [ long "layout-file"
-        , metavar "FILE"
-        , help "Dhall file containing expression to control layout of buttons etc."
+        , help "Dhall expression to control layout of buttons etc. The first of these will be used initially."
         ]
     qrPath <- optional . strOption $ mconcat
         [ long "qr"
         , metavar "PATH"
-        , help "Write QR encoding of server address as a PNG file"
+        , help "Write QR encoding of server address as a PNG file."
         ]
     externalWS <- optional . option auto $ mconcat
         [ long "ext-ws"
@@ -97,27 +94,19 @@ main :: IO ()
 main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    let checkDhallFile file = doesFileExist file >>= \case
-            True -> Right <$> canonicalizePath file
-            False -> pure $ Left "file does not exist"
-    (dhallFile, dhallLayout) <- case (layoutExpr, layoutFile) of
-        (Just e, Nothing) -> (,e) . first (<> ": maybe expression is not a file import?")
-            <$> checkDhallFile (T.unpack e)
-        (Nothing, Just f) -> (,) <$> checkDhallFile f <*> T.readFile f
-        (Nothing, Nothing) -> pure
-            ( Left "no layout file specified"
-            , defaultDhall ()
-            )
-        (Just _, Just _) -> T.putStrLn "You can only specify one of --layout-expr and --layout-file" >> exitFailure
+    (dhallFile, dhallLayouts) <- case nonEmpty layoutExprs of
+        Just layouts -> (,layouts) . maybeToEither "file does not exist: maybe expression is not a file import?"
+            <$> (canonicalizePathSafe . T.unpack $ NE.head layouts)
+        Nothing -> pure (Left "no layout file specified", pure (defaultDhall ()))
     case externalWS of
-        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort imageDir
-            =<< layoutFromDhall @() @() dhallLayout
+        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort imageDir
+            =<< layoutsFromDhall dhallLayouts
         Nothing -> if systemDevice
-            then join (run . OS.conf) =<< layoutFromDhall dhallLayout
-            else run @() @() @Unit @Unit mempty =<< layoutFromDhall dhallLayout
+            then join (run . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
+            else run @() @() @Unit @Unit mempty =<< layoutsFromDhall dhallLayouts
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
-                ServerConfig e s a b -> Layout a b -> IO ()
+                ServerConfig e s a b -> Layouts a b -> IO ()
             run sc l = do
                 scSendLayout <- if watchLayout
                     then case dhallFile of
@@ -156,12 +145,12 @@ scPrintStuff quiet = mempty
         T.putStrLn $ "New client: " <> i
         mempty
     , onMessage = \m -> do
-        ClientID c <- asks snd
+        ClientID c <- asks thd3
         unless quiet do
             liftIO $ T.putStrLn $ "Message received from client: " <> c
             pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
     , onDroppedConnection = \_ -> do
-        ClientID i <- asks snd
+        ClientID i <- asks thd3
         liftIO $ T.putStrLn $ "Client disconnected: " <> i
     }
 
@@ -216,3 +205,8 @@ lastOfGroup = f2 . asyncly . f1
             t <- getCurrentTime
             pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)
     interval = 0.1 :: Float
+
+canonicalizePathSafe :: FilePath -> IO (Maybe FilePath)
+canonicalizePathSafe p = doesFileExist p >>= \case
+    True -> Just <$> canonicalizePath p
+    False -> mempty

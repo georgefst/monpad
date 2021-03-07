@@ -8,6 +8,7 @@ import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor.TH (deriveBifunctor)
 import Data.Either (partitionEithers)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
@@ -28,13 +29,23 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Image _ -> []
     Indicator _ -> []
 
+-- | A (non-empty) list of 'Layout's.
+type Layouts a b = NonEmpty (Layout a b)
+layoutsFromDhall :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Layouts a b)
+layoutsFromDhall = traverse layoutFromDhall
+
 layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
+
+newtype LayoutID = LayoutID {unwrap :: Text}
+    deriving stock (Show)
+    deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)
 
 data Layout a b = Layout
     { elements :: [FullElement a b]
     , viewBox :: ViewBox
     , backgroundColour :: Colour
+    , name :: LayoutID
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout

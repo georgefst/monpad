@@ -1,5 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
@@ -24,6 +23,7 @@ import Control.Monad.Extra
 import Data.Function
 import Data.List
 import System.IO.Error
+import System.Info.Extra
 
 import Data.Text (Text, pack)
 import Data.Text.IO qualified as T
@@ -138,17 +138,10 @@ assets :: [FilePath]
 assets = elm : map snd linkedAssets
 
 osName :: Text
-osName = pack
-
-#if linux_HOST_OS
-    "Linux"
-#elif mingw32_HOST_OS
-    "Windows"
-#elif darwin_HOST_OS
-    "Mac"
-#else
-    error "unknown OS"
-#endif
+osName
+    | isWindows = pack "Windows"
+    | isMac = pack "Mac"
+    | otherwise = pack "Linux"
 
 {- Util -}
 

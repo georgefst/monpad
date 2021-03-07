@@ -220,5 +220,6 @@ windowsHack e = if isWindows && isAbsolute (T.unpack e)
     else pure e
   where
     -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
+    -- also uses forward slash regardless of OS
     makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
-        joinPath (replicate (length $ splitPath curr) "..") </> p
+        concat (replicate (length $ splitPath curr) "../") <> p

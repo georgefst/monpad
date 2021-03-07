@@ -12,6 +12,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
 import Data.Either.Extra
 import Data.Functor
+import Data.List
 import Data.List.NonEmpty (nonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
@@ -220,6 +221,6 @@ windowsHack e = if isWindows && isAbsolute (T.unpack e)
     else pure e
   where
     -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
-    -- also uses forward slash regardless of OS
+    -- also uses forward slash regardless of OS, and quotes all path components, for Dhall
     makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
-        concat (replicate (length $ splitPath curr) "../") <> p
+        intercalate "/" $ replicate (length $ splitPath curr) ".." <> map (("\"" ++) . (++ "\"")) (splitDirectories p)

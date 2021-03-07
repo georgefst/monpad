@@ -547,27 +547,23 @@ serverUpdate u model =
             { model | layout = { layout | elements = e :: layout.elements } }
 
         RemoveElement e ->
-            { username = model.username
-            , windowSize = model.windowSize
-            , stickPos = Dict.remove e model.stickPos
-            , pointerCallbacks = model.pointerCallbacks
-            , pressed = Set.remove e model.pressed
-            , sliderPos = Dict.remove e model.sliderPos
-            , imageToUrl = Dict.remove e model.imageToUrl
-            , startTime = model.startTime
-            , layout =
-                { layout
-                    | elements =
-                        layout.elements
-                            |> List.filterMap
-                                (\e1 ->
-                                    if e1.name == e then
-                                        Nothing
+            { model
+                | pressed = Set.remove e model.pressed
+                , sliderPos = Dict.remove e model.sliderPos
+                , imageToUrl = Dict.remove e model.imageToUrl
+                , layout =
+                    { layout
+                        | elements =
+                            layout.elements
+                                |> List.filterMap
+                                    (\e1 ->
+                                        if e1.name == e then
+                                            Nothing
 
-                                    else
-                                        Just e1
-                                )
-                }
+                                        else
+                                            Just e1
+                                    )
+                    }
             }
 
         SetBackgroundColour c ->

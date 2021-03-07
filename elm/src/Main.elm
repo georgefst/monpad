@@ -133,6 +133,9 @@ view model =
                     |> styled1 (toRgba orange)
                     |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
                     |> Collage.on "pointerdown" (JD.succeed [ Fullscreen ])
+
+            unknownIdMsg event =
+                ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
         [ div
             [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour
@@ -142,12 +145,13 @@ view model =
                 , style "touch-action" "none"
                 , Pointer.onMove <|
                     \event ->
-                        maybe [] (\c -> c.onMove event) <|
-                            Dict.get event.pointerId model.pointerCallbacks
+                        Dict.get event.pointerId model.pointerCallbacks
+                            |> maybe [ unknownIdMsg event ] (\c -> c.onMove event)
                 , Pointer.onLeave <|
                     \event ->
-                        PointerUp event.pointerId
-                            :: (maybe [] (\c -> c.onRelease) <| Dict.get event.pointerId model.pointerCallbacks)
+                        Dict.get event.pointerId model.pointerCallbacks
+                            |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
+                            |> (\msgs -> PointerUp event.pointerId :: msgs)
 
                 --TODO reading and reacting to changes seems ugly - is there no native API for "fill screen"?
                 -- if there is, we may not need "overflow: hidden" in app.css

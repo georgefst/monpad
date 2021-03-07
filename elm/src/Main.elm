@@ -144,8 +144,7 @@ view model =
                 ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
         [ div
-            [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour
-            ]
+            [ style "background-color" <| toCssString <| fromRgba model.layout.backgroundColour ]
             [ svgExplicit
                 [ viewBox x -(h + y) w h
                 , style "touch-action" "none"

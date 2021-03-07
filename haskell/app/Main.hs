@@ -36,6 +36,7 @@ import Streamly.Prelude qualified as SP
 import System.Directory
 import System.Exit
 import System.FilePath
+import System.Info.Extra
 import Text.Pretty.Simple
 
 type Port = Int
@@ -94,7 +95,8 @@ main :: IO ()
 main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    (dhallFile, dhallLayouts) <- case nonEmpty layoutExprs of
+    layoutExprs' <- traverse windowsHack layoutExprs
+    (dhallFile, dhallLayouts) <- case nonEmpty layoutExprs' of
         Just layouts -> (,layouts) . maybeToEither "file does not exist: maybe expression is not a file import?"
             <$> (canonicalizePathSafe . T.unpack $ NE.head layouts)
         Nothing -> pure (Left "no layout file specified", pure (defaultDhall ()))
@@ -210,3 +212,13 @@ canonicalizePathSafe :: FilePath -> IO (Maybe FilePath)
 canonicalizePathSafe p = doesFileExist p >>= \case
     True -> Just <$> canonicalizePath p
     False -> mempty
+
+--TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
+windowsHack :: Text -> IO Text
+windowsHack e = if isWindows && isAbsolute (T.unpack e)
+    then fmap T.pack . makeRelativeToCurrentDirectory' . snd . splitDrive $ T.unpack e
+    else pure e
+  where
+    -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
+    makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
+        joinPath (replicate (length $ splitPath curr) "..") </> p

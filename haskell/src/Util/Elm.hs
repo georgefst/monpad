@@ -102,9 +102,9 @@ instance
         Just $ Elm.deriveElmJSONDecoder @a elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 newtype Via1 a = Via1 (a Unit)
-instance (Generic (a Unit), GToJSON Zero (Rep (a Unit)), Typeable (a Unit)) => ToJSON (Via1 a) where
+instance (Generic (a Unit), GToJSON Zero (Rep (a Unit))) => ToJSON (Via1 a) where
     toJSON (Via1 a) = genericToJSON jsonOpts a
-instance (Generic (a Unit), GFromJSON Zero (Rep (a Unit)), Typeable (a Unit)) => FromJSON (Via1 a) where
+instance (Generic (a Unit), GFromJSON Zero (Rep (a Unit))) => FromJSON (Via1 a) where
     parseJSON = fmap Via1 . genericParseJSON jsonOpts
 instance
     (SOP.HasDatatypeInfo (a Unit), SOP.All2 HasElmType (SOP.Code (a Unit)), Typeable a) =>
@@ -126,9 +126,9 @@ instance
         Just $ Elm.deriveElmJSONDecoder @(a Unit) elmOpts jsonOpts $ Qualified [autoDir, typeRepT @a] "decode"
 
 newtype Via2 a = Via2 (a Unit Unit)
-instance (Generic (a Unit Unit), GToJSON Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => ToJSON (Via2 a) where
+instance (Generic (a Unit Unit), GToJSON Zero (Rep (a Unit Unit))) => ToJSON (Via2 a) where
     toJSON (Via2 a) = genericToJSON jsonOpts a
-instance (Generic (a Unit Unit), GFromJSON Zero (Rep (a Unit Unit)), Typeable (a Unit Unit)) => FromJSON (Via2 a) where
+instance (Generic (a Unit Unit), GFromJSON Zero (Rep (a Unit Unit))) => FromJSON (Via2 a) where
     parseJSON = fmap Via2 . genericParseJSON jsonOpts
 instance
     (SOP.HasDatatypeInfo (a Unit Unit), SOP.All2 HasElmType (SOP.Code (a Unit Unit)), Typeable a) =>

@@ -421,11 +421,11 @@ type alias Model =
 
 type alias LayoutState =
     { layout : Layout
+    , pressed : Set String -- buttons
     , stickPos : Dict String Vec2
-    , pointerCallbacks : Dict Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs } -- keyed by pointer id
-    , pressed : Set String
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
+    , pointerCallbacks : Dict Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs } -- keyed by pointer id
     }
 
 

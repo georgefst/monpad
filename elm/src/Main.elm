@@ -76,7 +76,7 @@ app =
         flip <|
             \model ->
                 mapSecond Cmd.batch
-                    << foldr
+                    << foldl
                         (\msg ( m, cs ) -> mapSecond (\c -> c :: cs) (update msg m))
                         ( model, [] )
     , view = view

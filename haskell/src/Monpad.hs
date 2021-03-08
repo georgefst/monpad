@@ -94,6 +94,8 @@ data ServerUpdate a b
     | SetIndicatorArcStart ElementID Double
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
+    | ResetLayoutState
+    -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
@@ -109,6 +111,7 @@ instance Bifunctor ServerUpdate where
         SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
         SetIndicatorHollowness t x -> SetIndicatorHollowness t x
         SetIndicatorShape t x -> SetIndicatorShape t x
+        ResetLayoutState -> ResetLayoutState
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -266,6 +269,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                         SetIndicatorArcStart{} -> mempty
                         SetIndicatorArcEnd{} -> mempty
                         SetIndicatorShape{} -> mempty
+                        ResetLayoutState{} -> mempty
                     sendUpdate conn (bimap (const Unit) (const Unit) update)
                     pure True
                 Right (Right u) -> do

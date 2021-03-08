@@ -651,6 +651,11 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        ResetLayoutState ->
+            ( { model | layout = loadLayout layoutState.layout }
+            , Cmd.none
+            )
+
 
 styled1 : Colour -> Collage.Shape -> Collage msg
 styled1 c =

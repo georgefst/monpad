@@ -651,6 +651,11 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        SetSliderPosition name x ->
+            ( { model | layout = { layoutState | sliderPos = Dict.insert name x layoutState.sliderPos } }
+            , Cmd.none
+            )
+
         ResetLayoutState ->
             ( { model | layout = loadLayout layoutState.layout }
             , Cmd.none

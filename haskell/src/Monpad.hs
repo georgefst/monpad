@@ -94,6 +94,7 @@ data ServerUpdate a b
     | SetIndicatorArcStart ElementID Double
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
+    | SetSliderPosition ElementID Double
     | ResetLayoutState
     -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
@@ -111,6 +112,7 @@ instance Bifunctor ServerUpdate where
         SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
         SetIndicatorHollowness t x -> SetIndicatorHollowness t x
         SetIndicatorShape t x -> SetIndicatorShape t x
+        SetSliderPosition t x -> SetSliderPosition t x
         ResetLayoutState -> ResetLayoutState
 
 -- | The arguments with which the frontend is initialised.
@@ -269,6 +271,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                         SetIndicatorArcStart{} -> mempty
                         SetIndicatorArcEnd{} -> mempty
                         SetIndicatorShape{} -> mempty
+                        SetSliderPosition{} -> mempty
                         ResetLayoutState{} -> mempty
                     sendUpdate conn (bimap (const Unit) (const Unit) update)
                     pure True

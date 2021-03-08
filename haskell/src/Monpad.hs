@@ -38,6 +38,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
+import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (setLocaleEncoding)
@@ -188,7 +189,7 @@ data ServerConfig e s a b = ServerConfig
     , onAxis :: a -> Double -> Monpad e s a b ()
     , onButton :: b -> Bool -> Monpad e s a b ()
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
-    , updates :: Async (e -> s -> ServerUpdate a b)
+    , updates :: Async [e -> s -> ServerUpdate a b]
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
@@ -251,29 +252,30 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
         let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
         WS.withPingThread conn 30 mempty . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
-                Left su -> do
-                    s <- gets thd3
-                    let update = su e s
-                    case update of
-                        SetLayout l -> put (l, mkElementMaps l.elements, s)
-                        SwitchLayout i -> do
-                            asks ((!? i) . fst3) >>= \case
-                                Just l -> put (l, mkElementMaps l.elements, s)
-                                Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: layout id not found: " <> i.unwrap
-                        AddElement el -> modify . first $ addToElementMaps el
-                        RemoveElement el -> modify . first $
-                            over #stickMap (Map.delete el)
-                                . over #sliderMap (Map.delete el)
-                                . over #buttonMap (Map.delete el)
-                        SetBackgroundColour{} -> mempty
-                        SetImageURL{} -> mempty
-                        SetIndicatorHollowness{} -> mempty
-                        SetIndicatorArcStart{} -> mempty
-                        SetIndicatorArcEnd{} -> mempty
-                        SetIndicatorShape{} -> mempty
-                        SetSliderPosition{} -> mempty
-                        ResetLayoutState{} -> mempty
-                    sendUpdate conn (bimap (const Unit) (const Unit) update)
+                Left sus -> do
+                    sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for sus \su -> do
+                        s <- gets thd3
+                        let update = su e s
+                        case update of
+                            SetLayout l -> put (l, mkElementMaps l.elements, s)
+                            SwitchLayout i -> do
+                                asks ((!? i) . fst3) >>= \case
+                                    Just l -> put (l, mkElementMaps l.elements, s)
+                                    Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: layout id not found: " <> i.unwrap
+                            AddElement el -> modify . first $ addToElementMaps el
+                            RemoveElement el -> modify . first $
+                                over #stickMap (Map.delete el)
+                                    . over #sliderMap (Map.delete el)
+                                    . over #buttonMap (Map.delete el)
+                            SetBackgroundColour{} -> mempty
+                            SetImageURL{} -> mempty
+                            SetIndicatorHollowness{} -> mempty
+                            SetIndicatorArcStart{} -> mempty
+                            SetIndicatorArcEnd{} -> mempty
+                            SetIndicatorShape{} -> mempty
+                            SetSliderPosition{} -> mempty
+                            ResetLayoutState{} -> mempty
+                        pure update
                     pure True
                 Right (Right u) -> do
                     ElementMaps{..} <- gets snd3
@@ -290,8 +292,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                         Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t.unwrap
                 Right (Left err) -> onDroppedConnection err >> pure False
       where
-        --TODO seeing as the Elm decoder is capable of taking a JSON list of updates, we should enable that here
-        sendUpdate conn = liftIO . WS.sendTextData conn . encode
+        sendUpdates conn = liftIO . WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
             Left err -> Left $ WebSocketException err
             Right b -> first UpdateDecodeException $ eitherDecode b

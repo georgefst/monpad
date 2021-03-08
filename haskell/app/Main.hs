@@ -119,7 +119,7 @@ main = do
                             pure mempty
                                 { updates = serially $
                                     traceStream (const $ T.putStrLn "Sending new layout to client") $
-                                    SP.map (const . const . SetLayout) $
+                                    SP.map (pure . const . const . SetLayout) $
                                     SP.mapMaybeM (const $ mkLayout file) $
                                     lastOfGroup es
                                 }

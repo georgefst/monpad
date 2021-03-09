@@ -29,6 +29,7 @@ import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.List
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
@@ -330,8 +331,8 @@ elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    layout <- defaultSimple
-    server 8000 (Just "../dist/images") (pure layout) config
+    layouts <- sequence $ defaultSimple :| []
+    server 8000 (Just "../dist/images") layouts config
   where
     config = ServerConfig
         { onStart = pPrint . ("started" :: Text,)
@@ -347,4 +348,4 @@ test = do
         , updates = mempty
         }
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") . pure =<< defaultSimple
+testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") =<< sequence (defaultSimple :| [])

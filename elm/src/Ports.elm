@@ -1,4 +1,4 @@
-port module Ports exposing (consoleLog, receiveUpdates, sendUpdate, toggleFullscreen)
+port module Ports exposing (consoleLog, receiveUpdates, sendInit, sendUpdate, toggleFullscreen)
 
 {-| Provide safe interfaces to any ports
 -}
@@ -53,4 +53,14 @@ consoleLog =
 
 port logPort :
     String
+    -> Cmd msg
+
+
+sendInit : Cmd msg
+sendInit =
+    initPort ()
+
+
+port initPort :
+    ()
     -> Cmd msg

@@ -10,6 +10,7 @@ const layouts = JSON.parse(attr("layouts"))
 window.onbeforeunload = () => ws.close()
 
 ws.onopen = event => {
+    elmInitialised = false
     const app = Elm.Main.init({
         flags: { username, layouts }
     })
@@ -21,8 +22,18 @@ ws.onopen = event => {
         }
     })
     app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
-    ws.addEventListener("message", event =>
-        app.ports.receiveUpdatePort.send(JSON.parse(event.data))
-    )
+    ws.addEventListener("message", event => {
+        const send = () => app.ports.receiveUpdatePort.send(JSON.parse(event.data))
+        if (elmInitialised) {
+            send()
+        } else {
+            //TODO this (waiting for an initialisation message)
+            // is all just a workaround for the fact that Elm has no built-in way of signalling that 'init' has finished
+            app.ports.initPort.subscribe(message => {
+                elmInitialised = true
+                setTimeout(send, 0);
+            })
+        }
+    })
     app.ports.logPort.subscribe(message => console.log(message))
 }

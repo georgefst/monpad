@@ -471,7 +471,7 @@ load flags =
                                                     |> List.map (\x -> ( x.name, loadLayout x ))
                                                     |> Dict.fromList
                                           }
-                                        , Cmd.none
+                                        , sendInit
                                         )
                         )
             )

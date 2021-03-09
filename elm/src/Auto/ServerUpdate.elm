@@ -20,7 +20,7 @@ type ServerUpdate
     | SetIndicatorArcEnd String Float
     | SetIndicatorShape String Auto.Shape.Shape
     | SetSliderPosition String Float
-    | ResetLayoutState 
+    | ResetLayoutState ()
 
 
 decode : Json.Decode.Decoder ServerUpdate
@@ -53,4 +53,5 @@ decode =
     , Json.Decode.field "setSliderPosition" (Json.Decode.succeed SetSliderPosition |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
-    , Json.Decode.succeed ResetLayoutState ]
+    , Json.Decode.succeed ResetLayoutState |>
+    Json.Decode.Pipeline.required "resetLayoutState" (Json.Decode.succeed ()) ]

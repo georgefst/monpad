@@ -656,7 +656,7 @@ serverUpdate u model =
             , Cmd.none
             )
 
-        ResetLayoutState ->
+        ResetLayoutState () ->
             ( { model | layout = loadLayout layoutState.layout }
             , Cmd.none
             )

@@ -96,7 +96,7 @@ data ServerUpdate a b
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
     | SetSliderPosition ElementID Double
-    | ResetLayoutState
+    | ResetLayoutState Unit --TODO this dummy field works around a bug in `haskell-to-elm`
     -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
@@ -114,7 +114,7 @@ instance Bifunctor ServerUpdate where
         SetIndicatorHollowness t x -> SetIndicatorHollowness t x
         SetIndicatorShape t x -> SetIndicatorShape t x
         SetSliderPosition t x -> SetSliderPosition t x
-        ResetLayoutState -> ResetLayoutState
+        ResetLayoutState Unit -> ResetLayoutState Unit
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags

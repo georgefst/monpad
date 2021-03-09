@@ -71,6 +71,8 @@ import Orphans.V2 ()
 import Util
 import Util.Elm (Unit (Unit))
 import Util.Elm qualified as Elm
+import qualified Dhall
+import Control.Concurrent
 
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)
@@ -331,8 +333,7 @@ elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
 test :: IO ()
 test = do
     setLocaleEncoding utf8
-    layouts <- sequence $ defaultSimple :| []
-    server 8000 (Just "../dist/images") layouts config
+    server 8000 (Just "../dist/images") layouts1 config
   where
     config = ServerConfig
         { onStart = pPrint . ("started" :: Text,)
@@ -345,7 +346,276 @@ test = do
         , onAxis = mempty
         , onButton = mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
-        , updates = mempty
+        , updates = map (const . const) <$> do
+            let f d xs = do
+                    liftIO do
+                        threadDelay d
+                        putStrLn "sending"
+                    pure xs
+                as =
+                    [ RemoveElement $ ElementID "Red"
+                    , RemoveElement $ ElementID "RED"
+                    , SetBackgroundColour $ Colour 1 0 0 1
+                    -- , SwitchLayout $ LayoutID "colour-manager"
+                    ]
+                bs =
+                    [SetBackgroundColour $ Colour 0 1 0 1]
+            f 1_000_000 bs <> f 0 as
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") =<< sequence (defaultSimple :| [])
+
+layouts1 =
+    Layout
+    { elements =
+        [ FullElement
+            { element = Button
+                ( Button'
+                    { shape = Circle 120
+                    , colour = Colour
+                        { red = 0.28
+                        , green = 0.28
+                        , blue = 0.85
+                        , alpha = 1.0
+                        }
+                    , buttonData = ()
+                    }
+                )
+            , location = V2 250 0
+            , name = ElementID "Blue"
+            , showName = False
+            }
+        , FullElement
+            { element = Button
+                ( Button'
+                    { shape = Circle 120
+                    , colour = Colour
+                        { red = 0.2
+                        , green = 0.72
+                        , blue = 0.2
+                        , alpha = 1.0
+                        }
+                    , buttonData = ()
+                    }
+                )
+            , location = V2 500
+                ( - 250 )
+            , name = ElementID "Green"
+            , showName = False
+            }
+        , FullElement
+            { element = Button
+                ( Button'
+                    { shape = Circle 120
+                    , colour = Colour
+                        { red = 0.85
+                        , green = 0.28
+                        , blue = 0.28
+                        , alpha = 1.0
+                        }
+                    , buttonData = ()
+                    }
+                )
+            , location = V2 750 0
+            , name = ElementID "Red"
+            , showName = False
+            }
+        , FullElement
+            { element = Button
+                ( Button'
+                    { shape = Circle 120
+                    , colour = Colour
+                        { red = 0.94
+                        , green = 0.95
+                        , blue = 0.33
+                        , alpha = 1.0
+                        }
+                    , buttonData = ()
+                    }
+                )
+            , location = V2 500 250
+            , name = ElementID "Yellow"
+            , showName = False
+            }
+        , FullElement
+            { element = Button
+                ( Button'
+                    { shape = Circle 80
+                    , colour = Colour
+                        { red = 1.0
+                        , green = 1.0
+                        , blue = 1.0
+                        , alpha = 1.0
+                        }
+                    , buttonData = ()
+                    }
+                )
+            , location = V2 0
+                ( - 300 )
+            , name = ElementID "M"
+            , showName = True
+            }
+        , FullElement
+            { element = Stick
+                ( Stick'
+                    { radius = 120
+                    , range = 320
+                    , stickColour = Colour
+                        { red = 1.0
+                        , green = 1.0
+                        , blue = 1.0
+                        , alpha = 1.0
+                        }
+                    , backgroundColour = Colour
+                        { red = 0.35
+                        , green = 0.35
+                        , blue = 0.4
+                        , alpha = 1.0
+                        }
+                    , stickDataX = ()
+                    , stickDataY = ()
+                    }
+                )
+            , location = V2
+                ( - 500 ) 0
+            , name = ElementID "Stick"
+            , showName = False
+            }
+        ]
+    , viewBox = ViewBox
+        { x = - 1000
+        , y = - 500
+        , w = 2000
+        , h = 1000
+        }
+    , backgroundColour = Colour
+        { red = 0.81
+        , green = 0.91
+        , blue = 0.97
+        , alpha = 1.0
+        }
+    , name = LayoutID
+        { unwrap = "default" }
+    } :|
+    [ Layout
+        { elements =
+            [ FullElement
+                { element = Button
+                    ( Button'
+                        { shape = Circle 80
+                        , colour = Colour
+                            { red = 1.0
+                            , green = 1.0
+                            , blue = 1.0
+                            , alpha = 1.0
+                            }
+                        , buttonData = ()
+                        }
+                    )
+                , location = V2 0
+                    ( - 300 )
+                , name = ElementID "Exit"
+                , showName = True
+                }
+            , FullElement
+                { element = Slider
+                    ( Slider'
+                        { radius = 60
+                        , offset = V2 650 0
+                        , width = 120
+                        , initialPosition = 1.0
+                        , resetOnRelease = False
+                        , sliderColour = Colour
+                            { red = 1.0
+                            , green = 1.0
+                            , blue = 1.0
+                            , alpha = 1.0
+                            }
+                        , backgroundColour = Colour
+                            { red = 0.85
+                            , green = 0.28
+                            , blue = 0.28
+                            , alpha = 1.0
+                            }
+                        , sliderData = ()
+                        }
+                    )
+                , location = V2
+                    ( - 875 )
+                    ( - 250 )
+                , name = ElementID "RedSlide"
+                , showName = False
+                }
+            , FullElement
+                { element = Slider
+                    ( Slider'
+                        { radius = 60
+                        , offset = V2 650 0
+                        , width = 120
+                        , initialPosition = 1.0
+                        , resetOnRelease = False
+                        , sliderColour = Colour
+                            { red = 1.0
+                            , green = 1.0
+                            , blue = 1.0
+                            , alpha = 1.0
+                            }
+                        , backgroundColour = Colour
+                            { red = 0.2
+                            , green = 0.72
+                            , blue = 0.2
+                            , alpha = 1.0
+                            }
+                        , sliderData = ()
+                        }
+                    )
+                , location = V2
+                    ( - 875 ) 0
+                , name = ElementID "GreenSlide"
+                , showName = False
+                }
+            , FullElement
+                { element = Slider
+                    ( Slider'
+                        { radius = 60
+                        , offset = V2 650 0
+                        , width = 120
+                        , initialPosition = 1.0
+                        , resetOnRelease = False
+                        , sliderColour = Colour
+                            { red = 1.0
+                            , green = 1.0
+                            , blue = 1.0
+                            , alpha = 1.0
+                            }
+                        , backgroundColour = Colour
+                            { red = 0.28
+                            , green = 0.28
+                            , blue = 0.85
+                            , alpha = 1.0
+                            }
+                        , sliderData = ()
+                        }
+                    )
+                , location = V2
+                    ( - 875 ) 250
+                , name = ElementID "BlueSlide"
+                , showName = False
+                }
+            ]
+        , viewBox = ViewBox
+            { x = - 1000
+            , y = - 500
+            , w = 2000
+            , h = 1000
+            }
+        , backgroundColour = Colour
+            { red = 0.81
+            , green = 0.91
+            , blue = 0.97
+            , alpha = 1.0
+            }
+        , name = LayoutID
+            { unwrap = "colour-manager" }
+        }
+    ]

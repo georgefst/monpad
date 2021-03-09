@@ -50,26 +50,6 @@ rules :: Rules ()
 rules = do
     want [monpad]
 
-    "elm" ~> need [elm]
-    "dhall" ~> do
-        need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
-    "assets" ~> need assets
-
-    let rmr dir = liftIO $ removeFiles dir ["//*"]
-        clean = do
-            putInfo "Cleaning Shake build artefacts"
-            rmr shakeDir
-            putInfo "Cleaning generated assets"
-            rmr rscDir
-            rmr distDir
-    "clean" ~> clean
-    "deep-clean" ~> do
-        clean
-        putInfo "Cleaning Haskell build artefacts"
-        rmr hsBuildDir
-        putInfo "Cleaning Elm artefacts"
-        rmr elmBuildDir
-
     forM_ linkedAssets \(file, link) ->
         link %> \_ -> do
             let copy = liftIO $ Dir.copyFile file link
@@ -95,10 +75,11 @@ rules = do
             [f'] -> copyFileChanged f' f
             fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
-    elm %> \_ -> do
-        needDirExcept elmBuildDir elmDir
-        cmd_ (Cwd "elm") "elm make src/Main.elm --optimize --output" (".." </> elm)
-        liftIO $ minifyFileJS elm
+    let elm opts = do
+            needDirExcept elmBuildDir elmDir
+            cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> elmJS) opts
+            liftIO $ minifyFileJS elmJS
+    elmJS %> \_ -> elm "--optimize"
 
     distDir </> "dhall" </> "*" %> \out -> do
         let in' = "dhall" </> takeFileName out
@@ -114,9 +95,30 @@ rules = do
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression
 
+    "elm" ~> need [elmJS]
+    "elm-debug" ~> elm ""
+    "dhall" ~> do
+        need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
+    "assets" ~> need assets
+
+    let rmr dir = liftIO $ removeFiles dir ["//*"]
+        clean = do
+            putInfo "Cleaning Shake build artefacts"
+            rmr shakeDir
+            putInfo "Cleaning generated assets"
+            rmr rscDir
+            rmr distDir
+    "clean" ~> clean
+    "deep-clean" ~> do
+        clean
+        putInfo "Cleaning Haskell build artefacts"
+        rmr hsBuildDir
+        putInfo "Cleaning Elm artefacts"
+        rmr elmBuildDir
+
 {- Constants -}
 
-monpadExe, monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elm :: FilePath
+monpadExe, monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
 monpadExe = "monpad" <.> exe
 monpad = distDir </> monpadExe
 shakeDir = ".shake"
@@ -126,7 +128,7 @@ hsDir = "haskell"
 hsBuildDir = ".build" </> "hs"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
-elm = rscDir </> "elm" <.> "js"
+elmJS = rscDir </> "elm" <.> "js"
 
 linkedAssets :: [(FilePath, FilePath)]
 linkedAssets =
@@ -135,7 +137,7 @@ linkedAssets =
     ]
 
 assets :: [FilePath]
-assets = elm : map snd linkedAssets
+assets = elmJS : map snd linkedAssets
 
 osName :: Text
 osName

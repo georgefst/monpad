@@ -42,7 +42,7 @@ main =
                                     List.map Main.ServerUpdate
                                         [ SwitchLayout "B"
                                         , SetBackgroundColour <| toRgba black
-                                        , ResetLayoutState
+                                        , ResetLayoutState ()
                                         , SetSliderPosition "0" 0.7
                                         ]
                         , app.subscriptions model

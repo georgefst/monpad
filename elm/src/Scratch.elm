@@ -7,6 +7,7 @@ import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
+import Basics.Extra exposing (..)
 import Color exposing (..)
 import Json.Decode as Json
 import Loadable
@@ -26,35 +27,32 @@ main =
             , subscriptions =
                 \model ->
                     Sub.batch
-                        [ sub
-                            (\x ->
+                        [ sub 3000 30 model <|
+                            \x ->
                                 [ Main.ServerUpdate <| SetIndicatorArcStart "0" <| x * 2 * pi
                                 , Main.ServerUpdate <| SetIndicatorHollowness "0" x
                                 ]
-                            )
-                            model
+                        , sub 4000 2000 model <|
+                            \x ->
+                                if x < 0.5 then
+                                    List.map Main.ServerUpdate
+                                        [ SwitchLayout "A" ]
+
+                                else
+                                    List.map Main.ServerUpdate
+                                        [ SwitchLayout "B"
+                                        , SetBackgroundColour <| toRgba black
+                                        , ResetLayoutState
+                                        , SetSliderPosition "0" 0.7
+                                        ]
                         , app.subscriptions model
                         ]
         }
 
 
-{-| time in milliseconds to perform a full loop
--}
-cycleLength : number
-cycleLength =
-    3000
-
-
-{-| milliseconds per tick
--}
-tick : number
-tick =
-    30
-
-
-sub : (Float -> Main.Msgs) -> Main.Model -> Sub Main.Msgs
-sub f model =
-    every tick <|
+sub : Int -> Int -> Main.Model -> (Float -> Main.Msgs) -> Sub Main.Msgs
+sub cycleLength tickMs model f =
+    every (toFloat tickMs) <|
         \t ->
             let
                 tDiff =
@@ -62,7 +60,7 @@ sub f model =
             in
             f <|
                 toFloat tDiff
-                    / cycleLength
+                    / toFloat cycleLength
 
 
 flags : ElmFlags
@@ -114,6 +112,27 @@ flags =
           , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
           , backgroundColour = { red = 0.81, green = 0.91, blue = 0.97, alpha = 1.0 }
           , name = "A"
+          }
+        , { elements =
+                [ { location = { x = -600, y = 0 }
+                  , name = "0"
+                  , showName = False
+                  , element =
+                        Slider
+                            { radius = 200
+                            , width = 200
+                            , offset = { x = 600 * 2, y = 0 }
+                            , backgroundColour = toRgba red
+                            , sliderColour = toRgba white
+                            , resetOnRelease = True
+                            , initialPosition = 0
+                            , sliderData = ()
+                            }
+                  }
+                ]
+          , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
+          , backgroundColour = toRgba white
+          , name = "B"
           }
         ]
     }

@@ -5,9 +5,11 @@ license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
 extra-source-files:
-    rsc/*.css
-    rsc/*.js
-    rsc/*.dhall
+    rsc/app.css
+    rsc/common.css
+    rsc/elm.js
+    rsc/main.js
+    rsc/default.dhall
 
 flag release
     Description: Distributable build. Optimise, embed assets etc.

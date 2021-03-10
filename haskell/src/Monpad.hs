@@ -44,6 +44,7 @@ import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (setLocaleEncoding)
 import Generic.Data (Generically (..))
+import Generic.Functor
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear
@@ -99,23 +100,10 @@ data ServerUpdate a b
     | SetSliderPosition ElementID Double
     | ResetLayoutState Unit --TODO this dummy field works around a bug in `haskell-to-elm`
     -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
-    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
+    deriving (Bifunctor) via GenericBifunctor ServerUpdate
 deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
-instance Bifunctor ServerUpdate where
-    bimap f g = \case
-        SetLayout l -> SetLayout $ bimap f g l
-        SwitchLayout l -> SwitchLayout l
-        AddElement e -> AddElement $ bimap f g e
-        SetImageURL i u -> SetImageURL i u
-        RemoveElement i -> RemoveElement i
-        SetBackgroundColour x -> SetBackgroundColour x
-        SetIndicatorArcStart t x -> SetIndicatorArcStart t x
-        SetIndicatorArcEnd t x -> SetIndicatorArcEnd t x
-        SetIndicatorHollowness t x -> SetIndicatorHollowness t x
-        SetIndicatorShape t x -> SetIndicatorShape t x
-        SetSliderPosition t x -> SetSliderPosition t x
-        ResetLayoutState Unit -> ResetLayoutState Unit
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags

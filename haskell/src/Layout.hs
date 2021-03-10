@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Layout where
@@ -6,12 +5,13 @@ module Layout where
 import Data.Aeson qualified as J
 import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Aeson.Types qualified as JSON
-import Data.Bifunctor.TH (deriveBifunctor)
+import Data.Bifunctor (Bifunctor)
 import Data.Either (partitionEithers)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
+import Generic.Functor (GenericBifunctor (GenericBifunctor))
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear.V2 (V2)
@@ -19,7 +19,6 @@ import Orphans.V2 ()
 import Util.Elm (Unit, Via (..))
 import Util.Elm qualified as Elm
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
-import Prelude hiding (length) --TODO perhaps 'bifunctors' could just qualify?
 
 allAxesAndButs :: Layout a b -> ([a], [b])
 allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
@@ -47,8 +46,9 @@ data Layout a b = Layout
     , backgroundColour :: Colour
     , name :: LayoutID
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout
+    deriving (Bifunctor) via GenericBifunctor Layout
 deriving via (Elm.Via2 Layout) instance ToJSON (Layout Unit Unit)
 
 data FullElement a b = FullElement
@@ -57,8 +57,9 @@ data FullElement a b = FullElement
     , name :: ElementID
     , showName :: Bool
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement
+    deriving (Bifunctor) via GenericBifunctor FullElement
 deriving via (Elm.Via2 FullElement) instance ToJSON (FullElement Unit Unit)
 
 newtype ElementID = ElementID {unwrap :: Text}
@@ -72,8 +73,9 @@ data Element a b
     | Slider (Slider a)
     | Image Image
     | Indicator Indicator
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
+    deriving (Bifunctor) via GenericBifunctor Element
 deriving via (Elm.Via2 Element) instance ToJSON (Element Unit Unit)
 
 data Stick a = Stick'
@@ -158,7 +160,3 @@ data ViewBox = ViewBox
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via ViewBox
-
-$(deriveBifunctor ''Layout)
-$(deriveBifunctor ''FullElement)
-$(deriveBifunctor ''Element)

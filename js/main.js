@@ -31,7 +31,7 @@ ws.onopen = event => {
             // is all just a workaround for the fact that Elm has no built-in way of signalling that 'init' has finished
             app.ports.initPort.subscribe(message => {
                 elmInitialised = true
-                setTimeout(send, 0);
+                setTimeout(send, 0)
             })
         }
     })

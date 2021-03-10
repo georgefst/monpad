@@ -14,6 +14,12 @@ ws.onopen = event => {
     const app = Elm.Main.init({
         flags: { username, layouts }
     })
+    //TODO this (waiting for an initialisation message)
+    // is all just a workaround for the fact that Elm has no built-in way of signalling that 'init' has finished
+    app.ports.initPort.subscribe(message => {
+        elmInitialised = true
+        dispatchEvent(new Event("elmInit"))
+    })
     app.ports.fullscreenPort.subscribe(message => {
         if (document.fullscreenElement == null) {
             document.documentElement.requestFullscreen()
@@ -27,10 +33,7 @@ ws.onopen = event => {
         if (elmInitialised) {
             send()
         } else {
-            //TODO this (waiting for an initialisation message)
-            // is all just a workaround for the fact that Elm has no built-in way of signalling that 'init' has finished
-            app.ports.initPort.subscribe(message => {
-                elmInitialised = true
+            addEventListener("elmInit", event => {
                 setTimeout(send, 0)
             })
         }

@@ -47,9 +47,9 @@ data Layout a b = Layout
     , name :: LayoutID
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout Unit Unit
+    deriving (ToJSON) via Elm.Via2 Layout a b
     deriving (Bifunctor) via GenericBifunctor Layout
-deriving via (Elm.Via2 Layout) instance ToJSON (Layout Unit Unit)
 
 data FullElement a b = FullElement
     { element :: Element a b
@@ -58,9 +58,9 @@ data FullElement a b = FullElement
     , showName :: Bool
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement Unit Unit
+    deriving (ToJSON) via Elm.Via2 FullElement a b
     deriving (Bifunctor) via GenericBifunctor FullElement
-deriving via (Elm.Via2 FullElement) instance ToJSON (FullElement Unit Unit)
 
 newtype ElementID = ElementID {unwrap :: Text}
     deriving stock (Eq, Ord)
@@ -74,9 +74,9 @@ data Element a b
     | Image Image
     | Indicator Indicator
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element Unit Unit
+    deriving (ToJSON) via Elm.Via2 Element a b
     deriving (Bifunctor) via GenericBifunctor Element
-deriving via (Elm.Via2 Element) instance ToJSON (Element Unit Unit)
 
 data Stick a = Stick'
     { radius :: Word
@@ -87,8 +87,8 @@ data Stick a = Stick'
     , stickDataY :: a
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick
-deriving via (Elm.Via1 Stick) instance ToJSON (Stick Unit)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick Unit
+    deriving (ToJSON) via Elm.Via1 Stick a
 
 data Button b = Button'
     { shape :: Shape
@@ -96,8 +96,8 @@ data Button b = Button'
     , buttonData :: b
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button
-deriving via (Elm.Via1 Button) instance ToJSON (Button Unit)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button Unit
+    deriving (ToJSON) via Elm.Via1 Button b
 
 data Slider a = Slider'
     { radius :: Word
@@ -112,8 +112,8 @@ data Slider a = Slider'
     , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider
-deriving via (Elm.Via1 Slider) instance ToJSON (Slider Unit)
+    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider Unit
+    deriving (ToJSON) via Elm.Via1 Slider a
 
 data Image = Image'
     { width :: Word

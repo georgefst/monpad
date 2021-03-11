@@ -60,7 +60,6 @@ import Servant.API.WebSocket
 import Servant.HTML.Lucid
 import Streamly
 import Streamly.Internal.Prelude qualified as SP
-import System.FilePath
 import System.IO
 import Text.Pretty.Simple
 
@@ -101,9 +100,9 @@ data ServerUpdate a b
     | ResetLayoutState Unit --TODO this dummy field works around a bug in `haskell-to-elm`
     -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate Unit Unit
+    deriving (ToJSON) via Elm.Via2 ServerUpdate a b
     deriving (Bifunctor) via GenericBifunctor ServerUpdate
-deriving via (Elm.Via2 ServerUpdate) instance ToJSON (ServerUpdate Unit Unit)
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -295,7 +294,7 @@ e.g. if we added an extra case to 'Update', it would need to be handled in vario
 -}
 -- >>> elm "elm"
 elm :: FilePath -> IO ()
-elm pathToElm = Elm.writeDefs (pathToElm </> "src") $ mconcat
+elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     [ Elm.decodedTypes @Update
     , Elm.decodedTypes @(V2 Double)
     , Elm.encodedTypes @(ServerUpdate () ())

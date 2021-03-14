@@ -157,9 +157,6 @@ view model =
                         Dict.get event.pointerId model.layout.pointerCallbacks
                             |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
                             |> (\msgs -> PointerUp event.pointerId :: msgs)
-
-                --TODO reading and reacting to changes seems ugly - is there no native API for "fill screen"?
-                -- if there is, we may not need "overflow: hidden" in app.css
                 , style "width" (String.fromInt model.windowSize.x ++ "px")
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]
@@ -362,8 +359,6 @@ viewIndicator _ ind =
 
                         Circle _ ->
                             let
-                                --TODO higher res? the whole thing is a hack really because of
-                                -- https://github.com/timjs/elm-collage/issues/8#issuecomment-776603367
                                 nPoints =
                                     256
                             in

@@ -581,6 +581,11 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        PlayAudioURL url ->
+            ( model
+            , playAudio url
+            )
+
         SetLayout l ->
             ( { model | layout = loadLayout l }
             , Cmd.none

@@ -69,10 +69,9 @@ parser = do
         , help "Port number for the server to listen on."
         ]
     imageDir <- optional . strOption $ mconcat
-        [ long "images"
-        , short 'i'
+        [ long "assets"
         , metavar "DIR"
-        , help "Directory from which to serve image files."
+        , help "Directory from which to serve image/audio files etc."
         ]
     layoutExprs <- many . strOption $ mconcat
         [ long "layout"

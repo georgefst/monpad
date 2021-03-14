@@ -38,5 +38,9 @@ ws.onopen = event => {
             })
         }
     })
+    app.ports.audioPort.subscribe(url => {
+        audio = new Audio(url)
+        audio.play()
+    })
     app.ports.logPort.subscribe(message => console.log(message))
 }

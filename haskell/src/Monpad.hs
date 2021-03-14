@@ -87,6 +87,7 @@ data Update
 
 data ServerUpdate a b
     = SetImageURL ElementID Text
+    | PlayAudioURL Text
     | SetLayout (Layout a b)
     | SwitchLayout LayoutID
     | AddElement (FullElement a b)
@@ -114,9 +115,9 @@ data ElmFlags = ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
-type ImageApi = "images" :> Raw
+type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
-type HttpApi = Root :> (CoreApi :<|> ImageApi)
+type HttpApi = Root :> (CoreApi :<|> AssetsApi)
 type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
 
 serverAddress :: Port -> IO Text
@@ -202,10 +203,10 @@ addToElementMaps e = case e.element of
     Indicator _ -> id
 
 server :: Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server port imageDir layouts conf = do
+server port assetsDir layouts conf = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port imageDir layouts :<|> websocketServer layouts conf
+        httpServer port assetsDir layouts :<|> websocketServer layouts conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -223,12 +224,12 @@ serverExtWs onStart httpPort wsPort path layouts = do
     run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort path layouts
 
 httpServer :: Port -> Maybe FilePath -> Layouts a b -> Server HttpApi
-httpServer wsPort imageDir layouts =
+httpServer wsPort assetsDir layouts =
     (pure . maybe loginHtml (mainHtml layouts wsPort))
         :<|> maybe
-            (pure $ const ($ responseLBS status404 [] "no image directory specified"))
+            (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
             serveDirectoryWebApp
-            imageDir
+            assetsDir
 
 websocketServer :: Layouts a b -> ServerConfig e s a b -> Server WsApi
 websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
@@ -257,6 +258,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                                     . over #buttonMap (Map.delete el)
                             SetBackgroundColour{} -> mempty
                             SetImageURL{} -> mempty
+                            PlayAudioURL{} -> mempty
                             SetIndicatorHollowness{} -> mempty
                             SetIndicatorArcStart{} -> mempty
                             SetIndicatorArcEnd{} -> mempty
@@ -319,7 +321,7 @@ test :: IO ()
 test = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
-    server 8000 (Just "../dist/images") layouts config
+    server 8000 (Just "../dist/assets") layouts config
   where
     config = ServerConfig
         { onStart = pPrint . ("started" :: Text,)
@@ -335,4 +337,4 @@ test = do
         , updates = mempty
         }
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 (Just "../dist/images") =<< sequence (defaultSimple :| [])
+testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])

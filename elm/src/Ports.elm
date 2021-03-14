@@ -1,4 +1,4 @@
-port module Ports exposing (consoleLog, receiveUpdates, sendInit, sendUpdate, toggleFullscreen)
+port module Ports exposing (consoleLog, playAudio, receiveUpdates, sendInit, sendUpdate, toggleFullscreen)
 
 {-| Provide safe interfaces to any ports
 -}
@@ -63,4 +63,14 @@ sendInit =
 
 port initPort :
     ()
+    -> Cmd msg
+
+
+playAudio : String -> Cmd msg
+playAudio =
+    audioPort
+
+
+port audioPort :
+    String
     -> Cmd msg

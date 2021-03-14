@@ -10,6 +10,7 @@ import Json.Decode.Pipeline
 
 type ServerUpdate 
     = SetImageURL String String
+    | PlayAudioURL String
     | SetLayout Auto.Layout.Layout
     | SwitchLayout String
     | AddElement Auto.FullElement.FullElement
@@ -28,6 +29,8 @@ decode =
     Json.Decode.oneOf [ Json.Decode.field "setImageURL" (Json.Decode.succeed SetImageURL |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
+    , Json.Decode.succeed PlayAudioURL |>
+    Json.Decode.Pipeline.required "playAudioURL" Json.Decode.string
     , Json.Decode.succeed SetLayout |>
     Json.Decode.Pipeline.required "setLayout" Auto.Layout.decode
     , Json.Decode.succeed SwitchLayout |>

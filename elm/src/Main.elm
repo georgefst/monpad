@@ -523,7 +523,12 @@ update msg model =
             serverUpdate u model
 
         PointerDown pid callbacks ->
-            ( { model | layout = { layoutState | pointerCallbacks = Dict.insert pid callbacks layoutState.pointerCallbacks } }
+            ( { model
+                | layout =
+                    { layoutState
+                        | pointerCallbacks = Dict.insert pid callbacks layoutState.pointerCallbacks
+                    }
+              }
             , Cmd.none
             )
 

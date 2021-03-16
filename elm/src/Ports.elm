@@ -1,4 +1,12 @@
-port module Ports exposing (consoleLog, playAudio, receiveUpdates, sendInit, sendUpdate, toggleFullscreen)
+port module Ports exposing
+    ( consoleLog
+    , fullscreenChanges
+    , goFullscreen
+    , playAudio
+    , receiveUpdates
+    , sendInit
+    , sendUpdate
+    )
 
 {-| Provide safe interfaces to any ports
 -}
@@ -9,12 +17,23 @@ import Json.Decode as JD
 import Json.Encode as JE
 
 
-toggleFullscreen : Cmd msg
-toggleFullscreen =
+goFullscreen : Cmd msg
+goFullscreen =
     fullscreenPort ()
 
 
 port fullscreenPort : () -> Cmd msg
+
+
+fullscreenChanges : Sub (Result JD.Error Bool)
+fullscreenChanges =
+    fullscreenChangePort <|
+        JD.decodeValue JD.bool
+
+
+port fullscreenChangePort :
+    (JD.Value -> msg)
+    -> Sub msg
 
 
 sendUpdate : Update -> Cmd msg

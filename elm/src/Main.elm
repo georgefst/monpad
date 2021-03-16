@@ -83,12 +83,10 @@ app =
     , subscriptions =
         always <|
             Sub.batch
-                [ Sub.map
-                    (either
-                        (\err -> [ ConsoleLog <| "Failed to decode update message: " ++ JD.errorToString err ])
-                        (List.map ServerUpdate)
-                    )
-                    receiveUpdates
+                [ receiveUpdates
+                    |> subLogErrors "update message" (List.map ServerUpdate)
+                , fullscreenChanges
+                    |> subLogErrors "fullscreen change" (singleton << FullscreenChange)
                 , onResize (\w h -> [ Resized { x = w, y = h } ])
                 ]
     , failCmd = Nothing
@@ -130,7 +128,7 @@ view model =
                 let
                     -- how much of the screen to cover
                     scale =
-                        1 / 10
+                        1 / 6
 
                     size =
                         toFloat (min w h) * scale
@@ -138,7 +136,7 @@ view model =
                 rectangle size size
                     |> styled1 (toRgba orange)
                     |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
-                    |> Collage.on "pointerdown" (JD.succeed [ Fullscreen ])
+                    |> Collage.on "pointerdown" (JD.succeed [ GoFullscreen ])
 
             unknownIdMsg event =
                 ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
@@ -161,9 +159,10 @@ view model =
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]
               <|
-                stack <|
-                    fullscreenButton
-                        :: List.map (viewElement model) model.layout.layout.elements
+                (List.map (viewElement model) model.layout.layout.elements
+                    |> applyWhen (not model.fullscreen) (\es -> fullscreenButton :: es)
+                    |> stack
+                )
             ]
         ]
     }
@@ -408,6 +407,7 @@ viewIndicator _ ind =
 type alias Model =
     { username : String
     , windowSize : IntVec2
+    , fullscreen : Bool
     , startTime : Posix
     , layout : LayoutState -- the active layout
     , layouts : Dict String LayoutState -- NB. the active layout doesn't get updated here until we switch out of it
@@ -434,7 +434,8 @@ type Msg
     | PointerDown Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs }
     | PointerUp Int
     | Resized IntVec2
-    | Fullscreen
+    | GoFullscreen
+    | FullscreenChange Bool
     | ConsoleLog String
 
 
@@ -460,6 +461,7 @@ load flags =
                                         ( { username = flags.username
                                           , layout = loadLayout layout
                                           , windowSize = viewport
+                                          , fullscreen = False
                                           , startTime = startTime
                                           , layouts =
                                                 (layout :: layouts)
@@ -540,8 +542,11 @@ update msg model =
         Resized v ->
             ( { model | windowSize = v }, Cmd.none )
 
-        Fullscreen ->
-            ( model, toggleFullscreen )
+        GoFullscreen ->
+            ( model, goFullscreen )
+
+        FullscreenChange b ->
+            ( { model | fullscreen = b }, Cmd.none )
 
         ConsoleLog s ->
             ( model, consoleLog s )
@@ -670,3 +675,12 @@ serverUpdate u model =
 styled1 : Colour -> Collage.Shape -> Collage msg
 styled1 c =
     styled ( uniform <| fromRgba c, defaultLineStyle )
+
+
+subLogErrors : String -> (a -> List Msg) -> Sub (Result JD.Error a) -> Sub (List Msg)
+subLogErrors s f =
+    Sub.map
+        (either
+            (\err -> [ ConsoleLog <| "Failed to decode " ++ s ++ ": " ++ JD.errorToString err ])
+            f
+        )

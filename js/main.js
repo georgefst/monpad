@@ -21,12 +21,13 @@ ws.onopen = event => {
         dispatchEvent(new Event("elmInit"))
     })
     app.ports.fullscreenPort.subscribe(message => {
-        if (document.fullscreenElement == null) {
-            document.documentElement.requestFullscreen()
-        } else {
-            document.exitFullscreen()
-        }
+        document.documentElement.requestFullscreen()
     })
+    document.onfullscreenchange = event => {
+        app.ports.fullscreenChangePort.send(
+            !(document.fullscreenElement == null)
+        )
+    }
     app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
     ws.addEventListener("message", event => {
         const send = () => app.ports.receiveUpdatePort.send(JSON.parse(event.data))

@@ -1,8 +1,13 @@
 let AllOS = ./lib/all-os.dhall
 
+-- let monpad = ./../"dhall/lib"/monpad.dhall AllOS.Axis AllOS.Button
 let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 
 let Evdev = ./lib/evdev.dhall
+
+-- let f = /"asdasd"/asda
+
+-- let g = "C:"/asdasd/asda
 
 let ButtonL = AllOS.ButtonLinux
 

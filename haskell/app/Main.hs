@@ -221,6 +221,6 @@ windowsHack e = if isWindows && isAbsolute e'
   where
     e' = T.unpack e
     -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
-    -- also uses forward slash regardless of OS, and quotes all path components, for Dhall
+    -- also uses forward slash regardless of OS
     makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
-        intercalate "/" $ replicate (length $ splitPath curr) ".." <> map (("\"" ++) . (++ "\"")) (splitDirectories p)
+        intercalate "/" $ replicate (length $ splitPath curr) ".." <> pure p

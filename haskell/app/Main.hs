@@ -10,6 +10,7 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
+import Data.Char
 import Data.Either.Extra
 import Data.Functor
 import Data.List
@@ -215,8 +216,13 @@ canonicalizePathSafe p = doesFileExist p >>= \case
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 windowsHack :: Text -> IO Text
-windowsHack e = if isWindows && isAbsolute e'
-    then fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' . snd $ splitDrive e'
+windowsHack e = if isWindows
+    then case e' of
+        '"' : c : _ | c /= '.' -> case reads e' of -- path is not relative - remove quotes around drive
+            (y, ys) : _ -> windowsHack . T.pack $ y <> ys
+            _ -> error "malformed input expression - check quoting"
+        c : ':' : '/' : xs | isUpper c -> fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' $ xs
+        _ -> pure $ T.pack e'
     else pure e
   where
     e' = T.unpack e

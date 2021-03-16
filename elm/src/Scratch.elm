@@ -70,7 +70,7 @@ flags =
         [ { elements =
                 [ { location = { x = -600, y = 0 }
                   , name = "0"
-                  , showName = False
+                  , showName = Nothing
                   , element =
                         Indicator
                             { hollowness = 0.5
@@ -82,7 +82,7 @@ flags =
                   }
                 , { location = { x = 600, y = 0 }
                   , name = "1"
-                  , showName = False
+                  , showName = Nothing
                   , element =
                         Stick
                             { radius = 80
@@ -95,7 +95,7 @@ flags =
                   }
                 , { location = { x = -300, y = -200 }
                   , name = "2"
-                  , showName = False
+                  , showName = Nothing
                   , element =
                         Slider
                             { radius = 40
@@ -116,7 +116,7 @@ flags =
         , { elements =
                 [ { location = { x = -600, y = 0 }
                   , name = "0"
-                  , showName = False
+                  , showName = Nothing
                   , element =
                         Slider
                             { radius = 200

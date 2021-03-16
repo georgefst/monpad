@@ -2,6 +2,14 @@ let Prelude = ./Prelude.dhall
 
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
+let TextStyle =
+      { size : Natural
+      , colour : Colour
+      , bold : Bool
+      , italic : Bool
+      , underline : Bool
+      }
+
 let ViewBox = { x : Integer, y : Integer, w : Integer, h : Integer }
 
 let V2 = λ(a : Type) → { x : a, y : a }
@@ -58,7 +66,7 @@ let FullElement =
         { element : Element a b
         , location : V2 Integer
         , name : Text
-        , showName : Bool
+        , showName : Optional TextStyle
         }
 
 let Layout =
@@ -167,9 +175,22 @@ let simpleSlider =
             ).(Slider a)
         : Element a b
 
+let noTextStyle =
+      { size = 19
+      , colour = cols.black
+      , bold = False
+      , italic = False
+      , underline = False
+      }
+
+let defaultTextStyle = noTextStyle ⫽ { colour = cols.red, italic = True }
+
 in  λ(a : Type) →
     λ(b : Type) →
       { Colour
+      , TextStyle
+      , noTextStyle
+      , defaultTextStyle
       , V2
       , Shape
       , cols

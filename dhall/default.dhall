@@ -31,7 +31,7 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = False
+        , showName = None monpad.TextStyle
         }
 
 in    { elements =
@@ -48,7 +48,7 @@ in    { elements =
                 }
           , location = { x = +0, y = -300 }
           , name = "M"
-          , showName = True
+          , showName = Some monpad.defaultTextStyle
           }
         , { element =
               monpad.Element.Stick
@@ -61,7 +61,7 @@ in    { elements =
                 }
           , location = { x = -500, y = +0 }
           , name = "Stick"
-          , showName = False
+          , showName = None monpad.TextStyle
           }
         ]
       , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }

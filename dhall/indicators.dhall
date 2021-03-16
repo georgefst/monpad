@@ -5,6 +5,8 @@ let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button
 let buttonData =
       { linux = AllOS.ButtonLinux.KeyUnknown, windows = {=}, mac = {=} }
 
+let showName = Some monpad.defaultTextStyle
+
 in    { elements =
         [ { element =
               monpad.Element.Indicator
@@ -16,7 +18,7 @@ in    { elements =
                 }
           , location = { x = -800, y = +0 }
           , name = "5"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Button
@@ -26,7 +28,7 @@ in    { elements =
                 }
           , location = { x = -800, y = +0 }
           , name = "6"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Indicator
@@ -38,7 +40,7 @@ in    { elements =
                 }
           , location = { x = -500, y = +0 }
           , name = "0"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Indicator
@@ -50,7 +52,7 @@ in    { elements =
                 }
           , location = { x = +0, y = +0 }
           , name = "1"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Indicator
@@ -62,7 +64,7 @@ in    { elements =
                 }
           , location = { x = +500, y = +0 }
           , name = "2"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Indicator
@@ -74,7 +76,7 @@ in    { elements =
                 }
           , location = { x = +800, y = +0 }
           , name = "3"
-          , showName = True
+          , showName
           }
         , { element =
               monpad.Element.Button
@@ -84,7 +86,7 @@ in    { elements =
                 }
           , location = { x = +800, y = +0 }
           , name = "4"
-          , showName = True
+          , showName
           }
         ]
       , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }

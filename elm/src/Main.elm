@@ -13,6 +13,7 @@ import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Auto.Slider exposing (..)
 import Auto.Stick exposing (..)
+import Auto.TextStyle exposing (..)
 import Auto.Update exposing (..)
 import Auto.ViewBox exposing (..)
 import Basics exposing (..)
@@ -168,12 +169,14 @@ view model =
     }
 
 
-showName : String -> Collage msg
-showName name =
+showName : TextStyle -> String -> Collage msg
+showName style name =
     Text.fromString name
-        |> Text.size Text.large
-        |> Text.color Color.darkRed
-        |> Text.shape Text.Italic
+        |> Text.size style.size
+        |> Text.color (Color.fromRgba style.colour)
+        |> applyWhen style.bold (Text.weight Text.Bold)
+        |> applyWhen style.italic (Text.shape Text.Italic)
+        |> applyWhen style.underline (Text.line Text.Under)
         |> Collage.rendered
 
 
@@ -197,11 +200,7 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            if element.showName then
-                [ showName element.name ]
-
-            else
-                []
+            maybe [] (singleton << flip showName element.name) element.showName
     in
     extra
         |> (case element.element of

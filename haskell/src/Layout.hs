@@ -55,7 +55,7 @@ data FullElement a b = FullElement
     { element :: Element a b
     , location :: V2 Int
     , name :: ElementID
-    , showName :: Bool
+    , showName :: Maybe TextStyle
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement Unit Unit
@@ -160,3 +160,13 @@ data ViewBox = ViewBox
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via ViewBox
+
+data TextStyle = TextStyle
+    { size :: Word
+    , colour :: Colour
+    , bold :: Bool
+    , italic :: Bool
+    , underline :: Bool
+    }
+    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextStyle

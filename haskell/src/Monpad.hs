@@ -304,6 +304,7 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     , Elm.encodedTypes @ElmFlags
     , Elm.encodedTypes @ViewBox
     , Elm.encodedTypes @Colour
+    , Elm.encodedTypes @TextStyle
     , Elm.encodedTypes @(Layout () ())
     , Elm.encodedTypes @(FullElement () ())
     , Elm.encodedTypes @(Element () ())

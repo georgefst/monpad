@@ -30,7 +30,7 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = False
+        , showName = None monpad.TextStyle
         }
 
 let button2 =
@@ -47,7 +47,10 @@ let button2 =
               }
         , location = { x, y }
         , name
-        , showName
+        , showName =
+            if    showName
+            then  Some monpad.defaultTextStyle
+            else  None monpad.TextStyle
         }
 
 let stick =
@@ -67,7 +70,7 @@ let stick =
               }
         , location = { x, y }
         , name
-        , showName = False
+        , showName = None monpad.TextStyle
         }
 
 let slider =
@@ -87,7 +90,7 @@ let slider =
               }
         , location = { x, y }
         , name
-        , showName = False
+        , showName = None monpad.TextStyle
         }
 
 in    { elements =

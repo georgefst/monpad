@@ -31,7 +31,7 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = False
+        , showName = None monpad.TextStyle
         }
 
 let layoutAll =
@@ -50,7 +50,7 @@ let layoutAll =
                   }
             , location = { x = +0, y = +1300 }
             , name = "Slider"
-            , showName = False
+            , showName = None monpad.TextStyle
             }
           , { element =
                 monpad.Element.Stick
@@ -63,7 +63,7 @@ let layoutAll =
                   }
             , location = { x = +0, y = +650 }
             , name = "Stick"
-            , showName = False
+            , showName = None monpad.TextStyle
             }
           ]
         , viewBox = { x = -500, y = +0, w = +1000, h = +2000 }

@@ -194,10 +194,17 @@ viewElement model element =
                         >> Vec2.add (vec2 0 <| toFloat model.layout.layout.viewBox.h)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
+
+        -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
+        extra =
+            if element.showName then
+                [ showName element.name ]
+
+            else
+                []
     in
-    shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y ) <|
-        applyWhen element.showName (impose <| showName element.name) <|
-            case element.element of
+    extra
+        |> (case element.element of
                 Element.Button x ->
                     viewButton element.name x <| Set.member element.name model.layout.pressed
 
@@ -216,10 +223,12 @@ viewElement model element =
 
                 Element.Indicator x ->
                     viewIndicator element.name x
+           )
+        |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 
 
-viewButton : String -> Button -> Bool -> Collage Msgs
-viewButton name button pressed =
+viewButton : String -> Button -> Bool -> List (Collage Msgs) -> Collage Msgs
+viewButton name button pressed extra =
     let
         shape =
             case button.shape of
@@ -234,12 +243,13 @@ viewButton name button pressed =
             ( uniform <| applyWhen pressed darkColor <| fromRgba button.colour
             , solid thick <| uniform black
             )
+        |> impose (stack extra)
         |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown name ])
         |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
 
 
-viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> Collage Msgs
-viewStick name stick toOffset stickPos =
+viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> List (Collage Msgs) -> Collage Msgs
+viewStick name stick toOffset stickPos extra =
     let
         range =
             toFloat stick.range
@@ -263,7 +273,7 @@ viewStick name stick toOffset stickPos =
         small =
             circle rad |> styled1 stick.stickColour
     in
-    stack [ small |> shift (unVec2 <| Vec2.scale range stickPos), big ]
+    stack (extra ++ [ small |> shift (unVec2 <| Vec2.scale range stickPos), big ])
         |> Collage.on "pointerdown"
             (Pointer.eventDecoder
                 |> JD.map
@@ -278,8 +288,8 @@ viewStick name stick toOffset stickPos =
             )
 
 
-viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> Collage Msgs
-viewSlider name slider toOffset pos =
+viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> List (Collage Msgs) -> Collage Msgs
+viewSlider name slider toOffset pos extra =
     let
         width =
             toFloat slider.width
@@ -309,7 +319,7 @@ viewSlider name slider toOffset pos =
                 |> rotate (angleVec2 v - pi / 2)
                 |> shift (unVec2 <| Vec2.scale (1 / 2) v)
     in
-    stack [ stick |> shift (unVec2 <| Vec2.scale pos v), background ]
+    stack (extra ++ [ stick |> shift (unVec2 <| Vec2.scale pos v), background ])
         |> Collage.on "pointerdown"
             (Pointer.eventDecoder
                 |> JD.map
@@ -329,13 +339,14 @@ viewSlider name slider toOffset pos =
             )
 
 
-viewImage : String -> Image -> String -> Collage Msgs
-viewImage _ img url =
+viewImage : String -> Image -> String -> List (Collage Msgs) -> Collage Msgs
+viewImage _ img url extra =
     image (both toFloat ( img.width, img.height )) url
+        |> impose (stack extra)
 
 
-viewIndicator : String -> Indicator -> Collage Msgs
-viewIndicator _ ind =
+viewIndicator : String -> Indicator -> List (Collage Msgs) -> Collage Msgs
+viewIndicator _ ind extra =
     let
         a =
             ind.arcStart
@@ -398,6 +409,7 @@ viewIndicator _ ind =
     (reverse outer ++ inner)
         |> polygon
         |> styled1 ind.colour
+        |> impose (stack extra)
 
 
 

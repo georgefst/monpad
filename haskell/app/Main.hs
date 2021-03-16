@@ -215,10 +215,11 @@ canonicalizePathSafe p = doesFileExist p >>= \case
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 windowsHack :: Text -> IO Text
-windowsHack e = if isWindows && isAbsolute (T.unpack e)
-    then fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' . snd . splitDrive $ T.unpack e
+windowsHack e = if isWindows && isAbsolute e'
+    then fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' . snd $ splitDrive e'
     else pure e
   where
+    e' = T.unpack e
     -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
     -- also uses forward slash regardless of OS, and quotes all path components, for Dhall
     makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->

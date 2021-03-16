@@ -6,6 +6,7 @@ import Data.Bool (bool)
 import Data.Either (partitionEithers)
 import Data.Foldable (for_)
 import Data.Functor ((<&>))
+import Data.Tuple.Extra (snd3)
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
 import GHC.Generics (Generic)
@@ -46,13 +47,13 @@ conf layout = ServerConfig
             }
         return (pure dev, ())
     , onMessage = mempty
-    , onAxis = \AxisInfo{..} x -> do --note that x is always between -1 and 1
-        devs <- asks fst
+    , onAxis = \AxisInfo{..} x -> do
+        devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d $ pure @[] case axis of
             Abs a -> AbsoluteEvent a $ EventValue $ round $ (x + 1) * multiplier / 2
             Rel a -> RelativeEvent a $ EventValue $ round $ x * multiplier
     , onButton = \key up -> do
-        devs <- asks fst
+        devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d [KeyEvent key $ bool Released Pressed up]
     , onDroppedConnection = mempty
     , updates = mempty

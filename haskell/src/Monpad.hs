@@ -81,7 +81,7 @@ data Update
     = ButtonUp ElementID
     | ButtonDown ElementID
     | StickMove ElementID (V2 Double) -- always a vector within the unit circle
-    | SliderMove ElementID Double -- abs <= 1
+    | SliderMove ElementID Double -- between 0 and 1
     deriving (Eq, Ord, Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
@@ -176,6 +176,7 @@ data ServerConfig e s a b = ServerConfig
     , onNewConnection :: ClientID -> IO (e, s)
     , onMessage :: Update -> Monpad e s a b ()
     , onAxis :: a -> Double -> Monpad e s a b ()
+    -- ^ the argument here always ranges from -1 to 1, even for sliders
     , onButton :: b -> Bool -> Monpad e s a b ()
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
     , updates :: Async [e -> s -> ServerUpdate a b]
@@ -274,7 +275,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                         ButtonUp t -> lookup' buttonMap t $ flip onButton False
                         ButtonDown t -> lookup' buttonMap t $ flip onButton True
                         StickMove t (V2 x y) -> lookup' stickMap t \(x', y') -> onAxis x' x >> onAxis y' y
-                        SliderMove t x -> lookup' sliderMap t $ flip onAxis x
+                        SliderMove t x -> lookup' sliderMap t $ flip onAxis $ x * 2 - 1
                     pure True
                   where
                     lookup' m t f = case m !? t of

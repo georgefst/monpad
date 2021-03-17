@@ -9,6 +9,7 @@ import Auto.Image exposing (..)
 import Auto.Indicator exposing (..)
 import Auto.IntVec2 exposing (..)
 import Auto.Layout exposing (..)
+import Auto.ResetLayout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Auto.Slider exposing (..)
@@ -407,6 +408,7 @@ type alias Model =
     , fullscreen : Bool
     , startTime : Posix
     , layout : LayoutState -- the active layout
+    , initialLayouts : Dict String Layout
     , layouts : Dict String LayoutState -- NB. the active layout doesn't get updated here until we switch out of it
     }
 
@@ -456,17 +458,21 @@ load flags =
                                 [] ->
                                     Task.fail <| OtherError "layout list is empty"
 
-                                layout :: layouts ->
+                                layout :: layouts1 ->
+                                    let
+                                        layouts =
+                                            (layout :: layouts1)
+                                                |> List.map (\x -> ( x.name, loadLayout x ))
+                                                |> Dict.fromList
+                                    in
                                     Task.succeed <|
                                         ( { username = flags.username
                                           , layout = loadLayout layout
                                           , windowSize = viewport
                                           , fullscreen = False
                                           , startTime = startTime
-                                          , layouts =
-                                                (layout :: layouts)
-                                                    |> List.map (\x -> ( x.name, loadLayout x ))
-                                                    |> Dict.fromList
+                                          , initialLayouts = layouts |> Dict.map (always <| \x -> x.layout)
+                                          , layouts = layouts
                                           }
                                         , sendInit
                                         )
@@ -670,10 +676,23 @@ serverUpdate u model =
             , Cmd.none
             )
 
-        ResetLayoutState () ->
-            ( { model | layout = loadLayout layoutState.layout }
-            , Cmd.none
-            )
+        ResetLayout x ->
+            case x of
+                StateReset ->
+                    ( { model | layout = loadLayout layoutState.layout }
+                    , Cmd.none
+                    )
+
+                FullReset ->
+                    case Dict.get layoutState.layout.name model.initialLayouts of
+                        Just l ->
+                            ( { model | layout = loadLayout l }
+                            , Cmd.none
+                            )
+
+                        Nothing ->
+                            -- this really shouldn't happen, since we never remove anything from the dict
+                            ( model, consoleLog <| "Not in initial layouts: " ++ layoutState.layout.name )
 
 
 

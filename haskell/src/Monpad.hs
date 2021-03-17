@@ -98,12 +98,20 @@ data ServerUpdate a b
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
     | SetSliderPosition ElementID Double
-    | ResetLayoutState Unit --TODO this dummy field works around a bug in `haskell-to-elm`
+    | ResetLayout ResetLayout
     -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate Unit Unit
     deriving (ToJSON) via Elm.Via2 ServerUpdate a b
     deriving (Bifunctor) via GenericBifunctor ServerUpdate
+
+data ResetLayout
+    = StateReset
+    -- ^ just stick positions, buttons pressed, etc.
+    | FullReset
+    -- ^ return to the layout the program was initialised with (undo add/remove elements etc.)
+    deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder J.Value) via Elm.Via ResetLayout
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -265,7 +273,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                             SetIndicatorArcEnd{} -> mempty
                             SetIndicatorShape{} -> mempty
                             SetSliderPosition{} -> mempty
-                            ResetLayoutState{} -> mempty
+                            ResetLayout{} -> mempty
                         pure update
                     pure True
                 Right (Right u) -> do
@@ -301,6 +309,7 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     [ Elm.decodedTypes @Update
     , Elm.decodedTypes @(V2 Double)
     , Elm.encodedTypes @(ServerUpdate () ())
+    , Elm.encodedTypes @ResetLayout
     , Elm.encodedTypes @ElmFlags
     , Elm.encodedTypes @ViewBox
     , Elm.encodedTypes @Colour

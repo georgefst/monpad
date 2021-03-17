@@ -5,6 +5,7 @@ module Scratch exposing (..)
 
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
+import Auto.ResetLayout exposing (ResetLayout(..))
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Basics.Extra exposing (..)
@@ -42,7 +43,7 @@ main =
                                     List.map Main.ServerUpdate
                                         [ SwitchLayout "B"
                                         , SetBackgroundColour <| toRgba black
-                                        , ResetLayoutState ()
+                                        , ResetLayout StateReset
                                         , SetSliderPosition "0" 0.7
                                         ]
                         , sub 4000 1000 model <|
@@ -53,7 +54,7 @@ main =
 
                                 else if x < 0.5 then
                                     List.map Main.ServerUpdate
-                                        [ ResetLayoutState () ]
+                                        [ ResetLayout FullReset ]
 
                                 else
                                     []

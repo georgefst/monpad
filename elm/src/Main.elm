@@ -698,7 +698,7 @@ styled1 c =
     styled ( uniform <| fromRgba c, defaultLineStyle )
 
 
-subLogErrors : String -> (a -> List Msg) -> Sub (Result JD.Error a) -> Sub (List Msg)
+subLogErrors : String -> (a -> Msgs) -> Sub (Result JD.Error a) -> Sub Msgs
 subLogErrors s f =
     Sub.map
         (either

@@ -218,7 +218,7 @@ viewElement model element =
                             Dict.get element.name model.layout.sliderPos
 
                 Element.Image x ->
-                    viewImage element.name x <| withDefault x.url <| Dict.get element.name model.layout.imageToUrl
+                    viewImage element.name x x.url
 
                 Element.Indicator x ->
                     viewIndicator element.name x
@@ -416,7 +416,6 @@ type alias LayoutState =
     , pressed : Set String -- buttons
     , stickPos : Dict String Vec2
     , sliderPos : Dict String Float
-    , imageToUrl : Dict String String
     , pointerCallbacks : Dict Int PointerCallbacks -- keyed by pointer id
     }
 
@@ -482,18 +481,6 @@ loadLayout layout =
     , pointerCallbacks = Dict.empty
     , pressed = Set.empty
     , sliderPos = Dict.empty
-    , imageToUrl =
-        layout.elements
-            |> filterMap
-                (\e ->
-                    case e.element of
-                        Element.Image img ->
-                            Just ( e.name, img.url )
-
-                        _ ->
-                            Nothing
-                )
-            |> Dict.fromList
     }
 
 
@@ -583,7 +570,29 @@ serverUpdate u model =
     in
     case u of
         SetImageURL image url ->
-            ( { model | layout = { layoutState | imageToUrl = Dict.insert image url layoutState.imageToUrl } }
+            ( { model
+                | layout =
+                    { layoutState
+                        | layout =
+                            { layout
+                                | elements =
+                                    layout.elements
+                                        |> List.map
+                                            (\e ->
+                                                if e.name == image then
+                                                    case e.element of
+                                                        Element.Image img ->
+                                                            { e | element = Element.Image { img | url = url } }
+
+                                                        _ ->
+                                                            e
+
+                                                else
+                                                    e
+                                            )
+                            }
+                    }
+              }
             , Cmd.none
             )
 
@@ -619,7 +628,6 @@ serverUpdate u model =
                         | pressed = Set.remove e layoutState.pressed
                         , sliderPos = Dict.remove e layoutState.sliderPos
                         , stickPos = Dict.remove e layoutState.stickPos
-                        , imageToUrl = Dict.remove e layoutState.imageToUrl
                         , layout =
                             { layout
                                 | elements =

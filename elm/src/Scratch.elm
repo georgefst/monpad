@@ -108,6 +108,23 @@ flags =
                             , sliderData = ()
                             }
                   }
+                , { location = { x = 0, y = 350 }
+                  , name = "button"
+                  , showName =
+                        Just
+                            { bold = True
+                            , italic = True
+                            , underline = True
+                            , colour = toRgba darkGray
+                            , size = 60
+                            }
+                  , element =
+                        Button
+                            { shape = Rectangle { x = 300, y = 100 }
+                            , colour = toRgba yellow
+                            , buttonData = ()
+                            }
+                  }
                 ]
           , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
           , backgroundColour = { red = 0.81, green = 0.91, blue = 0.97, alpha = 1.0 }

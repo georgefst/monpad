@@ -275,18 +275,6 @@ viewStick name stick toOffset stickPos extra =
             circle rad |> styled1 stick.stickColour
     in
     stack (extra ++ [ small |> shift (unVec2 <| Vec2.scale range stickPos), big ])
-        |> Collage.on "pointerdown"
-            (Pointer.eventDecoder
-                |> JD.map
-                    (\x ->
-                        [ PointerDown x.pointerId
-                            { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
-                            , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
-                            }
-                        , Update <| StickMove name <| getOffset x
-                        ]
-                    )
-            )
         |> onPointerDown (StickMove name << getOffset)
             { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
             , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
@@ -325,23 +313,6 @@ viewSlider name slider toOffset pos extra =
                 |> shift (unVec2 <| Vec2.scale (1 / 2) v)
     in
     stack (extra ++ [ stick |> shift (unVec2 <| Vec2.scale pos v), background ])
-        |> Collage.on "pointerdown"
-            (Pointer.eventDecoder
-                |> JD.map
-                    (\x ->
-                        [ PointerDown x.pointerId
-                            { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
-                            , onRelease =
-                                if slider.resetOnRelease then
-                                    [ Update <| SliderMove name <| slider.initialPosition ]
-
-                                else
-                                    []
-                            }
-                        , Update <| SliderMove name <| getOffset x
-                        ]
-                    )
-            )
         |> onPointerDown (SliderMove name << getOffset)
             { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
             , onRelease =

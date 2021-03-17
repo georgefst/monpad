@@ -45,6 +45,18 @@ main =
                                         , ResetLayoutState ()
                                         , SetSliderPosition "0" 0.7
                                         ]
+                        , sub 4000 1000 model <|
+                            \x ->
+                                if x < 0.25 then
+                                    List.map Main.ServerUpdate
+                                        [ SetImageURL "image" "https://bit.ly/38MOJxe" ]
+
+                                else if x < 0.5 then
+                                    List.map Main.ServerUpdate
+                                        [ ResetLayoutState () ]
+
+                                else
+                                    []
                         , app.subscriptions model
                         ]
         }
@@ -123,6 +135,16 @@ flags =
                             { shape = Rectangle { x = 300, y = 100 }
                             , colour = toRgba yellow
                             , buttonData = ()
+                            }
+                  }
+                , { location = { x = -500, y = 0 }
+                  , name = "image"
+                  , showName = Nothing
+                  , element =
+                        Image
+                            { width = 1000
+                            , height = 1000
+                            , url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
                             }
                   }
                 ]

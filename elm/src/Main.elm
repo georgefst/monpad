@@ -618,6 +618,7 @@ serverUpdate u model =
                     { layoutState
                         | pressed = Set.remove e layoutState.pressed
                         , sliderPos = Dict.remove e layoutState.sliderPos
+                        , stickPos = Dict.remove e layoutState.stickPos
                         , imageToUrl = Dict.remove e layoutState.imageToUrl
                         , layout =
                             { layout

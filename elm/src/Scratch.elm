@@ -29,8 +29,8 @@ main =
                     Sub.batch
                         [ sub 3000 30 model <|
                             \x ->
-                                [ Main.ServerUpdate <| SetIndicatorArcStart "0" <| x * 2 * pi
-                                , Main.ServerUpdate <| SetIndicatorHollowness "0" x
+                                [ Main.ServerUpdate <| SetIndicatorArcStart "indicator" <| x * 2 * pi
+                                , Main.ServerUpdate <| SetIndicatorHollowness "indicator" x
                                 ]
                         , sub 4000 2000 model <|
                             \x ->
@@ -69,7 +69,7 @@ flags =
     , layouts =
         [ { elements =
                 [ { location = { x = -600, y = 0 }
-                  , name = "0"
+                  , name = "indicator"
                   , showName = Nothing
                   , element =
                         Indicator
@@ -81,7 +81,7 @@ flags =
                             }
                   }
                 , { location = { x = 600, y = 0 }
-                  , name = "1"
+                  , name = "stick"
                   , showName = Nothing
                   , element =
                         Stick
@@ -94,7 +94,7 @@ flags =
                             }
                   }
                 , { location = { x = -300, y = -200 }
-                  , name = "2"
+                  , name = "slider"
                   , showName = Nothing
                   , element =
                         Slider

@@ -243,8 +243,18 @@ viewButton name button pressed extra =
             , solid thick <| uniform black
             )
         |> impose (stack extra)
-        |> Collage.on "pointerdown" (JD.succeed [ Update <| ButtonDown name ])
-        |> Collage.on "pointerout" (JD.succeed [ Update <| ButtonUp name ])
+        |> Collage.on "pointerdown"
+            (Pointer.eventDecoder
+                |> JD.map
+                    (\x ->
+                        [ PointerDown x.pointerId
+                            { onMove = always []
+                            , onRelease = [ Update <| ButtonUp name ]
+                            }
+                        , Update <| ButtonDown name
+                        ]
+                    )
+            )
 
 
 viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> List (Collage Msgs) -> Collage Msgs

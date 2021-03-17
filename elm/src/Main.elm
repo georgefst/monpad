@@ -624,14 +624,8 @@ serverUpdate u model =
                             { layout
                                 | elements =
                                     layout.elements
-                                        |> List.filterMap
-                                            (\e1 ->
-                                                if e1.name == e then
-                                                    Nothing
-
-                                                else
-                                                    Just e1
-                                            )
+                                        |> List.filter
+                                            (\x -> x.name /= e)
                             }
                     }
               }

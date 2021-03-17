@@ -243,18 +243,10 @@ viewButton name button pressed extra =
             , solid thick <| uniform black
             )
         |> impose (stack extra)
-        |> Collage.on "pointerdown"
-            (Pointer.eventDecoder
-                |> JD.map
-                    (\x ->
-                        [ PointerDown x.pointerId
-                            { onMove = always []
-                            , onRelease = [ Update <| ButtonUp name ]
-                            }
-                        , Update <| ButtonDown name
-                        ]
-                    )
-            )
+        |> onPointerDown (always <| ButtonDown name)
+            { onMove = always []
+            , onRelease = [ Update <| ButtonUp name ]
+            }
 
 
 viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> List (Collage Msgs) -> Collage Msgs
@@ -295,6 +287,10 @@ viewStick name stick toOffset stickPos extra =
                         ]
                     )
             )
+        |> onPointerDown (StickMove name << getOffset)
+            { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
+            , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
+            }
 
 
 viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> List (Collage Msgs) -> Collage Msgs
@@ -346,6 +342,15 @@ viewSlider name slider toOffset pos extra =
                         ]
                     )
             )
+        |> onPointerDown (SliderMove name << getOffset)
+            { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
+            , onRelease =
+                if slider.resetOnRelease then
+                    [ Update <| SliderMove name <| slider.initialPosition ]
+
+                else
+                    []
+            }
 
 
 viewImage : String -> Image -> String -> List (Collage Msgs) -> Collage Msgs
@@ -441,7 +446,7 @@ type alias LayoutState =
     , stickPos : Dict String Vec2
     , sliderPos : Dict String Float
     , imageToUrl : Dict String String
-    , pointerCallbacks : Dict Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs } -- keyed by pointer id
+    , pointerCallbacks : Dict Int PointerCallbacks -- keyed by pointer id
     }
 
 
@@ -452,12 +457,16 @@ type alias Msgs =
 type Msg
     = Update Update
     | ServerUpdate ServerUpdate
-    | PointerDown Int { onMove : Pointer.Event -> Msgs, onRelease : Msgs }
+    | PointerDown Int PointerCallbacks
     | PointerUp Int
     | Resized IntVec2
     | GoFullscreen
     | FullscreenChange Bool
     | ConsoleLog String
+
+
+type alias PointerCallbacks =
+    { onMove : Pointer.Event -> Msgs, onRelease : Msgs }
 
 
 type Error
@@ -693,6 +702,10 @@ serverUpdate u model =
             )
 
 
+
+{- Util -}
+
+
 styled1 : Colour -> Collage.Shape -> Collage msg
 styled1 c =
     styled ( uniform <| fromRgba c, defaultLineStyle )
@@ -704,4 +717,21 @@ subLogErrors s f =
         (either
             (\err -> [ ConsoleLog <| "Failed to decode " ++ s ++ ": " ++ JD.errorToString err ])
             f
+        )
+
+
+onPointerDown :
+    (Pointer.Event -> Update)
+    -> PointerCallbacks
+    -> Collage Msgs
+    -> Collage Msgs
+onPointerDown f y =
+    Collage.on "pointerdown"
+        (Pointer.eventDecoder
+            |> JD.map
+                (\x ->
+                    [ PointerDown x.pointerId y
+                    , Update <| f x
+                    ]
+                )
         )

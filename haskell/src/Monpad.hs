@@ -99,7 +99,6 @@ data ServerUpdate a b
     | SetIndicatorShape ElementID Shape
     | SetSliderPosition ElementID Double
     | ResetLayout ResetLayout
-    -- ^ reset stick positions, buttons pressed, image url map etc. for current layout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate Unit Unit
     deriving (ToJSON) via Elm.Via2 ServerUpdate a b

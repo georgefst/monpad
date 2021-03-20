@@ -65,7 +65,7 @@ parser = do
     port <- option auto $ mconcat
         [ long "port"
         , short 'p'
-        , metavar "INT"
+        , metavar "PORT"
         , value 8000
         , showDefault
         , help "Port number for the server to listen on."

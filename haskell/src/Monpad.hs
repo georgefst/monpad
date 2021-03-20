@@ -333,7 +333,7 @@ test = do
     layouts <- sequence $ defaultSimple :| []
     server 8000 (Just "../dist/assets") layouts config
   where
-    config = ServerConfig
+    config = mempty
         { onStart = pPrint . ("started" :: Text,)
         , onNewConnection = \c -> do
             pPrint ("connected" :: Text, c)
@@ -341,10 +341,7 @@ test = do
         , onMessage = \u -> do
             c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
-        , onAxis = mempty
-        , onButton = mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
-        , updates = mempty
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])

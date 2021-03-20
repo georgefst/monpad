@@ -418,7 +418,7 @@ type alias LayoutState =
     , pressed : Set String -- buttons
     , stickPos : Dict String Vec2
     , sliderPos : Dict String Float
-    , pointerCallbacks : Dict Int PointerCallbacks -- keyed by pointer id
+    , pointerCallbacks : Dict Int PointerCallbacks -- keys are the ids of the pointers currently held down
     }
 
 

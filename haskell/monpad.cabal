@@ -88,13 +88,13 @@ library
     exposed-modules:
         Monpad
         Layout
+        Util
     other-modules:
         Embed
         DhallHack
         Orphans.Elm
         Orphans.Generic
         Orphans.V2
-        Util
         Util.Elm
         Util.ShowNewtype
     hs-source-dirs:

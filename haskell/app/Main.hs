@@ -52,6 +52,7 @@ data Args = Args
     , layoutExprs :: [Text]
     , externalWS :: Maybe Port
     , qrPath :: Maybe FilePath
+    , pingFrequency :: Int
     }
 
 parser :: Parser Args
@@ -68,6 +69,13 @@ parser = do
         , value 8000
         , showDefault
         , help "Port number for the server to listen on."
+        ]
+    pingFrequency <- option auto $ mconcat
+        [ long "ping"
+        , metavar "SECONDS"
+        , value 30
+        , showDefault
+        , help "How often to send the client a ping message to keep it awake."
         ]
     imageDir <- optional . strOption $ mconcat
         [ long "assets"
@@ -88,7 +96,9 @@ parser = do
     externalWS <- optional . option auto $ mconcat
         [ long "ext-ws"
         , metavar "PORT"
-        , help "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+        , help
+            "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
+            \Note that options such as --ping will have no effect in this mode."
         ]
     pure Args{..}
 
@@ -126,7 +136,8 @@ main = do
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
                         Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
-                server port imageDir l $ scPrintStuff quiet <> scSendLayout <> maybe mempty scQR qrPath <> sc
+                server pingFrequency port imageDir l $
+                    scPrintStuff quiet <> scSendLayout <> maybe mempty scQR qrPath <> sc
 
 scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
 scQR path = mempty{onStart = writeQR path}

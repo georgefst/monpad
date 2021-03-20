@@ -210,11 +210,11 @@ addToElementMaps e = case e.element of
     Image _ -> id
     Indicator _ -> id
 
-server :: Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server port assetsDir layouts conf = do
+server :: Int -> Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
+server pingFrequency port assetsDir layouts conf = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port assetsDir layouts :<|> websocketServer layouts conf
+        httpServer port assetsDir layouts :<|> websocketServer pingFrequency layouts conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -239,15 +239,15 @@ httpServer wsPort assetsDir layouts =
             serveDirectoryWebApp
             assetsDir
 
-websocketServer :: Layouts a b -> ServerConfig e s a b -> Server WsApi
-websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
+websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
+websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
     Just clientId -> do
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
         let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-        WS.withPingThread conn 30 mempty . runMonpad layouts clientId e s0 . SP.drain $
+        WS.withPingThread conn pingFrequency mempty . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do
                     sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for sus \su -> do
@@ -331,7 +331,7 @@ test :: IO ()
 test = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
-    server 8000 (Just "../dist/assets") layouts config
+    server 30 8000 (Just "../dist/assets") layouts config
   where
     config = mempty
         { onStart = pPrint . ("started" :: Text,)

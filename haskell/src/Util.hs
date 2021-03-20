@@ -29,6 +29,10 @@ showT = T.pack . show
 typeRepT :: forall a. Typeable a => Text
 typeRepT = showT $ typeRep @a
 
+infixl 4 <<$>>
+(<<$>>) :: (Functor f1, Functor f2) => (a -> b) -> f1 (f2 a) -> f1 (f2 b)
+(<<$>>) = fmap . fmap
+
 biVoid :: Bifunctor p => p a b -> p () ()
 biVoid = bimap (const ()) (const ())
 

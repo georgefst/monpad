@@ -28,6 +28,7 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.IORef
 import Data.List
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
@@ -39,6 +40,8 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
+import Data.Time
+import Data.Time.Clock.POSIX
 import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
@@ -54,6 +57,7 @@ import Network.HTTP.Types.Status
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
+import Network.WebSockets.Connection qualified as WS
 import Optics
 import Servant hiding (layout)
 import Servant.API.WebSocket
@@ -67,6 +71,7 @@ import DhallHack
 import Embed
 import Layout
 import Orphans.Elm ()
+import Orphans.Generic ()
 import Orphans.V2 ()
 import Util
 import Util.Elm (Unit (Unit))
@@ -186,6 +191,8 @@ data ServerConfig e s a b = ServerConfig
     -- ^ the argument here always ranges from -1 to 1, even for sliders
     , onButton :: b -> Bool -> Monpad e s a b ()
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
+    , onPong :: NominalDiffTime -> IO ()
+    -- ^ when the client sends a pong, this gives us the time since the correspoonding ping
     , updates :: Async [e -> s -> ServerUpdate a b]
     }
     deriving Generic
@@ -240,14 +247,22 @@ httpServer wsPort assetsDir layouts =
             assetsDir
 
 websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
-    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
+websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case mu of
+    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending0 (encodeUtf8 err)
       where err = "no username parameter"
     Just clientId -> do
+        lastPing <- newIORef Nothing
+        let onPing = writeIORef lastPing . Just =<< getPOSIXTime
+            onPong' = readIORef lastPing >>= \case
+                Nothing -> warn "pong before ping"
+                Just t0 -> do
+                    t1 <- getPOSIXTime
+                    onPong $ t1 - t0
+            pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
         let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-        WS.withPingThread conn pingFrequency mempty . runMonpad layouts clientId e s0 . SP.drain $
+        WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do
                     sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for sus \su -> do
@@ -342,6 +357,7 @@ test = do
             c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
+        , onPong = pPrint . ("pong" :: Text,)
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])

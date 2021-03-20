@@ -258,7 +258,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                             SwitchLayout i -> do
                                 asks ((!? i) . fst3) >>= \case
                                     Just l -> put (l, mkElementMaps l.elements, s)
-                                    Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: layout id not found: " <> i.unwrap
+                                    Nothing -> warn $ "layout id not found: " <> i.unwrap
                             AddElement el -> modify . first $ addToElementMaps el
                             RemoveElement el -> modify . first $
                                 over #stickMap (Map.delete el)
@@ -287,7 +287,7 @@ websocketServer layouts ServerConfig{..} mu pending = liftIO case mu of
                   where
                     lookup' m t f = case m !? t of
                         Just b -> f b
-                        Nothing -> liftIO $ T.hPutStrLn stderr $ "Warning: element id not found: " <> t.unwrap
+                        Nothing -> warn $ "element id not found: " <> t.unwrap
                 Right (Left err) -> onDroppedConnection err >> pure False
       where
         sendUpdates conn = liftIO . WS.sendTextData conn . encode
@@ -348,3 +348,9 @@ test = do
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])
+
+{- Util -}
+
+--TODO colours
+warn :: MonadIO m => Text -> m ()
+warn s = liftIO $ T.hPutStrLn stderr $ "Warning: " <> s

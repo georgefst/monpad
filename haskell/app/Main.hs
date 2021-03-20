@@ -98,7 +98,7 @@ parser = do
         , metavar "PORT"
         , help
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
-            \Note that options such as --ping will have no effect in this mode."
+            \Note that options such as --ping and --watch-layout will have no effect in this mode."
         ]
     pure Args{..}
 

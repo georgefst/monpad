@@ -136,8 +136,12 @@ main = do
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
                         Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
-                server pingFrequency port imageDir l $
-                    scPrintStuff quiet <> scSendLayout <> maybe mempty scQR qrPath <> sc
+                server pingFrequency port imageDir l $ mconcat
+                    [ scPrintStuff quiet
+                    , scSendLayout
+                    , maybe mempty scQR qrPath
+                    , sc
+                    ]
 
 scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
 scQR path = mempty{onStart = writeQR path}

@@ -31,15 +31,17 @@ main =
                     Sub.batch
                         [ sub 3000 30 model <|
                             \x ->
-                                [ Main.ServerUpdate <| SetIndicatorArcStart "indicator" x
-                                , Main.ServerUpdate <| SetIndicatorHollowness "indicator" x
-                                ]
+                                List.map Main.ServerUpdate
+                                    [ SetIndicatorArcStart "indicator" x
+                                    , SetIndicatorHollowness "indicator" x
+                                    ]
                         , sub 3000 30 model <|
                             \x ->
-                                [ Main.ServerUpdate <| SetIndicatorCentre "powerbar" <| vec2 0 (2 * x - 1)
-                                , Main.ServerUpdate <| SetIndicatorArcStart "powerbar" <| 5 / 8 - x / 4
-                                , Main.ServerUpdate <| SetIndicatorArcEnd "powerbar" <| 7 / 8 + x / 4
-                                ]
+                                List.map Main.ServerUpdate
+                                    [ SetIndicatorCentre "powerbar" <| vec2 0 (2 * x - 1)
+                                    , SetIndicatorArcStart "powerbar" <| 5 / 8 - x / 4
+                                    , SetIndicatorArcEnd "powerbar" <| 7 / 8 + x / 4
+                                    ]
                         , sub 4000 2000 model <|
                             \x ->
                                 if x < 0.5 then

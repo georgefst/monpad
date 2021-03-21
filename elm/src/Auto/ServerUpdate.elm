@@ -7,6 +7,8 @@ import Auto.ResetLayout
 import Auto.Shape
 import Json.Decode
 import Json.Decode.Pipeline
+import Math.Vector2
+import Util
 
 
 type ServerUpdate 
@@ -23,6 +25,7 @@ type ServerUpdate
     | SetIndicatorArcStart String Float
     | SetIndicatorArcEnd String Float
     | SetIndicatorShape String Auto.Shape.Shape
+    | SetIndicatorCentre String Math.Vector2.Vec2
     | SetSliderPosition String Float
     | ResetLayout Auto.ResetLayout.ResetLayout
 
@@ -61,6 +64,9 @@ decode =
     , Json.Decode.field "setIndicatorShape" (Json.Decode.succeed SetIndicatorShape |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Shape.decode))
+    , Json.Decode.field "setIndicatorCentre" (Json.Decode.succeed SetIndicatorCentre |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Util.decodeVec2))
     , Json.Decode.field "setSliderPosition" (Json.Decode.succeed SetSliderPosition |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))

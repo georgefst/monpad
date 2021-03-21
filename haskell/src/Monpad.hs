@@ -6,6 +6,7 @@ module Monpad (
     Monpad,
     runMonpad,
     ServerConfig (..),
+    combineConfs,
     ClientID (..),
     Update (..),
     ServerUpdate (..),
@@ -169,13 +170,12 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
 
 --TODO use dedicated record types for State and Reader, and expose a cleaner interface
 -- | The Monpad monad
-newtype Monpad e s a b x = Monpad {unMonpad :: StateT (Layout a b, ElementMaps a b, s) (ReaderT (Map LayoutID (Layout a b), e, ClientID) IO) x}
+newtype Monpad e s a b x = Monpad {unMonpad :: ReaderT (Map LayoutID (Layout a b), e, ClientID) (StateT (Layout a b, ElementMaps a b, s) IO) x}
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (Map LayoutID (Layout a b), e, ClientID), MonadState (Layout a b, ElementMaps a b, s))
 deriving via Action (Monpad e s a b) instance (Semigroup (Monpad e s a b ()))
 deriving via Action (Monpad e s a b) instance (Monoid (Monpad e s a b ()))
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
-runMonpad ls c e s mon = runReaderT (evalStateT (unMonpad mon) (l, mkElementMaps l.elements, s))
-    (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)
+runMonpad ls c e s mon = evalStateT (runReaderT (unMonpad mon) (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)) (l, mkElementMaps l.elements, s)
   where l = NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
@@ -198,6 +198,33 @@ data ServerConfig e s a b = ServerConfig
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
+
+-- | Run two `ServerConfig`s with different environments.
+combineConfs :: Monoid s => ServerConfig e1 s a b -> ServerConfig e2 s a b -> ServerConfig (e1, e2) s a b
+combineConfs sc1 sc2 = ServerConfig
+    { onStart = \x -> sc1.onStart x <> sc2.onStart x
+    , onNewConnection = \x -> (\(e1, s1) (e2, s2) -> ((e1, e2), s1 <> s2))
+        <$> sc1.onNewConnection x
+        <*> sc2.onNewConnection x
+    , onMessage = \x -> f
+        (sc1.onMessage x)
+        (sc2.onMessage x)
+    , onAxis = \x y -> f
+        (sc1.onAxis x y)
+        (sc2.onAxis x y)
+    , onButton = \x y -> f
+        (sc1.onButton x y)
+        (sc2.onButton x y)
+    , onDroppedConnection = \x -> f
+        (sc1.onDroppedConnection x)
+        (sc2.onDroppedConnection x)
+    , onPong = \(e1, e2) x -> sc1.onPong e1 x <> sc2.onPong e2 x
+    , updates = \(e1, e2) -> sc1.updates e1 <> sc2.updates e2
+    }
+  where
+    f a1 a2 = Monpad $ (<>)
+        <$> withReaderT (second3 fst) (unMonpad a1)
+        <*> withReaderT (second3 snd) (unMonpad a2)
 
 -- | Maps of element names to axes and buttons.
 data ElementMaps a b = ElementMaps

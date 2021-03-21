@@ -34,6 +34,12 @@ main =
                                 [ Main.ServerUpdate <| SetIndicatorArcStart "indicator" x
                                 , Main.ServerUpdate <| SetIndicatorHollowness "indicator" x
                                 ]
+                        , sub 3000 30 model <|
+                            \x ->
+                                [ Main.ServerUpdate <| SetIndicatorCentre "powerbar" <| vec2 0 (2 * x - 1)
+                                , Main.ServerUpdate <| SetIndicatorArcStart "powerbar" <| 5 / 8 - x / 4
+                                , Main.ServerUpdate <| SetIndicatorArcEnd "powerbar" <| 7 / 8 + x / 4
+                                ]
                         , sub 4000 2000 model <|
                             \x ->
                                 if x < 0.5 then
@@ -93,6 +99,19 @@ flags =
                             , centre = vec2 0 0
                             , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
                             , shape = Circle 300
+                            }
+                  }
+                , { location = { x = 900, y = 0 }
+                  , name = "powerbar"
+                  , showName = Nothing
+                  , element =
+                        Indicator
+                            { hollowness = 0
+                            , arcStart = 0.5
+                            , arcEnd = 1
+                            , centre = vec2 0 0
+                            , colour = toRgba purple
+                            , shape = Rectangle { x = 100, y = 800 }
                             }
                   }
                 , { location = { x = 600, y = 0 }

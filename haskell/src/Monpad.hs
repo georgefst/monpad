@@ -192,7 +192,7 @@ data ServerConfig e s a b = ServerConfig
     -- ^ the argument here always ranges from -1 to 1, even for sliders
     , onButton :: b -> Bool -> Monpad e s a b ()
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
-    , onPong :: NominalDiffTime -> IO ()
+    , onPong :: e -> NominalDiffTime -> IO ()
     -- ^ when the client sends a pong, this gives us the time since the correspoonding ping
     , updates :: e -> Async [s -> ServerUpdate a b]
     }
@@ -254,15 +254,15 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
       where err = "no username parameter"
     Just clientId -> do
         lastPing <- newIORef Nothing
+        (e, s0) <- onNewConnection clientId
         let onPing = writeIORef lastPing . Just =<< getPOSIXTime
             onPong' = readIORef lastPing >>= \case
                 Nothing -> warn "pong before ping"
                 Just t0 -> do
                     t1 <- getPOSIXTime
-                    onPong $ t1 - t0
+                    onPong e $ t1 - t0
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
-        (e, s0) <- onNewConnection clientId
         let stream = asyncly $ (Left <$> updates e) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
@@ -361,7 +361,7 @@ test = do
             c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
-        , onPong = pPrint . ("pong" :: Text,)
+        , onPong = const $ pPrint . ("pong" :: Text,)
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])

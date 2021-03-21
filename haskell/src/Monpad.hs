@@ -94,6 +94,8 @@ data Update
 data ServerUpdate a b
     = SetImageURL ElementID Text
     | PlayAudioURL Text
+    | Vibrate [Int]
+    -- ^ millisecond intervals: https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API#vibration_patterns
     | SetText ElementID Text
     | SetLayout (Layout a b)
     | SwitchLayout LayoutID
@@ -328,6 +330,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             SetBackgroundColour{} -> mempty
                             SetImageURL{} -> mempty
                             PlayAudioURL{} -> mempty
+                            Vibrate{} -> mempty
                             SetText{} -> mempty
                             SetIndicatorHollowness{} -> mempty
                             SetIndicatorArcStart{} -> mempty

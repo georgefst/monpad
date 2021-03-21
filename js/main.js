@@ -51,6 +51,11 @@ ws.onopen = _event => {
         audio.play()
     })
 
+    // vibration
+    app.ports.vibratePort.subscribe(intervals => {
+        window.navigator.vibrate(intervals)
+    })
+
     // logging
     app.ports.logPort.subscribe(console.log)
 }

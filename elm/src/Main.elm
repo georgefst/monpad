@@ -639,6 +639,11 @@ serverUpdate u model =
             , playAudio url
             )
 
+        Vibrate intervals ->
+            ( model
+            , vibrate intervals
+            )
+
         SetLayout l ->
             ( { model | layout = loadLayout l }
             , Cmd.none

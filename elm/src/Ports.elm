@@ -3,6 +3,7 @@ port module Ports exposing
     , fullscreenChanges
     , goFullscreen
     , playAudio
+    , vibrate
     , receiveUpdates
     , sendInit
     , sendUpdate
@@ -92,4 +93,14 @@ playAudio =
 
 port audioPort :
     String
+    -> Cmd msg
+
+
+vibrate : List Int -> Cmd msg
+vibrate =
+    vibratePort
+
+
+port vibratePort :
+    List Int
     -> Cmd msg

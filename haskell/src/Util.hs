@@ -1,6 +1,7 @@
 module Util where
 
 import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bool (bool)
 import Data.List (find)
 import Data.Maybe (mapMaybe)
 import Data.Proxy (Proxy (Proxy))
@@ -19,6 +20,9 @@ import Network.Socket (
 import System.Directory (listDirectory)
 import System.FilePath ((</>))
 import Type.Reflection (Typeable, typeRep)
+
+applyWhen :: Bool -> (a -> a) -> a -> a
+applyWhen = flip $ bool id
 
 symbolValT :: forall a. KnownSymbol a => Text
 symbolValT = T.pack $ symbolVal $ Proxy @a

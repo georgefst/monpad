@@ -5,6 +5,7 @@ import Auto.Image
 import Auto.Indicator
 import Auto.Slider
 import Auto.Stick
+import Auto.TextBox
 import Json.Decode
 import Json.Decode.Pipeline
 
@@ -14,6 +15,7 @@ type Element
     | Button Auto.Button.Button
     | Slider Auto.Slider.Slider
     | Image Auto.Image.Image
+    | TextBox Auto.TextBox.TextBox
     | Indicator Auto.Indicator.Indicator
 
 
@@ -27,5 +29,7 @@ decode =
     Json.Decode.Pipeline.required "slider" Auto.Slider.decode
     , Json.Decode.succeed Image |>
     Json.Decode.Pipeline.required "image" Auto.Image.decode
+    , Json.Decode.succeed TextBox |>
+    Json.Decode.Pipeline.required "textBox" Auto.TextBox.decode
     , Json.Decode.succeed Indicator |>
     Json.Decode.Pipeline.required "indicator" Auto.Indicator.decode ]

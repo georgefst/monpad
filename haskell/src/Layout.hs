@@ -26,6 +26,7 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Button b -> [Right b.buttonData]
     Slider s -> [Left s.sliderData]
     Image _ -> []
+    TextBox _ -> []
     Indicator _ -> []
 
 -- | A (non-empty) list of 'Layout's.
@@ -72,6 +73,7 @@ data Element a b
     | Button (Button b)
     | Slider (Slider a)
     | Image Image
+    | TextBox TextBox
     | Indicator Indicator
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element Unit Unit
@@ -122,6 +124,13 @@ data Image = Image'
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
+
+data TextBox = TextBox'
+    { text :: Text
+    , style :: TextStyle
+    }
+    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextBox
 
 data Indicator = Indicator'
     { hollowness :: Double

@@ -14,6 +14,7 @@ import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Auto.Slider exposing (..)
 import Auto.Stick exposing (..)
+import Auto.TextBox exposing (..)
 import Auto.TextStyle exposing (..)
 import Auto.Update exposing (..)
 import Auto.ViewBox exposing (..)
@@ -170,15 +171,16 @@ view model =
     }
 
 
-showName : TextStyle -> String -> Collage msg
-showName style name =
-    Text.fromString name
-        |> Text.size style.size
-        |> Text.color (Color.fromRgba style.colour)
-        |> applyWhen style.bold (Text.weight Text.Bold)
-        |> applyWhen style.italic (Text.shape Text.Italic)
-        |> applyWhen style.underline (Text.line Text.Under)
+viewText : TextBox -> List (Collage Msgs) -> Collage Msgs
+viewText x extra =
+    Text.fromString x.text
+        |> Text.size x.style.size
+        |> Text.color (Color.fromRgba x.style.colour)
+        |> applyWhen x.style.bold (Text.weight Text.Bold)
+        |> applyWhen x.style.italic (Text.shape Text.Italic)
+        |> applyWhen x.style.underline (Text.line Text.Under)
         |> Collage.rendered
+        |> impose (stack extra)
 
 
 viewElement : Model -> FullElement -> Collage Msgs
@@ -201,7 +203,7 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            maybe [] (singleton << flip showName element.name) element.showName
+            maybe [] (\style -> [ viewText { text = element.name, style = style } [] ]) element.showName
     in
     extra
         |> (case element.element of
@@ -220,6 +222,9 @@ viewElement model element =
 
                 Element.Image x ->
                     viewImage element.name x x.url
+
+                Element.TextBox x ->
+                    viewText x
 
                 Element.Indicator x ->
                     viewIndicator element.name x
@@ -589,6 +594,33 @@ serverUpdate u model =
                                                     case e.element of
                                                         Element.Image img ->
                                                             { e | element = Element.Image { img | url = url } }
+
+                                                        _ ->
+                                                            e
+
+                                                else
+                                                    e
+                                            )
+                            }
+                    }
+              }
+            , Cmd.none
+            )
+
+        SetText id text ->
+            ( { model
+                | layout =
+                    { layoutState
+                        | layout =
+                            { layout
+                                | elements =
+                                    layout.elements
+                                        |> List.map
+                                            (\e ->
+                                                if e.name == id then
+                                                    case e.element of
+                                                        Element.TextBox box ->
+                                                            { e | element = Element.TextBox { box | text = text } }
 
                                                         _ ->
                                                             e

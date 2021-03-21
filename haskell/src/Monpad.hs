@@ -93,6 +93,7 @@ data Update
 data ServerUpdate a b
     = SetImageURL ElementID Text
     | PlayAudioURL Text
+    | SetText ElementID Text
     | SetLayout (Layout a b)
     | SwitchLayout LayoutID
     | AddElement (FullElement a b)
@@ -215,6 +216,7 @@ addToElementMaps e = case e.element of
     Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
     Button b -> over #buttonMap $ Map.insert e.name b.buttonData
     Image _ -> id
+    TextBox _ -> id
     Indicator _ -> id
 
 server :: Int -> Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
@@ -282,6 +284,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             SetBackgroundColour{} -> mempty
                             SetImageURL{} -> mempty
                             PlayAudioURL{} -> mempty
+                            SetText{} -> mempty
                             SetIndicatorHollowness{} -> mempty
                             SetIndicatorArcStart{} -> mempty
                             SetIndicatorArcEnd{} -> mempty
@@ -335,6 +338,7 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     , Elm.encodedTypes @(Slider ())
     , Elm.encodedTypes @(Button ())
     , Elm.encodedTypes @Image
+    , Elm.encodedTypes @TextBox
     , Elm.encodedTypes @Indicator
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)

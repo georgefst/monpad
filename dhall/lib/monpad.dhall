@@ -42,6 +42,8 @@ let Slider =
 
 let Image = { width : Natural, height : Natural, url : Text }
 
+let TextBox = { text : Text, style : TextStyle }
+
 let Indicator =
       { hollowness : Double
       , arcStart : Double
@@ -57,6 +59,7 @@ let Element =
         | Stick : Stick a
         | Slider : Slider a
         | Image : Image
+        | TextBox : TextBox
         | Indicator : Indicator
         >
 
@@ -142,6 +145,7 @@ let mapLayout
                                       ⫽ { sliderData = fa slider.sliderData }
                                     )
                             , Image = (Element a1 b1).Image
+                            , TextBox = (Element a1 b1).TextBox
                             , Indicator = (Element a1 b1).Indicator
                             }
                             fe.element

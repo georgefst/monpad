@@ -120,7 +120,7 @@ main = do
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
                 ServerConfig e s a b -> Layouts a b -> IO ()
-            run sc l = do
+            run sc ls = do
                 scSendLayout <- if watchLayout
                     then case dhallFile of
                         Right file -> do
@@ -136,7 +136,7 @@ main = do
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
                         Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
-                server pingFrequency port imageDir l $ mconcat
+                server pingFrequency port imageDir ls $ mconcat
                     [ scPrintStuff quiet
                     , scSendLayout
                     , maybe mempty scQR qrPath

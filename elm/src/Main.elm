@@ -384,7 +384,7 @@ viewIndicator _ ind extra =
                                     f x =
                                         clamp -1 1 <| ((abs (mod1 x - 0.5) * 2) - 0.5) * 4
                                 in
-                                vec2 (f t / 2) (f (t - 0.25) / 2)
+                                vec2 (f t) (f <| t - 0.25)
 
                             Circle _ ->
                                 let
@@ -401,7 +401,7 @@ viewIndicator _ ind extra =
         scale =
             case ind.shape of
                 Rectangle v ->
-                    scaleVec2 { sfX = toFloat v.x, sfY = toFloat v.y }
+                    scaleVec2 { sfX = toFloat v.x / 2, sfY = toFloat v.y / 2 }
 
                 Circle r ->
                     Vec2.scale <| toFloat r

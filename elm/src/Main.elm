@@ -383,7 +383,7 @@ viewIndicator _ ind extra =
                                     f x =
                                         clamp -1 1 <| ((abs (mod1 x - 0.5) * 2) - 0.5) * 4
                                 in
-                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - 0.25) )
+                                vec2 (toFloat v.x / 2 * f t) (toFloat v.y / 2 * f (t - 0.25))
 
                             Circle r ->
                                 let
@@ -393,14 +393,15 @@ viewIndicator _ ind extra =
                                     t1 =
                                         t * 2 * pi
                                 in
-                                ( r1 * cos t1, r1 * sin t1 )
+                                Vec2.scale r1 <| vec2 (cos t1) (sin t1)
                     )
 
         inner =
             outer
-                |> List.map (both (\x -> x * ind.hollowness))
+                |> List.map (\x -> Vec2.scale ind.hollowness x)
     in
     (reverse outer ++ inner)
+        |> List.map unVec2
         |> polygon
         |> styled1 ind.colour
         |> impose (stack extra)

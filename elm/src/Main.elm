@@ -100,14 +100,15 @@ app =
                 { title = "Whoops"
                 , body =
                     [ Html.text "Monpad failed to start. If you're using \"elm reactor\", try Scratch.elm instead."
-                    , div [] []
-                    , Html.text <|
-                        case e of
-                            JsonError err ->
-                                JD.errorToString err
+                    , pre []
+                        [ Html.text <|
+                            case e of
+                                JsonError err ->
+                                    JD.errorToString err
 
-                            OtherError s ->
-                                s
+                                OtherError s ->
+                                    s
+                        ]
                     ]
                 }
     , onUrlRequest = always []

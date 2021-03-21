@@ -11,10 +11,13 @@ import Auto.Shape exposing (..)
 import Basics.Extra exposing (..)
 import Color exposing (..)
 import Json.Decode as Json
+import List.Extra exposing (..)
 import Loadable
 import Main
 import Math.Vector2 exposing (..)
+import Maybe exposing (..)
 import Time exposing (..)
+import Util exposing (..)
 
 
 main : Loadable.Program Json.Value Main.Model Main.Msgs Main.Error
@@ -28,6 +31,7 @@ main =
             | load = \_ _ _ -> Main.load flags
             , subscriptions =
                 \model ->
+                    -- withDefault Sub.none <| getAt 1
                     Sub.batch
                         [ sub 3000 30 model <|
                             \x ->

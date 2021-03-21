@@ -107,6 +107,7 @@ data ServerUpdate a b
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
     | SetIndicatorCentre ElementID (V2 Double)
+    | SetIndicatorColour ElementID Colour
     | SetSliderPosition ElementID Double
     | ResetLayout ResetLayout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
@@ -338,6 +339,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             SetIndicatorArcEnd{} -> mempty
                             SetIndicatorShape{} -> mempty
                             SetIndicatorCentre{} -> mempty
+                            SetIndicatorColour{} -> mempty
                             SetSliderPosition{} -> mempty
                             ResetLayout{} -> mempty
                         pure update

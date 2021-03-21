@@ -45,6 +45,12 @@ main =
                                     [ SetIndicatorCentre "powerbar" <| vec2 0 (2 * x - 1)
                                     , SetIndicatorArcStart "powerbar" <| 5 / 8 - x / 4
                                     , SetIndicatorArcEnd "powerbar" <| 7 / 8 + x / 4
+                                    , SetIndicatorColour "powerbar" <|
+                                        let
+                                            c =
+                                                toRgba black
+                                        in
+                                        { c | alpha = x }
                                     ]
                         , sub 4000 2000 model <|
                             \x ->

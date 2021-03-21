@@ -723,6 +723,11 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        SetIndicatorColour name x ->
+            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | colour = x }) } }
+            , Cmd.none
+            )
+
         SetSliderPosition name x ->
             ( { model | layout = { layoutState | sliderPos = Dict.insert name x layoutState.sliderPos } }
             , Cmd.none

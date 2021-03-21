@@ -26,6 +26,7 @@ type ServerUpdate
     | SetIndicatorArcEnd String Float
     | SetIndicatorShape String Auto.Shape.Shape
     | SetIndicatorCentre String Math.Vector2.Vec2
+    | SetIndicatorColour String Auto.Colour.Colour
     | SetSliderPosition String Float
     | ResetLayout Auto.ResetLayout.ResetLayout
 
@@ -67,6 +68,9 @@ decode =
     , Json.Decode.field "setIndicatorCentre" (Json.Decode.succeed SetIndicatorCentre |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Util.decodeVec2))
+    , Json.Decode.field "setIndicatorColour" (Json.Decode.succeed SetIndicatorColour |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
     , Json.Decode.field "setSliderPosition" (Json.Decode.succeed SetSliderPosition |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))

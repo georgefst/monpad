@@ -181,7 +181,7 @@ let simpleSlider =
         : Element a b
 
 let noTextStyle =
-      { size = 19
+      { size = 30
       , colour = cols.black
       , bold = False
       , italic = False

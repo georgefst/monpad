@@ -10,8 +10,8 @@ let showName = Some monpad.defaultTextStyle
 in    { elements =
         [ { element =
               monpad.Element.Indicator
-                { arcStart = 0.1
-                , arcEnd = 4.2
+                { arcStart = 0.02
+                , arcEnd = 0.7
                 , colour = monpad.cols.white ⫽ { alpha = 0.4 }
                 , hollowness = 0.0
                 , shape = monpad.Shape.Circle 100
@@ -33,7 +33,7 @@ in    { elements =
         , { element =
               monpad.Element.Indicator
                 { arcStart = 0.0
-                , arcEnd = 3.14
+                , arcEnd = 0.5
                 , colour = monpad.cols.yellow
                 , hollowness = 0.2
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
@@ -44,8 +44,8 @@ in    { elements =
           }
         , { element =
               monpad.Element.Indicator
-                { arcStart = 4.0
-                , arcEnd = 9.0
+                { arcStart = 0.7
+                , arcEnd = 1.3
                 , colour = monpad.cols.green
                 , hollowness = 0.95
                 , shape = monpad.Shape.Circle 400
@@ -56,8 +56,8 @@ in    { elements =
           }
         , { element =
               monpad.Element.Indicator
-                { arcStart = 4.0
-                , arcEnd = 9.0
+                { arcStart = 0.7
+                , arcEnd = 1.3
                 , colour = monpad.cols.blue
                 , hollowness = 0.0
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
@@ -68,8 +68,8 @@ in    { elements =
           }
         , { element =
               monpad.Element.Indicator
-                { arcStart = 0.1
-                , arcEnd = 4.2
+                { arcStart = 0.02
+                , arcEnd = 0.7
                 , colour = monpad.cols.white ⫽ { alpha = 0.4 }
                 , hollowness = 0.0
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }

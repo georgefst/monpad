@@ -30,7 +30,7 @@ main =
                     Sub.batch
                         [ sub 3000 30 model <|
                             \x ->
-                                [ Main.ServerUpdate <| SetIndicatorArcStart "indicator" <| x * 2 * pi
+                                [ Main.ServerUpdate <| SetIndicatorArcStart "indicator" x
                                 , Main.ServerUpdate <| SetIndicatorHollowness "indicator" x
                                 ]
                         , sub 4000 2000 model <|
@@ -88,7 +88,7 @@ flags =
                         Indicator
                             { hollowness = 0.5
                             , arcStart = 0
-                            , arcEnd = 4 * pi / 3
+                            , arcEnd = 2 / 3
                             , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
                             , shape = Circle 300
                             }

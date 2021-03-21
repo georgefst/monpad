@@ -344,19 +344,19 @@ viewIndicator _ ind extra =
 
         b =
             if ind.arcEnd < ind.arcStart then
-                ind.arcEnd + 2 * pi
+                ind.arcEnd + 1
 
             else
                 ind.arcEnd
 
-        -- values in [0, 4pi) where we need a vertex
+        -- values in [0, 1) where we need a vertex
         angles =
             takeWhile (\x -> x < b) <|
                 dropWhile (\x -> x < a) <|
                     case ind.shape of
                         Rectangle _ ->
                             range 0 7
-                                |> List.map (\x -> (2 * toFloat x + 1) * pi / 4)
+                                |> List.map (\x -> (2 * toFloat x + 1) * 1 / 8)
 
                         Circle _ ->
                             let
@@ -364,7 +364,7 @@ viewIndicator _ ind extra =
                                     256
                             in
                             range 0 (2 * nPoints - 1)
-                                |> List.map (\x -> toFloat x * 2 * pi / nPoints)
+                                |> List.map (\x -> toFloat x / nPoints)
 
         outer =
             (a :: angles ++ [ b ])
@@ -378,19 +378,22 @@ viewIndicator _ ind extra =
 
                                     {- there's nothing I can tell you about this function that you can't get
                                         from typing in to Wolfram Alpha:
-                                       min(1, max(-1, ((abs(mod(x / (2 * pi), 1) - 0.5) * 2) - 0.5) * 4))
+                                       min(1, max(-1, ((abs(mod(x, 1) - 0.5) * 2) - 0.5) * 4))
                                     -}
                                     f x =
-                                        clamp -1 1 <| ((abs (mod1 (x / (2 * pi)) - 0.5) * 2) - 0.5) * 4
+                                        clamp -1 1 <| ((abs (mod1 x - 0.5) * 2) - 0.5) * 4
                                 in
-                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - pi / 2) )
+                                ( toFloat v.x / 2 * f t, toFloat v.y / 2 * f (t - 0.25) )
 
                             Circle r ->
                                 let
                                     r1 =
                                         toFloat r
+
+                                    t1 =
+                                        t * 2 * pi
                                 in
-                                ( r1 * cos t, r1 * sin t )
+                                ( r1 * cos t1, r1 * sin t1 )
                     )
 
         inner =

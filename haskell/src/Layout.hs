@@ -136,9 +136,9 @@ data Indicator = Indicator'
     { hollowness :: Double
     -- ^ [0, 1]
     , arcStart :: Double
-    -- ^ [0, 2π)
+    -- ^ [0, 1)
     , arcEnd :: Double
-    -- ^ [0, arcStart + 2π)
+    -- ^ [0, arcStart + 1)
     , colour :: Colour
     , shape :: Shape
     }

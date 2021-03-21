@@ -5,7 +5,7 @@ module Scratch exposing (..)
 
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
-import Auto.ResetLayout exposing (ResetLayout(..))
+import Auto.ResetLayout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Basics.Extra exposing (..)

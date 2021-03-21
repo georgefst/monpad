@@ -395,8 +395,15 @@ viewIndicator _ ind extra =
                     )
 
         inner =
-            outer
-                |> List.map (Vec2.add ind.centre << Vec2.scale ind.hollowness << flip Vec2.sub ind.centre)
+            if b == a + 1 && ind.hollowness == 0 then
+                -- Prevent ugly line in to the center.
+                -- Yes, these are float comparisons.
+                -- But we only need this workaround when the user has set exact integer values.
+                []
+
+            else
+                outer
+                    |> List.map (Vec2.add ind.centre << Vec2.scale ind.hollowness << flip Vec2.sub ind.centre)
 
         scale =
             case ind.shape of

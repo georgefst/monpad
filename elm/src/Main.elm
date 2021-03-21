@@ -372,7 +372,7 @@ viewIndicator _ ind extra =
                 |> List.map
                     (\t ->
                         case ind.shape of
-                            Rectangle v ->
+                            Rectangle _ ->
                                 let
                                     mod1 x =
                                         x - toFloat (floor x)
@@ -384,25 +384,30 @@ viewIndicator _ ind extra =
                                     f x =
                                         clamp -1 1 <| ((abs (mod1 x - 0.5) * 2) - 0.5) * 4
                                 in
-                                vec2 (toFloat v.x / 2 * f t) (toFloat v.y / 2 * f (t - 0.25))
+                                vec2 (f t / 2) (f (t - 0.25) / 2)
 
-                            Circle r ->
+                            Circle _ ->
                                 let
-                                    r1 =
-                                        toFloat r
-
                                     t1 =
                                         t * 2 * pi
                                 in
-                                Vec2.scale r1 <| vec2 (cos t1) (sin t1)
+                                vec2 (cos t1) (sin t1)
                     )
 
         inner =
             outer
-                |> List.map (\x -> Vec2.scale ind.hollowness x)
+                |> List.map (Vec2.add ind.centre << Vec2.scale ind.hollowness << flip Vec2.sub ind.centre)
+
+        scale =
+            case ind.shape of
+                Rectangle v ->
+                    scaleVec2 { sfX = toFloat v.x, sfY = toFloat v.y }
+
+                Circle r ->
+                    Vec2.scale <| toFloat r
     in
     (reverse outer ++ inner)
-        |> List.map unVec2
+        |> List.map (unVec2 << scale)
         |> polygon
         |> styled1 ind.colour
         |> impose (stack extra)

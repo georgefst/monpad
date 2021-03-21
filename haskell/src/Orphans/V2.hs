@@ -38,16 +38,25 @@ data WordVec2 = WordVec2
     }
     deriving (Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via IntVec2
+data DoubleVec2 = DoubleVec2
+    { x :: Double
+    , y :: Double
+    }
+    deriving (Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo, ToJSON)
 
 instance ToJSON (V2 Int) where
     toJSON = J.toJSON . \(V2 x y) -> IntVec2 x y
 instance ToJSON (V2 Word) where
     toJSON = J.toJSON . \(V2 x y) -> WordVec2 x y
+instance ToJSON (V2 Double) where
+    toJSON = J.toJSON . \(V2 x y) -> DoubleVec2 x y
 
 instance FromDhall (V2 Int) where
     autoWith = fmap (\(IntVec2 x y) -> V2 x y) . autoWith
 instance FromDhall (V2 Word) where
     autoWith = fmap (\(WordVec2 x y) -> V2 x y) . autoWith
+instance FromDhall (V2 Double) where
+    autoWith = fmap (\(DoubleVec2 x y) -> V2 x y) . autoWith
 
 deriving instance SOP.Generic (V2 Int)
 deriving instance SOP.HasDatatypeInfo (V2 Int)
@@ -63,10 +72,11 @@ instance HasElmDecoder J.Value (V2 Word) where
 instance HasElmType (V2 Word) where
     elmDefinition = elmDefinition @WordVec2
 
-deriving instance ToJSON (V2 Double)
 deriving instance FromJSON (V2 Double)
 deriving instance SOP.Generic (V2 Double)
 deriving instance SOP.HasDatatypeInfo (V2 Double)
+instance HasElmDecoder J.Value (V2 Double) where
+    elmDecoder = Expr.Global $ Name.Qualified ["Util"] "decodeVec2"
 instance HasElmEncoder J.Value (V2 Double) where
     elmEncoder = Expr.Global $ Name.Qualified ["Util"] "encodeVec2"
 instance HasElmType (V2 Double) where

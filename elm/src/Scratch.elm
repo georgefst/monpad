@@ -13,6 +13,7 @@ import Color exposing (..)
 import Json.Decode as Json
 import Loadable
 import Main
+import Math.Vector2 exposing (..)
 import Time exposing (..)
 
 
@@ -89,6 +90,7 @@ flags =
                             { hollowness = 0.5
                             , arcStart = 0
                             , arcEnd = 2 / 3
+                            , centre = vec2 0 0
                             , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
                             , shape = Circle 300
                             }

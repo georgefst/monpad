@@ -14,6 +14,7 @@ in    { elements =
                 , arcEnd = 0.7
                 , colour = monpad.cols.white ⫽ { alpha = 0.4 }
                 , hollowness = 0.0
+                , centre = { x = 0.5, y = 0.15 }
                 , shape = monpad.Shape.Circle 100
                 }
           , location = { x = -800, y = +0 }
@@ -36,6 +37,7 @@ in    { elements =
                 , arcEnd = 0.5
                 , colour = monpad.cols.yellow
                 , hollowness = 0.2
+                , centre = { x = 0.0, y = 0.0 }
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
                 }
           , location = { x = -500, y = +0 }
@@ -48,6 +50,7 @@ in    { elements =
                 , arcEnd = 1.3
                 , colour = monpad.cols.green
                 , hollowness = 0.95
+                , centre = { x = 0.9, y = 0.9 }
                 , shape = monpad.Shape.Circle 400
                 }
           , location = { x = +0, y = +0 }
@@ -60,6 +63,7 @@ in    { elements =
                 , arcEnd = 1.3
                 , colour = monpad.cols.blue
                 , hollowness = 0.0
+                , centre = { x = 0.0, y = 0.0 }
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
                 }
           , location = { x = +500, y = +0 }
@@ -72,6 +76,7 @@ in    { elements =
                 , arcEnd = 0.7
                 , colour = monpad.cols.white ⫽ { alpha = 0.4 }
                 , hollowness = 0.0
+                , centre = { x = 0.0, y = 0.0 }
                 , shape = monpad.Shape.Rectangle { x = 100, y = 800 }
                 }
           , location = { x = +800, y = +0 }

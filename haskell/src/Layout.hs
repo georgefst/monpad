@@ -139,6 +139,8 @@ data Indicator = Indicator'
     -- ^ [0, 1)
     , arcEnd :: Double
     -- ^ [0, arcStart + 1)
+    , centre :: V2 Double
+    -- ^ x and y in [-1, 1]
     , colour :: Colour
     , shape :: Shape
     }

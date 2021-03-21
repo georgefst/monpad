@@ -48,6 +48,7 @@ let Indicator =
       { hollowness : Double
       , arcStart : Double
       , arcEnd : Double
+      , centre : V2 Double
       , colour : Colour
       , shape : Shape
       }

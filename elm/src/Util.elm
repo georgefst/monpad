@@ -6,6 +6,8 @@ import Color
 import Color.Interpolate exposing (Space(..), interpolate)
 import Html
 import Html.Attributes as Attr
+import Json.Decode
+import Json.Decode.Pipeline
 import Json.Encode
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 import Task exposing (Task)
@@ -46,6 +48,13 @@ encodeVec2 v =
     case unVec2 v of
         ( x, y ) ->
             Json.Encode.list identity [ Json.Encode.float x, Json.Encode.float y ]
+
+
+decodeVec2 : Json.Decode.Decoder Vec2
+decodeVec2 =
+    Json.Decode.succeed vec2
+        |> Json.Decode.Pipeline.required "x" Json.Decode.float
+        |> Json.Decode.Pipeline.required "y" Json.Decode.float
 
 
 zeroVec2 : Vec2

@@ -25,6 +25,9 @@ import Type.Reflection (Typeable, typeRep)
 applyWhen :: Bool -> (a -> a) -> a -> a
 applyWhen = flip $ bool id
 
+clamp :: Ord c => (c, c) -> c -> c
+clamp (l, u) = max l . min u
+
 symbolValT :: forall a. KnownSymbol a => Text
 symbolValT = T.pack $ symbolVal $ Proxy @a
 

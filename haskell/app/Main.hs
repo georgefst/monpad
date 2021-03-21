@@ -158,19 +158,48 @@ scPing :: forall s a b. Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTim
 scPing vb =
     let onNewConnection = const $ (,mempty) <$> newEmptyMVar
         onPong = putMVar
-        elementId = ElementID "_internal_ping_indicator"
-        initialUpdate = AddElement $ FullElement
-            { location = let ViewBox{..} = vb in V2 (x + w) (y + h) - ((`div` 8) <$> V2 w h)
-            , name = elementId
-            , showName = Nothing
-            , element = TextBox TextBox'
-                { text = "Ping"
-                , style = TextStyle 50 (Colour 0 0 0 1) False False False
+        textElementId = ElementID "_internal_ping_text"
+        indicatorElementId = ElementID "_internal_ping_indicator"
+        (location, size) =
+            let ViewBox{..} = vb
+                s = min w h `div` 4
+             in ( V2 (x + w - s `div` 2) (y + h - s `div` 2)
+                , s
+                )
+        square = Rectangle $ fromIntegral <$> V2 size size
+        initialUpdate =
+            [ AddElement $ FullElement
+                { location
+                , name = indicatorElementId
+                , showName = Nothing
+                , element = Indicator Indicator'
+                    { hollowness = 0
+                    , arcStart = 0
+                    , arcEnd = 1
+                    , centre = 0
+                    , colour = Colour 1 1 1 1 -- white
+                    , shape = square
+                    }
                 }
-            }
-        updates m = SP.cons [const initialUpdate] $ const <<$>> SP.repeatM do
+            , AddElement $ FullElement
+                { location
+                , name = textElementId
+                , showName = Nothing
+                , element = TextBox TextBox'
+                    { text = "Ping"
+                    , style = TextStyle 50 (Colour 0 0 0 1) False False False
+                    }
+                }
+            ]
+        updates m = SP.cons (map const initialUpdate) $ const <<$>> SP.repeatM do
             time <- takeMVar m
-            pure [SetText elementId $ showT time]
+            let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
+                scaleFactor = negate $ log 0.5 / okPing
+                goodness = exp $ negate (realToFrac time) * scaleFactor -- in range (0, 1]
+            pure
+                [ SetText textElementId $ showT time
+                , SetIndicatorColour indicatorElementId $ Colour (1 - goodness) goodness 0 1
+                ]
      in ServerConfig
             { onNewConnection
             , onPong

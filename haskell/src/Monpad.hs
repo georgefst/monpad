@@ -206,7 +206,7 @@ data ServerConfig e s a b = ServerConfig
     , onButton :: b -> Bool -> Monpad e s a b ()
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
     , onPong :: e -> NominalDiffTime -> IO ()
-    -- ^ when the client sends a pong, this gives us the time since the correspoonding ping
+    -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: e -> Async [s -> ServerUpdate a b]
     }
     deriving Generic

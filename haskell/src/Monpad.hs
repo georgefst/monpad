@@ -170,12 +170,25 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
 
 --TODO use dedicated record types for State and Reader, and expose a cleaner interface
 -- | The Monpad monad
-newtype Monpad e s a b x = Monpad {unMonpad :: ReaderT (Map LayoutID (Layout a b), e, ClientID) (StateT (Layout a b, ElementMaps a b, s) IO) x}
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (Map LayoutID (Layout a b), e, ClientID), MonadState (Layout a b, ElementMaps a b, s))
+newtype Monpad e s a b x = Monpad
+    {unMonpad :: ReaderT (Map LayoutID (Layout a b), e, ClientID) (StateT (Layout a b, ElementMaps a b, s) IO) x}
+    deriving newtype
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadIO
+        , MonadReader (Map LayoutID (Layout a b), e, ClientID)
+        , MonadState (Layout a b, ElementMaps a b, s)
+        )
 deriving via Action (Monpad e s a b) instance (Semigroup (Monpad e s a b ()))
 deriving via Action (Monpad e s a b) instance (Monoid (Monpad e s a b ()))
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
-runMonpad ls c e s mon = evalStateT (runReaderT (unMonpad mon) (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)) (l, mkElementMaps l.elements, s)
+runMonpad ls c e s mon = evalStateT
+    (runReaderT
+        (unMonpad mon)
+        (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)
+    )
+    (l, mkElementMaps l.elements, s)
   where l = NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)

@@ -127,9 +127,9 @@ main = do
                             (_, es) <- liftIO $ watchDirectory (takeDirectory file) watchPred
                             T.putStrLn $ "Watching: " <> T.pack file
                             pure mempty
-                                { updates = serially $
+                                { updates = const . serially $
                                     traceStream (const $ T.putStrLn "Sending new layout to client") $
-                                    SP.map (pure . const . const . SetLayout) $
+                                    SP.map (pure . const . SetLayout) $
                                     SP.mapMaybeM (const $ mkLayout file) $
                                     lastOfGroup es
                                 }

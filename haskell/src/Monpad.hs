@@ -193,7 +193,7 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: MonpadException -> Monpad e s a b ()
     , onPong :: NominalDiffTime -> IO ()
     -- ^ when the client sends a pong, this gives us the time since the correspoonding ping
-    , updates :: Async [e -> s -> ServerUpdate a b]
+    , updates :: e -> Async [s -> ServerUpdate a b]
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
@@ -261,13 +261,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
         (e, s0) <- onNewConnection clientId
-        let stream = asyncly $ (Left <$> updates) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
+        let stream = asyncly $ (Left <$> updates e) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do
                     sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for sus \su -> do
                         s <- gets thd3
-                        let update = su e s
+                        let update = su s
                         case update of
                             SetLayout l -> put (l, mkElementMaps l.elements, s)
                             SwitchLayout i -> do

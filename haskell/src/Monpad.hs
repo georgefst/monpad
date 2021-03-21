@@ -215,23 +215,27 @@ data ServerConfig e s a b = ServerConfig
 -- | Run two `ServerConfig`s with different environments.
 combineConfs :: Monoid s => ServerConfig e1 s a b -> ServerConfig e2 s a b -> ServerConfig (e1, e2) s a b
 combineConfs sc1 sc2 = ServerConfig
-    { onStart = \x -> sc1.onStart x <> sc2.onStart x
-    , onNewConnection = \x -> (\(e1, s1) (e2, s2) -> ((e1, e2), s1 <> s2))
-        <$> sc1.onNewConnection x
-        <*> sc2.onNewConnection x
-    , onMessage = \x -> f
-        (sc1.onMessage x)
-        (sc2.onMessage x)
-    , onAxis = \x y -> f
-        (sc1.onAxis x y)
-        (sc2.onAxis x y)
-    , onButton = \x y -> f
-        (sc1.onButton x y)
-        (sc2.onButton x y)
-    , onDroppedConnection = \x -> f
-        (sc1.onDroppedConnection x)
-        (sc2.onDroppedConnection x)
-    , onPong = \(e1, e2) x -> sc1.onPong e1 x <> sc2.onPong e2 x
+    { onStart = pure (<>)
+        <*> sc1.onStart
+        <*> sc2.onStart
+    , onNewConnection = pure (pure \(e1, s1) (e2, s2) -> ((e1, e2), s1 <> s2))
+        <<*>> sc1.onNewConnection
+        <<*>> sc2.onNewConnection
+    , onMessage = pure f
+        <*> sc1.onMessage
+        <*> sc2.onMessage
+    , onAxis = pure (pure f)
+        <<*>> sc1.onAxis
+        <<*>> sc2.onAxis
+    , onButton = pure (pure f)
+        <<*>> sc1.onButton
+        <<*>> sc2.onButton
+    , onDroppedConnection = pure f
+        <*> sc1.onDroppedConnection
+        <*> sc2.onDroppedConnection
+    , onPong = \(e1, e2) -> pure (<>)
+        <*> sc1.onPong e1
+        <*> sc2.onPong e2
     , updates = \(e1, e2) -> sc1.updates e1 <> sc2.updates e2
     }
   where

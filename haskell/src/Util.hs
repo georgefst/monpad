@@ -1,5 +1,6 @@
 module Util where
 
+import Control.Applicative (liftA2)
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Bool (bool)
 import Data.List (find)
@@ -36,6 +37,10 @@ typeRepT = showT $ typeRep @a
 infixl 4 <<$>>
 (<<$>>) :: (Functor f1, Functor f2) => (a -> b) -> f1 (f2 a) -> f1 (f2 b)
 (<<$>>) = fmap . fmap
+
+infixl 4 <<*>>
+(<<*>>) :: (Applicative f, Applicative g) => f (g (a -> b)) -> f (g a) -> f (g b)
+(<<*>>) = liftA2 (<*>)
 
 biVoid :: Bifunctor p => p a b -> p () ()
 biVoid = bimap (const ()) (const ())

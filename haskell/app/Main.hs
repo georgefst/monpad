@@ -5,7 +5,7 @@ module Main (main) where
 import Codec.Picture
 import Codec.QRCode qualified as QR
 import Codec.QRCode.JuicyPixels qualified as QR
-import Control.Concurrent (threadDelay)
+import Control.Concurrent
 import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
@@ -19,7 +19,7 @@ import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
-import Data.Time (diffUTCTime, getCurrentTime)
+import Data.Time
 import Data.Tuple.Extra
 import Data.Void (Void)
 import Dhall (FromDhall)
@@ -40,6 +40,7 @@ import System.Exit
 import System.FilePath
 import System.Info.Extra
 import Text.Pretty.Simple
+import Util
 
 type Port = Int
 
@@ -53,6 +54,7 @@ data Args = Args
     , externalWS :: Maybe Port
     , qrPath :: Maybe FilePath
     , pingFrequency :: Int
+    , displayPing :: Bool
     }
 
 parser :: Parser Args
@@ -93,12 +95,16 @@ parser = do
         , metavar "PATH"
         , help "Write QR encoding of server address as a PNG file."
         ]
+    displayPing <- switch $ mconcat
+        [ long "show-ping"
+        , help "Indicate the user's current ping in the top-right of the screen."
+        ]
     externalWS <- optional . option auto $ mconcat
         [ long "ext-ws"
         , metavar "PORT"
         , help
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
-            \Note that options such as --ping and --watch-layout will have no effect in this mode."
+            \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
         ]
     pure Args{..}
 
@@ -136,12 +142,45 @@ main = do
                           where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
                         Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
-                server pingFrequency port imageDir ls $ mconcat
-                    [ scPrintStuff quiet
-                    , scSendLayout
-                    , maybe mempty scQR qrPath
-                    , sc
-                    ]
+                let scBase = mconcat
+                        [ scPrintStuff quiet
+                        , scSendLayout
+                        , maybe mempty scQR qrPath
+                        , sc
+                        ]
+                    runServer = server pingFrequency port imageDir ls
+                if displayPing then
+                    runServer $ combineConfs (scPing . viewBox $ NE.head ls) scBase
+                else
+                    runServer scBase
+
+scPing :: forall s a b. Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
+scPing vb =
+    let onNewConnection = const $ (,mempty) <$> newEmptyMVar
+        onPong = putMVar
+        elementId = ElementID "_internal_ping_indicator"
+        initialUpdate = AddElement $ FullElement
+            { location = let ViewBox{..} = vb in V2 (x + w) (y + h) - ((`div` 8) <$> V2 w h)
+            , name = elementId
+            , showName = Nothing
+            , element = TextBox TextBox'
+                { text = "Ping"
+                , style = TextStyle 50 (Colour 0 0 0 1) False False False
+                }
+            }
+        updates m = SP.cons [const initialUpdate] $ const <<$>> SP.repeatM do
+            time <- takeMVar m
+            pure [SetText elementId $ showT time]
+     in ServerConfig
+            { onNewConnection
+            , onPong
+            , updates
+            , onStart = mempty
+            , onMessage = mempty
+            , onAxis = mempty
+            , onButton = mempty
+            , onDroppedConnection = mempty
+            }
 
 scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
 scQR path = mempty{onStart = writeQR path}

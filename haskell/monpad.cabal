@@ -5,8 +5,9 @@ license:             BSD-3-Clause
 author:              George Thomas
 maintainer:          georgefsthomas@gmail.com
 extra-source-files:
-    rsc/app.css
     rsc/common.css
+    rsc/login.css
+    rsc/app.css
     rsc/elm.js
     rsc/main.js
     rsc/default.dhall

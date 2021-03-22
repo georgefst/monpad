@@ -20,9 +20,8 @@ import Monpad
 import Orphans.Evdev ()
 
 conf :: Layout AxisInfo Key -> ServerConfig [Device] () AxisInfo Key
-conf layout = ServerConfig
-    { onStart = mempty
-    , onNewConnection = \(ClientID clientId) -> do
+conf layout = mempty
+    { onNewConnection = \(ClientID clientId) -> do
         let (as, bs) = allAxesAndButs layout
             (aas, ras) = partitionEithers $ as <&> \case
                 AxisInfo{axis = Abs a, ..} -> Left
@@ -46,7 +45,6 @@ conf layout = ServerConfig
             , idProduct = Just monpadId
             }
         return (pure dev, ())
-    , onMessage = mempty
     , onAxis = \AxisInfo{..} x -> do
         devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d $ pure @[] case axis of
@@ -55,8 +53,6 @@ conf layout = ServerConfig
     , onButton = \key up -> do
         devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d [KeyEvent key $ bool Released Pressed up]
-    , onDroppedConnection = mempty
-    , updates = mempty
     }
 
 -- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")

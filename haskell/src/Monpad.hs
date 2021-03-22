@@ -147,6 +147,7 @@ loginHtml :: Html ()
 loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
     [ title_ "monpad: login"
     , style_ (commonCSS ())
+    , style_ (loginCSS ())
     , label_ [for_ nameBoxId] "Username:"
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]

@@ -4,10 +4,13 @@ import Control.Applicative (liftA2)
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Bool (bool)
 import Data.List (find)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Tuple.Extra (second, (&&&))
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HostName (getHostName)
 import Network.Socket (
@@ -53,6 +56,18 @@ untilLeft x = x >>= either pure (const $ untilLeft x)
 
 mapRightM :: Monad m => (a -> m b) -> Either e a -> m (Either e b)
 mapRightM f = either (return . Left) (fmap Right . f)
+
+-- | Like 'groupOn', but with non-adjacent elements grouped, and the witness to equality returned.
+classifyOn :: Ord b => (a -> b) -> [a] -> [(b, NonEmpty a)]
+classifyOn f = Map.toList . Map.fromListWith (<>) . map (f &&& pure)
+
+-- | Special case of 'classifyOn'.
+classifyOnFst :: Ord a => [(a, b)] -> [(a, NonEmpty b)]
+classifyOnFst = second (fmap snd) <<$>> classifyOn fst
+
+-- | See 'classifyOnFst'.
+classifyOnSnd :: Ord b => [(a, b)] -> [(b, NonEmpty a)]
+classifyOnSnd = second (fmap fst) <<$>> classifyOn snd
 
 -- | Like 'listDirectory', but returns paths relative to the input.
 listDirectory' :: FilePath -> IO [FilePath]

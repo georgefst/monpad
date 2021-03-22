@@ -1,0 +1,7 @@
+form, input {
+    font-size: 32px;
+}
+form {
+    padding-top: 0.25em;
+    text-align: center;
+}

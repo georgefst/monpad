@@ -82,6 +82,7 @@ common common
         TupleSections
         TypeApplications
         TypeOperators
+        ViewPatterns
 
 library
     import:

@@ -10,12 +10,15 @@ import Control.Exception
 import Control.Monad.Extra
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
+import Control.Monad.Trans.State.Strict
 import Data.Char
-import Data.Either.Extra
+import Data.Foldable
 import Data.Functor
 import Data.List
-import Data.List.NonEmpty (nonEmpty)
+import Data.List.Extra
+import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
@@ -23,7 +26,9 @@ import Data.Time
 import Data.Tuple.Extra
 import Data.Void (Void)
 import Dhall (FromDhall)
+import Dhall.Core qualified as D
 import Dhall.Core qualified as Dhall
+import Dhall.Import qualified as D
 import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
 import Dhall.TypeCheck qualified as Dhall
@@ -36,7 +41,6 @@ import Streamly (Async, Serial, asyncly, serially)
 import Streamly.FSNotify
 import Streamly.Prelude qualified as SP
 import System.Directory
-import System.Exit
 import System.FilePath
 import System.Info.Extra
 import Text.Pretty.Simple
@@ -113,10 +117,9 @@ main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     layoutExprs' <- traverse windowsHack layoutExprs
-    (dhallFile, dhallLayouts) <- case nonEmpty layoutExprs' of
-        Just layouts -> (,layouts) . maybeToEither "file does not exist: maybe expression is not a file import?"
-            <$> (canonicalizePathSafe . T.unpack $ NE.head layouts)
-        Nothing -> pure (Left "no layout file specified", pure (defaultDhall ()))
+    let dhallLayouts = case nonEmpty layoutExprs' of
+            Just layouts -> layouts
+            Nothing -> pure $ defaultDhall ()
     case externalWS of
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort imageDir
             =<< layoutsFromDhall dhallLayouts
@@ -128,19 +131,18 @@ main = do
                 ServerConfig e s a b -> Layouts a b -> IO ()
             run sc ls = do
                 scSendLayout <- if watchLayout
-                    then case dhallFile of
-                        Right file -> do
-                            (_, es) <- liftIO $ watchDirectory (takeDirectory file) watchPred
-                            T.putStrLn $ "Watching: " <> T.pack file
+                    then mconcat <$> let exprText = NE.head dhallLayouts in
+                        dhallImports exprText >>= traverse \(dir, toList -> files) -> do
+                            let isImport = EventPredicate ((`elem` files) . T.pack . takeFileName . eventPath)
+                            (_, es) <- watchDirectory dir $ isModification `conj` isImport
+                            T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
                             pure mempty
                                 { updates = const . serially $
                                     traceStream (const $ T.putStrLn "Sending new layout to client") $
                                     SP.map (pure . const . SetLayout) $
-                                    SP.mapMaybeM (const $ mkLayout file) $
+                                    SP.mapMaybeM (const $ mkLayout exprText) $
                                     lastOfGroup es
                                 }
-                          where watchPred = isModification `conj` EventPredicate ((== file) . eventPath)
-                        Left s -> T.putStrLn ("Cannot watch layout: " <> s) >> exitFailure
                     else mempty
                 let scBase = mconcat
                         [ scPrintStuff quiet
@@ -240,8 +242,8 @@ scPrintStuff quiet = mempty
         liftIO $ T.putStrLn $ "Client disconnected: " <> i
     }
 
-mkLayout :: (FromDhall a, FromDhall b) => FilePath -> IO (Maybe (Layout a b))
-mkLayout file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
+mkLayout :: (FromDhall a, FromDhall b) => Text -> IO (Maybe (Layout a b))
+mkLayout expr = printDhallErrors $ layoutFromDhall =<< dhallResolve expr
   where
     {-TODO this may well be incomplete
         anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
@@ -258,10 +260,8 @@ mkLayout file = printDhallErrors $ layoutFromDhall =<< dhallResolve file
         (and be total, while we're at it?)
         also 'normalize' and 'typeOf'
     -}
-    dhallResolve p = do
-        x <- Dhall.loadRelativeTo (takeDirectory p) Dhall.UseSemanticCache
-            =<< Dhall.throws . Dhall.exprFromText p
-            =<< T.readFile p
+    dhallResolve e = do
+        x <- Dhall.load =<< Dhall.throws (Dhall.exprFromText "" e)
         _ <- Dhall.throws $ Dhall.typeOf x
         T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
         pure $ Dhall.pretty x
@@ -292,11 +292,6 @@ lastOfGroup = f2 . asyncly . f1
             pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)
     interval = 0.1 :: Float
 
-canonicalizePathSafe :: FilePath -> IO (Maybe FilePath)
-canonicalizePathSafe p = doesFileExist p >>= \case
-    True -> Just <$> canonicalizePath p
-    False -> mempty
-
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 windowsHack :: Text -> IO Text
 windowsHack e = if isWindows
@@ -313,3 +308,15 @@ windowsHack e = if isWindows
     -- also uses forward slash regardless of OS
     makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
         intercalate "/" $ replicate (length $ splitPath curr) ".." <> pure p
+
+-- | Returns list of files (transitively) imported by the expression, grouped by directory.
+dhallImports :: Text -> IO [(FilePath, NonEmpty Text)]
+dhallImports t = do
+    e <- Dhall.throws $ Dhall.exprFromText "" t
+    --TODO we could return and reuse the ignored expression, rather than re-running the previous step in the outer scope
+    (_e', s) <- flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
+    pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
+  where
+    importFile x = case D.importType $ D.importHashed x of
+        D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
+        _ -> Nothing

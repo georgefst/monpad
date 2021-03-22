@@ -1,24 +1,17 @@
-html {
-    height: 100%;
-    background-color: rgb(207, 231, 247); /* Fallback to blue if no background image */
+body {
+    height: 100vh;
     background-image: url(monpad/images/login-background.jpg);
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
 }
-body {
-    background-color: transparent;
-    background-image: linear-gradient(rgba(0, 60, 100, 1), rgba(0, 60, 100, 0));
-    color: white;
-    margin: 0;
-    padding-bottom: 5vw;
-}
+
 form {
     padding: 0.5em;
     text-align: center;
-    font-size: 32px; /* Fallback if browser doesn't support vw or max() */
-    font-size: max(5vw, 12px);
+    font-size: 5vw;
 }
+
 input {
     font-size: inherit;
 }

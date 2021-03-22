@@ -27,8 +27,9 @@ import System.FilePath ((</>))
 {-# NOINLINE elmJS #-}
 {-# NOINLINE jsJS #-}
 {-# NOINLINE defaultDhall #-}
-commonCSS, appCSS, elmJS, jsJS, defaultDhall :: () -> Text
+commonCSS, loginCSS, appCSS, elmJS, jsJS, defaultDhall :: () -> Text
 commonCSS () = GET_FILE("rsc" </> "common.css")
+loginCSS () = GET_FILE("rsc" </> "login.css")
 appCSS () = GET_FILE("rsc" </> "app.css")
 elmJS () = GET_FILE("rsc" </> "elm.js")
 jsJS () = GET_FILE("rsc" </> "main.js")

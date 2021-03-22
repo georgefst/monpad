@@ -2,10 +2,3 @@ body {
     background-color: rgb(207, 231, 247);
     font-family: Helvetica, Arial, sans-serif;
 }
-form, input {
-    font-size: 32px;
-}
-form {
-    padding-top: 0.25em;
-    text-align: center;
-}

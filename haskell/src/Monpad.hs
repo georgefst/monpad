@@ -143,8 +143,8 @@ serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
     pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
-loginHtml :: Html ()
-loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
+loginHtml :: Maybe Text -> Html ()
+loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] $ mconcat
     [ title_ "monpad: login"
     , style_ (commonCSS ())
     , style_ (loginCSS ())
@@ -155,6 +155,7 @@ loginHtml = doctypehtml_ . form_ [action_ $ symbolValT @Root] $ mconcat
     ]
   where
     nameBoxId = "name"
+    imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
 mainHtml :: Layouts a b -> Port -> ClientID -> Html ()
 mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
@@ -268,11 +269,11 @@ addToElementMaps e = case e.element of
     TextBox _ -> id
     Indicator _ -> id
 
-server :: Int -> Port -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server pingFrequency port assetsDir layouts conf = do
+server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
+server pingFrequency port loginImage assetsDir layouts conf = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port assetsDir layouts :<|> websocketServer pingFrequency layouts conf
+        httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -282,16 +283,17 @@ serverExtWs ::
     Port ->
     -- | WS port
     Port ->
+    Maybe Text ->
     Maybe FilePath ->
     Layouts a b ->
     IO ()
-serverExtWs onStart httpPort wsPort assetsDir layouts = do
+serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort assetsDir layouts
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts
 
-httpServer :: Port -> Maybe FilePath -> Layouts a b -> Server HttpApi
-httpServer wsPort assetsDir layouts =
-    (pure . maybe loginHtml (mainHtml layouts wsPort))
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Server HttpApi
+httpServer wsPort loginImage assetsDir layouts =
+    (pure . maybe (loginHtml loginImage) (mainHtml layouts wsPort))
         :<|> maybe
             (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
             serveDirectoryWebApp
@@ -402,7 +404,13 @@ test :: IO ()
 test = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
-    server 30 8000 (Just "../dist/assets") layouts config
+    server
+        30
+        8000
+        Nothing
+        (Just "../dist/assets")
+        layouts
+        config
   where
     config = mempty
         { onStart = pPrint . ("started" :: Text,)
@@ -416,7 +424,7 @@ test = do
         , onPong = const $ pPrint . ("pong" :: Text,)
         }
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 (Just "../dist/assets") =<< sequence (defaultSimple :| [])
+testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< sequence (defaultSimple :| [])
 
 {- Util -}
 

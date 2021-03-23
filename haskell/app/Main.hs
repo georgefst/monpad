@@ -59,6 +59,7 @@ data Args = Args
     , qrPath :: Maybe FilePath
     , pingFrequency :: Int
     , displayPing :: Bool
+    , loginImageUrl :: Maybe Text
     }
 
 parser :: Parser Args
@@ -99,6 +100,11 @@ parser = do
         , metavar "PATH"
         , help "Write QR encoding of server address as a PNG file."
         ]
+    loginImageUrl <- optional . strOption $ mconcat
+        [ long "login-image"
+        , metavar "URL"
+        , help "Background image for login page."
+        ]
     displayPing <- switch $ mconcat
         [ long "show-ping"
         , help "Indicate the user's current ping in the top-right of the screen."
@@ -121,7 +127,7 @@ main = do
             Just layouts -> layouts
             Nothing -> pure $ defaultDhall ()
     case externalWS of
-        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort imageDir
+        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl imageDir
             =<< layoutsFromDhall dhallLayouts
         Nothing -> if systemDevice
             then join (run . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
@@ -150,7 +156,7 @@ main = do
                         , maybe mempty scQR qrPath
                         , sc
                         ]
-                    runServer = server pingFrequency port imageDir ls
+                    runServer = server pingFrequency port loginImageUrl imageDir ls
                 if displayPing then
                     runServer $ combineConfs (scPing . viewBox $ NE.head ls) scBase
                 else

@@ -285,9 +285,9 @@ serverExtWs ::
     Maybe FilePath ->
     Layouts a b ->
     IO ()
-serverExtWs onStart httpPort wsPort path layouts = do
+serverExtWs onStart httpPort wsPort assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort path layouts
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort assetsDir layouts
 
 httpServer :: Port -> Maybe FilePath -> Layouts a b -> Server HttpApi
 httpServer wsPort assetsDir layouts =

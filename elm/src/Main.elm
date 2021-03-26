@@ -150,16 +150,16 @@ view model =
                             gap =
                                 200
                         in
-                        scanl (\( x0, y0 ) ( x1, y1 ) -> ( x0 + x1, y0 + y1 ))
-                            ( gap, -width / 2 )
-                            [ ( 0, width )
-                            , ( shaft, 0 )
-                            , ( 0, (head - width) / 2 )
-                            , ( head / 2, -head / 2 )
-                            , ( -head / 2, -head / 2 )
-                            , ( 0, (head - width) / 2 )
+                        scanl Vec2.add
+                            (vec2 gap (-width / 2))
+                            [ vec2 0 width
+                            , vec2 shaft 0
+                            , vec2 0 ((head - width) / 2)
+                            , vec2 (head / 2) (-head / 2)
+                            , vec2 (-head / 2) (-head / 2)
+                            , vec2 0 ((head - width) / 2)
                             ]
-                            |> List.map (both (\a -> a * scale))
+                            |> List.map (unVec2 << Vec2.scale scale)
                             |> polygon
                             |> styled1 (toRgba white)
 

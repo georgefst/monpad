@@ -40,7 +40,6 @@ import List.Extra exposing (..)
 import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
-import Maybe.Extra as Maybe
 import Platform.Cmd as Cmd
 import Ports exposing (..)
 import Set exposing (Set)

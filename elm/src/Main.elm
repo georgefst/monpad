@@ -169,7 +169,7 @@ view model =
                             |> stack
                 in
                 rectangle size size
-                    |> styled1 (toRgba orange)
+                    |> styled1 (toRgba black)
                     |> impose arrows
                     |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
                     |> Collage.on "pointerdown" (JD.succeed [ GoFullscreen ])

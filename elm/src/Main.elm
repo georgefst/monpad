@@ -139,16 +139,16 @@ view model =
                     arrow =
                         let
                             width =
-                                160
+                                0.16
 
                             shaft =
-                                200
+                                0.2
 
                             head =
-                                400
+                                0.4
 
                             gap =
-                                200
+                                0.2
                         in
                         scanl Vec2.add
                             (vec2 gap (-width / 2))
@@ -159,7 +159,7 @@ view model =
                             , vec2 (-head / 2) (-head / 2)
                             , vec2 0 ((head - width) / 2)
                             ]
-                            |> List.map (unVec2 << Vec2.scale scale)
+                            |> List.map (unVec2 << Vec2.scale size)
                             |> polygon
                             |> styled1 (toRgba white)
 

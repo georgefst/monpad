@@ -204,4 +204,11 @@ in  λ(a : Type) →
       , Layout = Layout a b
       , mapLayout = mapLayout a b
       , simpleSlider = simpleSlider a b
+      , ViewBox
+      , Button = Button b
+      , Stick = Stick a
+      , Slider = Slider a
+      , Image
+      , TextBox
+      , Indicator
       }

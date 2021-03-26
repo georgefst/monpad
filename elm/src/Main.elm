@@ -127,53 +127,6 @@ view model =
             { x, y, w, h } =
                 model.layout.layout.viewBox
 
-            fullscreenButton =
-                let
-                    -- how much of the screen to cover
-                    scale =
-                        1 / 6
-
-                    size =
-                        toFloat (min w h) * scale
-
-                    arrow =
-                        let
-                            width =
-                                0.16
-
-                            shaft =
-                                0.2
-
-                            head =
-                                0.4
-
-                            gap =
-                                0.2
-                        in
-                        scanl Vec2.add
-                            (vec2 gap (-width / 2))
-                            [ vec2 0 width
-                            , vec2 shaft 0
-                            , vec2 0 ((head - width) / 2)
-                            , vec2 (head / 2) (-head / 2)
-                            , vec2 (-head / 2) (-head / 2)
-                            , vec2 0 ((head - width) / 2)
-                            ]
-                            |> List.map (unVec2 << Vec2.scale size)
-                            |> polygon
-                            |> styled1 (toRgba white)
-
-                    arrows =
-                        range 0 3
-                            |> List.map (\a -> arrow |> rotate ((toFloat a + 0.5) * pi / 2))
-                            |> stack
-                in
-                rectangle size size
-                    |> styled1 (toRgba black)
-                    |> impose arrows
-                    |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
-                    |> Collage.on "pointerdown" (JD.succeed [ GoFullscreen ])
-
             unknownIdMsg event =
                 ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
@@ -196,7 +149,7 @@ view model =
                 ]
               <|
                 (List.map (viewElement model) model.layout.layout.elements
-                    |> applyWhen (not model.fullscreen) (\es -> fullscreenButton :: es)
+                    |> applyWhen (not model.fullscreen) (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
                     |> stack
                 )
             ]
@@ -450,6 +403,55 @@ viewIndicator _ ind extra =
         |> polygon
         |> styled1 ind.colour
         |> impose (stack extra)
+
+
+viewFullscreenButton : ViewBox -> Collage (List Msg)
+viewFullscreenButton vb =
+    let
+        -- how much of the screen to cover
+        scale =
+            1 / 6
+
+        size =
+            toFloat (min vb.w vb.h) * scale
+
+        arrow =
+            let
+                width =
+                    0.16
+
+                shaft =
+                    0.2
+
+                head =
+                    0.4
+
+                gap =
+                    0.2
+            in
+            scanl Vec2.add
+                (vec2 gap (-width / 2))
+                [ vec2 0 width
+                , vec2 shaft 0
+                , vec2 0 ((head - width) / 2)
+                , vec2 (head / 2) (-head / 2)
+                , vec2 (-head / 2) (-head / 2)
+                , vec2 0 ((head - width) / 2)
+                ]
+                |> List.map (unVec2 << Vec2.scale size)
+                |> polygon
+                |> styled1 (toRgba white)
+
+        arrows =
+            range 0 3
+                |> List.map (\x -> arrow |> rotate ((toFloat x + 0.5) * pi / 2))
+                |> stack
+    in
+    rectangle size size
+        |> styled1 (toRgba black)
+        |> impose arrows
+        |> shift ( toFloat vb.x + size / 2, toFloat (vb.h + vb.y) - size / 2 )
+        |> Collage.on "pointerdown" (JD.succeed [ GoFullscreen ])
 
 
 

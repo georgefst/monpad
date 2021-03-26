@@ -135,9 +135,42 @@ view model =
 
                     size =
                         toFloat (min w h) * scale
+
+                    arrow =
+                        let
+                            width =
+                                160
+
+                            shaft =
+                                200
+
+                            head =
+                                400
+
+                            gap =
+                                200
+                        in
+                        scanl (\( x0, y0 ) ( x1, y1 ) -> ( x0 + x1, y0 + y1 ))
+                            ( gap, -width / 2 )
+                            [ ( 0, width )
+                            , ( shaft, 0 )
+                            , ( 0, (head - width) / 2 )
+                            , ( head / 2, -head / 2 )
+                            , ( -head / 2, -head / 2 )
+                            , ( 0, (head - width) / 2 )
+                            ]
+                            |> List.map (both (\a -> a * scale))
+                            |> polygon
+                            |> styled1 (toRgba white)
+
+                    arrows =
+                        range 0 3
+                            |> List.map (\a -> arrow |> rotate ((toFloat a + 0.5) * pi / 2))
+                            |> stack
                 in
                 rectangle size size
                     |> styled1 (toRgba orange)
+                    |> impose arrows
                     |> shift ( toFloat x + size / 2, toFloat (h + y) - size / 2 )
                     |> Collage.on "pointerdown" (JD.succeed [ GoFullscreen ])
 

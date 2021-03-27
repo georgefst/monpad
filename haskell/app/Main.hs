@@ -57,10 +57,18 @@ data Args = Args
 
 parser :: Parser Args
 parser = do
-    quiet <- switch $ short 'q' <> long "quiet"
-    systemDevice <- fmap not $ switch $ long "no-system-device"
+    quiet <- switch $ mconcat
+        [ short 'q'
+        , long "quiet"
+        , help "Don't print all client updates to stdout."
+        ]
     watchLayout <- switch $ mconcat
         [ long "watch-layout"
+        , help "Watch all files involved in the layout expression, updating client with any changes."
+        ]
+    systemDevice <- fmap not $ switch $ mconcat
+        [ long "no-system-device"
+        , help "Don't create an OS-level virtual device."
         ]
     port <- option auto $ mconcat
         [ long "port"

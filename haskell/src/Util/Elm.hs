@@ -36,8 +36,7 @@ import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
 import Type.Reflection (Typeable)
-
-import Util
+import Util.Util (listDirectory', typeRepT)
 
 {- | Isomorphic to '()', but we want to decode to empty record, rather than list, in order to match 'dhall-to-json'.
 Also avoids orphans for 'HasElmType' etc.

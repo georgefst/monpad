@@ -1,7 +1,8 @@
-module Monpad.Util where
+module Util where
 
 import Data.Foldable
 import Data.Maybe
+import Util.Util
 
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -14,8 +15,6 @@ import Network.Socket (
     getAddrInfo,
     hostAddressToTuple,
  )
-
-import Util
 
 getLocalIp :: IO (Maybe HostAddress)
 getLocalIp = do

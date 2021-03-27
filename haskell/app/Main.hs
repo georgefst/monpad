@@ -1,5 +1,4 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE PackageImports #-}
 
 module Main (main) where
 
@@ -38,7 +37,7 @@ import System.Directory
 import System.FilePath
 import Text.Pretty.Simple
 import Util
-import "georgefst-utils" Util
+import Util.Util
 
 type Port = Int
 

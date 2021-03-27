@@ -95,10 +95,10 @@ library
         Embed
         DhallHack
         Layout
-        Monpad.Util
         Orphans.Elm
         Orphans.Generic
         Orphans.V2
+        Util
         Util.Elm
         Util.ShowNewtype
     hs-source-dirs:

@@ -1,4 +1,3 @@
-{-# LANGUAGE PackageImports #-}
 module Util where
 
 import Control.Concurrent
@@ -23,7 +22,7 @@ import Streamly.Prelude qualified as SP
 import System.Directory
 import System.FilePath
 import System.Info.Extra
-import "georgefst-utils" Util
+import Util.Util
 
 -- | Attach an extra action to each element of the stream.
 traceStream :: (a -> IO ()) -> Serial a -> Serial a

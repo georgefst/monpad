@@ -4,4 +4,9 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: 33d6076972b4aa753031299692c7ab631ddb780d
 
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/georgefst-utils
+  tag: d5f958973333c054366523cc4c3b8baeb550c8f9
+
 packages: .

@@ -33,7 +33,6 @@ import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
 import Dhall.TypeCheck qualified as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Layout
 import Monpad
 import OS qualified
 import Options.Applicative

@@ -15,11 +15,9 @@ module Monpad (
     elm,
     test,
     testExt,
-    Layout,
-    layoutFromDhall,
     defaultDhall,
     defaultSimple,
-    allAxesAndButs,
+    module Layout
 ) where
 
 import Control.Exception
@@ -71,6 +69,7 @@ import Text.Pretty.Simple
 import DhallHack
 import Embed
 import Layout
+import Monpad.Util
 import Orphans.Elm ()
 import Orphans.Generic ()
 import Orphans.V2 ()

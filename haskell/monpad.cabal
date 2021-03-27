@@ -32,6 +32,7 @@ common common
     build-tool-depends:
         record-dot-preprocessor:record-dot-preprocessor ^>= 0.2.5,
     build-depends:
+        georgefst-utils,
         base >= 4.14,
         bytestring ^>= 0.10.8,
         composition ^>= 1.0.2.1,
@@ -90,11 +91,11 @@ library
         common
     exposed-modules:
         Monpad
-        Layout
-        Util
     other-modules:
         Embed
         DhallHack
+        Layout
+        Monpad.Util
         Orphans.Elm
         Orphans.Generic
         Orphans.V2

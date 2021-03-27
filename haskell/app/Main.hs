@@ -62,14 +62,6 @@ parser = do
         , long "quiet"
         , help "Don't print all client updates to stdout."
         ]
-    watchLayout <- switch $ mconcat
-        [ long "watch-layout"
-        , help "Watch all files involved in the layout expression, updating client with any changes."
-        ]
-    systemDevice <- fmap not $ switch $ mconcat
-        [ long "no-system-device"
-        , help "Don't create an OS-level virtual device."
-        ]
     port <- option auto $ mconcat
         [ long "port"
         , short 'p'
@@ -77,13 +69,6 @@ parser = do
         , value 8000
         , showDefault
         , help "Port number for the server to listen on."
-        ]
-    pingFrequency <- option auto $ mconcat
-        [ long "ping"
-        , metavar "SECONDS"
-        , value 30
-        , showDefault
-        , help "How often to send the client a ping message to keep it awake."
         ]
     imageDir <- optional . strOption $ mconcat
         [ long "assets"
@@ -96,19 +81,29 @@ parser = do
         , metavar "EXPR"
         , help "Dhall expression to control layout of buttons etc. The first of these will be used initially."
         ]
+    watchLayout <- switch $ mconcat
+        [ long "watch-layout"
+        , help "Watch all files involved in the layout expression, updating client with any changes."
+        ]
     qrPath <- optional . strOption $ mconcat
         [ long "qr"
         , metavar "PATH"
         , help "Write QR encoding of server address as a PNG file."
         ]
-    loginImageUrl <- optional . strOption $ mconcat
-        [ long "login-image"
-        , metavar "URL"
-        , help "Background image for login page."
+    pingFrequency <- option auto $ mconcat
+        [ long "ping"
+        , metavar "SECONDS"
+        , value 30
+        , showDefault
+        , help "How often to send the client a ping message to keep it awake."
         ]
     displayPing <- switch $ mconcat
         [ long "show-ping"
         , help "Indicate the user's current ping in the top-right of the screen."
+        ]
+    systemDevice <- fmap not $ switch $ mconcat
+        [ long "no-system-device"
+        , help "Don't create an OS-level virtual device."
         ]
     externalWS <- optional . option auto $ mconcat
         [ long "ext-ws"
@@ -116,6 +111,11 @@ parser = do
         , help
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
             \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
+        ]
+    loginImageUrl <- optional . strOption $ mconcat
+        [ long "login-image"
+        , metavar "URL"
+        , help "Background image for login page."
         ]
     pure Args{..}
 

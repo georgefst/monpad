@@ -8,7 +8,7 @@ import Codec.QRCode.JuicyPixels qualified as QR
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Extra
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Monad.Reader (asks)
 import Control.Monad.Trans.State.Strict
 import Data.Char
@@ -23,6 +23,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Time
+import Data.Traversable
 import Data.Tuple.Extra
 import Data.Void (Void)
 import Dhall (FromDhall)
@@ -134,32 +135,34 @@ main = do
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
                 ServerConfig e s a b -> Layouts a b -> IO ()
-            run sc ls = do
-                scSendLayout <- if watchLayout
-                    then mconcat <$> let exprText = NE.head dhallLayouts in
-                        dhallImports exprText >>= traverse \(dir, toList -> files) -> do
-                            let isImport = EventPredicate ((`elem` files) . T.pack . takeFileName . eventPath)
-                            (_, es) <- watchDirectory dir $ isModification `conj` isImport
-                            T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                            pure mempty
-                                { updates = const . serially $
-                                    traceStream (const $ T.putStrLn "Sending new layout to client") $
-                                    SP.map (pure . const . SetLayout) $
-                                    SP.mapMaybeM (const $ mkLayout exprText) $
-                                    lastOfGroup es
-                                }
-                    else mempty
-                let scBase = mconcat
-                        [ scPrintStuff quiet
-                        , scSendLayout
-                        , maybe mempty scQR qrPath
-                        , sc
-                        ]
-                    runServer = server pingFrequency port loginImageUrl imageDir ls
+            run sc ls =
                 if displayPing then
                     runServer $ combineConfs (scPing . viewBox $ NE.head ls) scBase
                 else
                     runServer scBase
+              where
+                runServer = server pingFrequency port loginImageUrl imageDir ls
+                scBase = mconcat
+                    [ scPrintStuff quiet
+                    , if watchLayout then scSendLayout $ NE.head dhallLayouts else mempty
+                    , maybe mempty scQR qrPath
+                    , sc
+                    ]
+
+scSendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Text -> ServerConfig e s a b
+scSendLayout exprText = mempty
+    { updates = const do
+        imports <- dhallImports exprText
+        evss <- for imports \(dir, toList -> files) -> liftIO do
+            let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
+            T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
+            snd <$> watchDirectory dir (isModification `conj` isImport)
+        flip foldMap evss $ serially
+            . traceStream (const $ T.putStrLn "Sending new layout to client")
+            . SP.map (pure . const . SetLayout)
+            . SP.mapMaybeM (const $ mkLayout exprText)
+            . lastOfGroup
+    }
 
 scPing :: forall s a b. Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
 scPing vb =
@@ -315,11 +318,11 @@ windowsHack e = if isWindows
         intercalate "/" $ replicate (length $ splitPath curr) ".." <> pure p
 
 -- | Returns list of files (transitively) imported by the expression, grouped by directory.
-dhallImports :: Text -> IO [(FilePath, NonEmpty Text)]
+dhallImports :: MonadIO io => Text -> io [(FilePath, NonEmpty Text)]
 dhallImports t = do
     e <- Dhall.throws $ Dhall.exprFromText "" t
     --TODO we could return and reuse the ignored expression, rather than re-running the previous step in the outer scope
-    (_e', s) <- flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
+    (_e', s) <- liftIO $ flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
     pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
   where
     importFile x = case D.importType $ D.importHashed x of

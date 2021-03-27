@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE PackageImports #-}
 
 module Main (main) where
 
@@ -8,17 +9,12 @@ import Codec.QRCode.JuicyPixels qualified as QR
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Extra
-import Control.Monad.IO.Class (liftIO, MonadIO)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (asks)
-import Control.Monad.Trans.State.Strict
-import Data.Char
 import Data.Foldable
 import Data.Functor
-import Data.List
-import Data.List.Extra
-import Data.List.NonEmpty (NonEmpty, nonEmpty)
+import Data.List.NonEmpty (nonEmpty)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
@@ -27,9 +23,7 @@ import Data.Traversable
 import Data.Tuple.Extra
 import Data.Void (Void)
 import Dhall (FromDhall)
-import Dhall.Core qualified as D
 import Dhall.Core qualified as Dhall
-import Dhall.Import qualified as D
 import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
 import Dhall.TypeCheck qualified as Dhall
@@ -37,14 +31,14 @@ import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Monpad
 import OS qualified
 import Options.Applicative
-import Streamly (Async, Serial, asyncly, serially)
+import Streamly (serially)
 import Streamly.FSNotify
 import Streamly.Prelude qualified as SP
 import System.Directory
 import System.FilePath
-import System.Info.Extra
 import Text.Pretty.Simple
 import Util
+import "georgefst-utils" Util
 
 type Port = Int
 
@@ -149,6 +143,11 @@ main = do
                     , sc
                     ]
 
+{-TODO
+find a way to remove 'lastOfGroup' workaround
+the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
+    but because 'fsnotify' is cross-platform, there may be no good way to filter
+-}
 scSendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Text -> ServerConfig e s a b
 scSendLayout exprText = mempty
     { updates = const do
@@ -161,7 +160,7 @@ scSendLayout exprText = mempty
             . traceStream (const $ T.putStrLn "Sending new layout to client")
             . SP.map (pure . const . SetLayout)
             . SP.mapMaybeM (const $ mkLayout exprText)
-            . lastOfGroup
+            . lastOfGroup 100_000
     }
 
 scPing :: forall s a b. Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
@@ -273,58 +272,3 @@ mkLayout expr = printDhallErrors $ layoutFromDhall =<< dhallResolve expr
         _ <- Dhall.throws $ Dhall.typeOf x
         T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
         pure $ Dhall.pretty x
-
---TODO better name
--- | Attach an extra action to each element of the stream.
-traceStream :: (a -> IO ()) -> Serial a -> Serial a
-traceStream f = SP.mapM \x -> f x >> pure x
-
-{-TODO
-the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
-    but because 'fsnotify' is cross-platform, there may be no good way to filter
--}
--- | Ignore events which are followed within 0.1s.
-lastOfGroup :: Async a -> Serial a
-lastOfGroup = f2 . asyncly . f1
-  where
-    -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
-    f1 = SP.concatMapWith (<>) \x ->
-        SP.yieldM (pure Nothing) <> SP.yieldM (threadDelay (round $ 1_000_000 * interval) >> pure (Just x))
-    -- ignore any event which appears within `interval` of a 'Nothing'
-    f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) -> \case
-        Just x -> do
-            t <- getCurrentTime
-            pure (tooSoon, guard (not $ tooSoon t) $> x)
-        Nothing -> do
-            t <- getCurrentTime
-            pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)
-    interval = 0.1 :: Float
-
---TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
-windowsHack :: Text -> IO Text
-windowsHack e = if isWindows
-    then case e' of
-        '"' : c : _ | c /= '.' -> case reads e' of -- path is not relative - remove quotes around drive
-            (y, ys) : _ -> windowsHack . T.pack $ y <> ys
-            _ -> error "malformed input expression - check quoting"
-        c : ':' : '/' : xs | isUpper c -> fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' $ xs
-        _ -> pure $ T.pack e'
-    else pure e
-  where
-    e' = T.unpack e
-    -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
-    -- also uses forward slash regardless of OS
-    makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
-        intercalate "/" $ replicate (length $ splitPath curr) ".." <> pure p
-
--- | Returns list of files (transitively) imported by the expression, grouped by directory.
-dhallImports :: MonadIO io => Text -> io [(FilePath, NonEmpty Text)]
-dhallImports t = do
-    e <- Dhall.throws $ Dhall.exprFromText "" t
-    --TODO we could return and reuse the ignored expression, rather than re-running the previous step in the outer scope
-    (_e', s) <- liftIO $ flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
-    pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
-  where
-    importFile x = case D.importType $ D.importHashed x of
-        D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
-        _ -> Nothing

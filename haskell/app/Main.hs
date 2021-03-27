@@ -46,7 +46,7 @@ data Args = Args
     , systemDevice :: Bool
     , watchLayout :: Bool
     , port :: Port
-    , imageDir :: Maybe FilePath
+    , assetsDir :: Maybe FilePath
     , layoutExprs :: [Text]
     , externalWS :: Maybe Port
     , qrPath :: Maybe FilePath
@@ -70,7 +70,7 @@ parser = do
         , showDefault
         , help "Port number for the server to listen on."
         ]
-    imageDir <- optional . strOption $ mconcat
+    assetsDir <- optional . strOption $ mconcat
         [ long "assets"
         , metavar "DIR"
         , help "Directory from which to serve image/audio files etc."
@@ -128,7 +128,7 @@ main = do
             Just layouts -> layouts
             Nothing -> pure $ defaultDhall ()
     case externalWS of
-        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl imageDir
+        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< layoutsFromDhall dhallLayouts
         Nothing -> if systemDevice
             then join (run . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
@@ -142,7 +142,7 @@ main = do
                 else
                     runServer scBase
               where
-                runServer = server pingFrequency port loginImageUrl imageDir ls
+                runServer = server pingFrequency port loginImageUrl assetsDir ls
                 scBase = mconcat
                     [ scPrintStuff quiet
                     , if watchLayout then scSendLayout $ NE.head dhallLayouts else mempty

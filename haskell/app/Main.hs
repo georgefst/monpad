@@ -36,7 +36,7 @@ import Streamly.Prelude qualified as SP
 import System.Directory
 import System.FilePath
 import Text.Pretty.Simple
-import Util
+import Utils
 import Util.Util
 
 type Port = Int

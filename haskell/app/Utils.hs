@@ -1,4 +1,5 @@
-module Util where
+--TODO should just be `Util`, but doesn't work as HLS doesn't hide the private module in library component
+module Utils where
 
 import Control.Concurrent
 import Control.Monad.Extra

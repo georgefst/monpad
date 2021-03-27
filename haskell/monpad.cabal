@@ -137,7 +137,7 @@ executable monpad
         Main.hs
     other-modules:
         OS
-        Util
+        Utils
     if os(windows)
         hs-source-dirs: windows
     if os(linux)

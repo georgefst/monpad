@@ -222,8 +222,8 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            maybe [] (\x -> [ viewImage x [] ]) element.image
-                ++ maybe [] (\x -> [ viewText x [] ]) element.text
+            maybe [] (\x -> [ viewText x [] ]) element.text
+                ++ maybe [] (\x -> [ viewImage x [] ]) element.image
     in
     extra
         |> (case element.element of

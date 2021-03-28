@@ -58,7 +58,7 @@ getHostName' = f <$> getHostName
 traceStream :: (a -> IO ()) -> Serial a -> Serial a
 traceStream f = SP.mapM \x -> f x >> pure x
 
--- | Ignore events which are followed within a given number of milliseconds.
+-- | Ignore events which are followed within a given number of microseconds.
 lastOfGroup :: Int -> Async a -> Serial a
 lastOfGroup interval = f2 . asyncly . f1
   where

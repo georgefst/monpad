@@ -72,7 +72,7 @@ lastOfGroup interval = f2 . asyncly . f1
             pure (tooSoon, guard (not $ tooSoon t) $> x)
         Nothing -> do
             t <- getCurrentTime
-            pure (\t' -> diffUTCTime t' t < realToFrac interval, Nothing)
+            pure (\t' -> diffUTCTime t' t < (realToFrac interval / 1_000_000), Nothing)
 
 -- | Returns list of files (transitively) imported by the expression, grouped by directory.
 dhallImports :: MonadIO io => Text -> io [(FilePath, NonEmpty Text)]

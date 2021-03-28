@@ -174,16 +174,43 @@ viewElement model element =
     let
         toOffset =
             let
+                w0 =
+                    toFloat model.windowSize.x
+
+                h0 =
+                    toFloat model.windowSize.y
+
+                w1 =
+                    toFloat model.layout.layout.viewBox.w
+
+                h1 =
+                    toFloat model.layout.layout.viewBox.h
+
+                rw =
+                    w0 / w1
+
+                rh =
+                    h0 / h1
+
+                -- adjust for when aspect ratio of layout's viewbox doesn't match page
+                ( w2, h2 ) =
+                    if rw < rh then
+                        ( w0, h1 * rw )
+
+                    else
+                        ( w1 * rh, h0 )
+
                 bottomLeft =
                     vec2FromIntRecord model.layout.layout.viewBox
 
                 pageToSvg =
-                    scaleVec2
-                        { sfX = toFloat model.layout.layout.viewBox.w / toFloat model.windowSize.x
-                        , sfY = -(toFloat model.layout.layout.viewBox.h / toFloat model.windowSize.y)
-                        }
+                    Vec2.add (Vec2.scale (1 / 2) <| vec2 (w2 - w0) (h2 - h0))
+                        >> scaleVec2
+                            { sfX = w1 / w2
+                            , sfY = -h1 / h2
+                            }
                         >> Vec2.add bottomLeft
-                        >> Vec2.add (vec2 0 <| toFloat model.layout.layout.viewBox.h)
+                        >> Vec2.add (vec2 0 h1)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
 

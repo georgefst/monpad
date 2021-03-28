@@ -22,9 +22,9 @@ showPing vb =
             let ViewBox{..} = vb
                 s = min w h `div` 4
              in ( V2 (x + w - s `div` 2) (y + h - s `div` 2)
-                , s
+                , fromIntegral s
                 )
-        square = Rectangle $ fromIntegral <$> V2 size size
+        square = Rectangle $ V2 size size
         initialUpdate =
             [ AddElement $ FullElement
                 { location
@@ -45,7 +45,7 @@ showPing vb =
                 , showName = Nothing
                 , element = TextBox TextBox'
                     { text = "Ping"
-                    , style = TextStyle 50 (Colour 0 0 0 1) False False False
+                    , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
                     }
                 }
             ]

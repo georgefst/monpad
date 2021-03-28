@@ -93,10 +93,10 @@ library
     exposed-modules:
         Monpad
         Monpad.Plugins
-        Monpad.Plugins.WatchLayout
+        Monpad.Plugins.Logger
         Monpad.Plugins.PingIndicator
         Monpad.Plugins.QR
-        Monpad.Plugins.Logger
+        Monpad.Plugins.WatchLayout
     other-modules:
         Embed
         DhallHack

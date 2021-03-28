@@ -2,42 +2,31 @@
 
 module Main (main) where
 
-import Codec.Picture
-import Codec.QRCode qualified as QR
-import Codec.QRCode.JuicyPixels qualified as QR
-import Control.Concurrent
-import Control.Exception
 import Control.Monad.Extra
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Reader (asks)
-import Data.Foldable
+import Data.Char
 import Data.Functor
-import Data.List.NonEmpty (nonEmpty)
+import Data.List
+import Options.Applicative
+import System.Directory
+import System.FilePath
+import System.Info.Extra
+import Util.Util
+
+import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
-import Data.Time
-import Data.Traversable
-import Data.Tuple.Extra
-import Data.Void (Void)
 import Dhall (FromDhall)
-import Dhall.Core qualified as Dhall
-import Dhall.Import qualified as Dhall
-import Dhall.Parser qualified as Dhall
-import Dhall.TypeCheck qualified as Dhall
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+
 import Monpad
+import Monpad.Plugins
+import Monpad.Plugins.Logger qualified as Logger
+import Monpad.Plugins.PingIndicator qualified as PingIndicator
+import Monpad.Plugins.QR qualified as QR
+import Monpad.Plugins.WatchLayout qualified as WatchLayout
 import OS qualified
-import Options.Applicative
-import Streamly (serially)
-import Streamly.FSNotify
-import Streamly.Prelude qualified as SP
-import System.Directory
-import System.FilePath
-import Text.Pretty.Simple
-import Utils
-import Util.Util
 
 type Port = Int
 
@@ -130,152 +119,35 @@ main = do
     case externalWS of
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< layoutsFromDhall dhallLayouts
+          where
+            writeQR path url = withPlugin (`onStart` url) $ QR.plugin path
         Nothing -> if systemDevice
             then join (run . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
             else run @() @() @Unit @Unit mempty =<< layoutsFromDhall dhallLayouts
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
                 ServerConfig e s a b -> Layouts a b -> IO ()
-            run sc ls =
-                if displayPing then
-                    runServer $ combineConfs (scPing . viewBox $ NE.head ls) scBase
-                else
-                    runServer scBase
-              where
-                runServer = server pingFrequency port loginImageUrl assetsDir ls
-                scBase = mconcat
-                    [ scPrintStuff quiet
-                    , if watchLayout then scSendLayout $ NE.head dhallLayouts else mempty
-                    , maybe mempty scQR qrPath
-                    , sc
-                    ]
+            run sc ls = withPlugin (server pingFrequency port loginImageUrl assetsDir ls) $ plugins
+                $ (Logger.plugin T.putStrLn quiet :|)
+                $ applyWhen displayPing ((PingIndicator.plugin . viewBox $ NE.head ls) :)
+                $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
+                $ maybe id ((:) . QR.plugin) qrPath
+                [ Plugin sc ]
 
-{-TODO
-find a way to remove 'lastOfGroup' workaround
-the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
-    but because 'fsnotify' is cross-platform, there may be no good way to filter
--}
-scSendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Text -> ServerConfig e s a b
-scSendLayout exprText = mempty
-    { updates = const do
-        imports <- dhallImports exprText
-        evss <- for imports \(dir, toList -> files) -> liftIO do
-            let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
-            T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-            snd <$> watchDirectory dir (isModification `conj` isImport)
-        flip foldMap evss $ serially
-            . traceStream (const $ T.putStrLn "Sending new layout to client")
-            . SP.map (pure . const . SetLayout)
-            . SP.mapMaybeM (const $ mkLayout exprText)
-            . lastOfGroup 100_000
-    }
-
-scPing :: forall s a b. Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
-scPing vb =
-    let onNewConnection = const $ (,mempty) <$> newEmptyMVar
-        onPong = putMVar
-        textElementId = ElementID "_internal_ping_text"
-        indicatorElementId = ElementID "_internal_ping_indicator"
-        (location, size) =
-            let ViewBox{..} = vb
-                s = min w h `div` 4
-             in ( V2 (x + w - s `div` 2) (y + h - s `div` 2)
-                , s
-                )
-        square = Rectangle $ fromIntegral <$> V2 size size
-        initialUpdate =
-            [ AddElement $ FullElement
-                { location
-                , name = indicatorElementId
-                , showName = Nothing
-                , element = Indicator Indicator'
-                    { hollowness = 0
-                    , arcStart = 0
-                    , arcEnd = 1
-                    , centre = 0
-                    , colour = Colour 1 1 1 1 -- white
-                    , shape = square
-                    }
-                }
-            , AddElement $ FullElement
-                { location
-                , name = textElementId
-                , showName = Nothing
-                , element = TextBox TextBox'
-                    { text = "Ping"
-                    , style = TextStyle 50 (Colour 0 0 0 1) False False False
-                    }
-                }
-            ]
-        updates m = SP.cons (map const initialUpdate) $ const <<$>> SP.repeatM do
-            time <- takeMVar m
-            let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
-                scaleFactor = negate $ log 0.5 / okPing
-                goodness = exp $ negate (realToFrac time) * scaleFactor -- in range (0, 1]
-            pure
-                [ SetText textElementId $ showT time
-                , SetIndicatorColour indicatorElementId $ Colour (1 - goodness) goodness 0 1
-                ]
-     in ServerConfig
-            { onNewConnection
-            , onPong
-            , updates
-            , onStart = mempty
-            , onMessage = mempty
-            , onAxis = mempty
-            , onButton = mempty
-            , onDroppedConnection = mempty
-            }
-
-scQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
-scQR path = mempty{onStart = writeQR path}
-
-writeQR :: FilePath -> Text -> IO ()
-writeQR path0 url = case QR.encodeText (QR.defaultQRCodeOptions QR.M) QR.Iso8859_1OrUtf8WithoutECI url of
-    Nothing -> T.putStrLn "Failed to encode URL as QR code"
-    Just qr -> do
-        path <- doesDirectoryExist path0 <&> \case
-            True -> path0 </> "monpad-address-qr.png"
-            False -> path0
-        savePngImage path . ImageY8 $ QR.toImage 4 100 qr
-        T.putStrLn $ "Server address encoded as: " <> T.pack path
-
-scPrintStuff :: (Monoid e, Monoid s) => Bool -> ServerConfig e s a b
-scPrintStuff quiet = mempty
-    { onStart = \url -> T.putStrLn $ "Monpad server started at " <> url
-    , onNewConnection = \(ClientID i) -> do
-        T.putStrLn $ "New client: " <> i
-        mempty
-    , onMessage = \m -> do
-        ClientID c <- asks thd3
-        unless quiet do
-            liftIO $ T.putStrLn $ "Message received from client: " <> c
-            pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
-    , onDroppedConnection = \_ -> do
-        ClientID i <- asks thd3
-        liftIO $ T.putStrLn $ "Client disconnected: " <> i
-    }
-
-mkLayout :: (FromDhall a, FromDhall b) => Text -> IO (Maybe (Layout a b))
-mkLayout expr = printDhallErrors $ layoutFromDhall =<< dhallResolve expr
+--TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
+-- | Make an absolute path relative, at all costs.
+windowsHack :: Text -> IO Text
+windowsHack e = if isWindows
+    then case e' of
+        '"' : c : _ | c /= '.' -> case reads e' of -- path is not relative - remove quotes around drive
+            (y, ys) : _ -> windowsHack . T.pack $ y <> ys
+            _ -> error "malformed input expression - check quoting"
+        c : ':' : '/' : xs | isUpper c -> fmap (T.pack . ("./" ++)) . makeRelativeToCurrentDirectory' $ xs
+        _ -> pure $ T.pack e'
+    else pure e
   where
-    {-TODO this may well be incomplete
-        anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
-    -}
-    printDhallErrors = fmap (join . join)
-        . h @Dhall.ParseError
-        . h @(Dhall.SourcedException Dhall.MissingImports)
-        . h @(Dhall.TypeError Dhall.Src Void)
-      where
-        h :: forall e a. Exception e => IO a -> IO (Maybe a)
-        h = handle @e (\x -> print x >> pure Nothing) . fmap Just
-    {-TODO using 'pretty' means we're repeating work
-        perhaps 'layoutFromDhall' should take an 'Expr Src/Void Void'
-        (and be total, while we're at it?)
-        also 'normalize' and 'typeOf'
-    -}
-    dhallResolve e = do
-        x <- Dhall.load =<< Dhall.throws (Dhall.exprFromText "" e)
-        _ <- Dhall.throws $ Dhall.typeOf x
-        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
-        pure $ Dhall.pretty x
+    e' = T.unpack e
+    -- ventures where 'makeRelative' fears to tread - namely, introduces ".." (in fact it's very keen to do so...)
+    -- also uses forward slash regardless of OS
+    makeRelativeToCurrentDirectory' p = getCurrentDirectory <&> \curr ->
+        intercalate "/" $ replicate (length $ splitPath curr) ".." <> pure p

@@ -67,6 +67,7 @@ common common
         EmptyCase
         FlexibleContexts
         FlexibleInstances
+        GADTs
         GeneralizedNewtypeDeriving
         ImportQualifiedPost
         LambdaCase
@@ -91,6 +92,11 @@ library
         common
     exposed-modules:
         Monpad
+        Monpad.Plugins
+        Monpad.Plugins.WatchLayout
+        Monpad.Plugins.PingIndicator
+        Monpad.Plugins.QR
+        Monpad.Plugins.Logger
     other-modules:
         Embed
         DhallHack
@@ -115,14 +121,18 @@ library
         haskell-to-elm ^>= 0.3.1,
         hostname ^>= 1.0,
         http-types ^>= 0.12.3,
+        JuicyPixels ^>= 3.3.5,
         lucid ^>= 2.9.12,
         network ^>= 3.1.1.1,
         prettyprinter ^>= 1.7.0,
+        qrcode-core ^>= 0.9.4,
+        qrcode-juicypixels ^>= 0.8.2,
         reducers ^>= 3.12.3,
         servant ^>= 0.18,
         servant-lucid ^>= 0.9.0.1,
         servant-server ^>= 0.18,
         servant-websockets ^>= 2.0,
+        streamly-fsnotify ^>= 1.1.1.0,
         wai ^>= 3.2.2,
         warp ^>= 3.3.9,
         websockets ^>= 0.12.7,
@@ -137,7 +147,6 @@ executable monpad
         Main.hs
     other-modules:
         OS
-        Utils
     if os(windows)
         hs-source-dirs: windows
     if os(linux)
@@ -150,8 +159,4 @@ executable monpad
         app
     build-depends:
         monpad,
-        JuicyPixels ^>= 3.3.5,
         optparse-applicative ^>= 0.15.1.0,
-        qrcode-core ^>= 0.9.4,
-        qrcode-juicypixels ^>= 0.8.2,
-        streamly-fsnotify ^>= 1.1.1.0,

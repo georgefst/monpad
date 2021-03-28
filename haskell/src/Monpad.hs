@@ -49,7 +49,7 @@ import Generic.Data (Generically (..))
 import Generic.Functor
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
-import Linear
+import Linear (V2 (..))
 import Lucid
 import Lucid.Base (makeAttribute)
 import Network.HTTP.Types.Status
@@ -217,13 +217,13 @@ data ServerConfig e s a b = ServerConfig
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
 
--- | Run two `ServerConfig`s with different environments.
-combineConfs :: Monoid s => ServerConfig e1 s a b -> ServerConfig e2 s a b -> ServerConfig (e1, e2) s a b
+-- | Run two `ServerConfig`s with different states and environments.
+combineConfs :: ServerConfig e1 s1 a b -> ServerConfig e2 s2 a b -> ServerConfig (e1, e2) (s1, s2) a b
 combineConfs sc1 sc2 = ServerConfig
     { onStart = pure (<>)
         <*> sc1.onStart
         <*> sc2.onStart
-    , onNewConnection = pure (pure \(e1, s1) (e2, s2) -> ((e1, e2), s1 <> s2))
+    , onNewConnection = pure (pure \(e1, s1) (e2, s2) -> ((e1, e2), (s1, s2)))
         <<*>> sc1.onNewConnection
         <<*>> sc2.onNewConnection
     , onMessage = pure f
@@ -241,12 +241,21 @@ combineConfs sc1 sc2 = ServerConfig
     , onPong = \(e1, e2) -> pure (<>)
         <*> sc1.onPong e1
         <*> sc2.onPong e2
-    , updates = \(e1, e2) -> sc1.updates e1 <> sc2.updates e2
+    , updates = \(e1, e2) ->
+        ((. fst) <<$>> sc1.updates e1)
+            <>
+        ((. snd) <<$>> sc2.updates e2)
     }
   where
-    f a1 a2 = Monpad $ (<>)
-        <$> withReaderT (second3 fst) (unMonpad a1)
-        <*> withReaderT (second3 snd) (unMonpad a2)
+    f :: Monpad ex sx a b () -> Monpad ey sy a b () -> Monpad (ex, ey) (sx, sy) a b ()
+    f x y = do
+        (ml, (ex, ey), c) <- ask
+        (l0, me0, (sx, sy)) <- get
+        let rx = runReaderT (unMonpad x) (ml, ex, c)
+            ry = runReaderT (unMonpad y) (ml, ey, c)
+        (l1, me1, sx') <- liftIO $ snd <$> runStateT rx (l0, me0, sx)
+        (l2, me2, sy') <- liftIO $ snd <$> runStateT ry (l1, me1, sy)
+        put (l2, me2, (sx', sy'))
 
 -- | Maps of element names to axes and buttons.
 data ElementMaps a b = ElementMaps

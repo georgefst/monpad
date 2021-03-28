@@ -111,9 +111,9 @@ parser = do
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    layoutExprs' <- traverse windowsHack layoutExprs
-    let dhallLayouts = case nonEmpty layoutExprs' of
+    Args{layoutExprs = layoutExprs0, ..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+    layoutExprs <- traverse windowsHack layoutExprs0
+    let dhallLayouts = case nonEmpty layoutExprs of
             Just layouts -> layouts
             Nothing -> pure $ defaultDhall ()
     case externalWS of

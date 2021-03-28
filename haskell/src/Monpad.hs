@@ -57,7 +57,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
 import Network.WebSockets.Connection qualified as WS
-import Optics
+import Optics hiding (Empty)
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
@@ -273,9 +273,8 @@ addToElementMaps e = case e.element of
     Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
     Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
     Button b -> over #buttonMap $ Map.insert e.name b.buttonData
-    Image _ -> id
-    TextBox _ -> id
     Indicator _ -> id
+    Empty -> id
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
 server pingFrequency port loginImage assetsDir layouts conf = do

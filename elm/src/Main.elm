@@ -157,6 +157,12 @@ view model =
     }
 
 
+viewImage : Image -> List (Collage Msgs) -> Collage Msgs
+viewImage img extra =
+    image (both toFloat ( img.width, img.height )) img.url
+        |> impose (stack extra)
+
+
 viewText : TextBox -> List (Collage Msgs) -> Collage Msgs
 viewText x extra =
     Text.fromString x.text
@@ -216,7 +222,8 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            maybe [] (\style -> [ viewText { text = element.name, style = style } [] ]) element.showName
+            maybe [] (\x -> [ viewImage x [] ]) element.image
+                ++ maybe [] (\x -> [ viewText x [] ]) element.text
     in
     extra
         |> (case element.element of
@@ -233,14 +240,11 @@ viewElement model element =
                         withDefault x.initialPosition <|
                             Dict.get element.name model.layout.sliderPos
 
-                Element.Image x ->
-                    viewImage element.name x x.url
-
-                Element.TextBox x ->
-                    viewText x
-
                 Element.Indicator x ->
                     viewIndicator element.name x
+
+                Element.Empty ->
+                    stack
            )
         |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 
@@ -341,12 +345,6 @@ viewSlider name slider toOffset pos extra =
                 else
                     []
             }
-
-
-viewImage : String -> Image -> String -> List (Collage Msgs) -> Collage Msgs
-viewImage _ img url extra =
-    image (both toFloat ( img.width, img.height )) url
-        |> impose (stack extra)
 
 
 viewIndicator : String -> Indicator -> List (Collage Msgs) -> Collage Msgs
@@ -658,7 +656,7 @@ serverUpdate u model =
             }
     in
     case u of
-        SetImageURL image url ->
+        SetImageURL id url ->
             ( { model
                 | layout =
                     { layoutState
@@ -668,13 +666,8 @@ serverUpdate u model =
                                     layout.elements
                                         |> List.map
                                             (\e ->
-                                                if e.name == image then
-                                                    case e.element of
-                                                        Element.Image img ->
-                                                            { e | element = Element.Image { img | url = url } }
-
-                                                        _ ->
-                                                            e
+                                                if e.name == id then
+                                                    { e | image = e.image |> Maybe.map (\x -> { x | url = url }) }
 
                                                 else
                                                     e
@@ -696,12 +689,7 @@ serverUpdate u model =
                                         |> List.map
                                             (\e ->
                                                 if e.name == id then
-                                                    case e.element of
-                                                        Element.TextBox box ->
-                                                            { e | element = Element.TextBox { box | text = text } }
-
-                                                        _ ->
-                                                            e
+                                                    { e | text = e.text |> Maybe.map (\x -> { x | text = text }) }
 
                                                 else
                                                     e

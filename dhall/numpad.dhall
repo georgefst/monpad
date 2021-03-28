@@ -17,7 +17,8 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = Some monpad.defaultTextStyle
+        , text = Some { style = monpad.defaultTextStyle, text = name }
+        , image = None monpad.Image
         }
 
 in    { elements =

@@ -25,9 +25,8 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Stick s -> map Left [s.stickDataX, s.stickDataY]
     Button b -> [Right b.buttonData]
     Slider s -> [Left s.sliderData]
-    Image _ -> []
-    TextBox _ -> []
     Indicator _ -> []
+    Empty -> []
 
 -- | A (non-empty) list of 'Layout's.
 type Layouts a b = NonEmpty (Layout a b)
@@ -56,7 +55,8 @@ data FullElement a b = FullElement
     { element :: Element a b
     , location :: V2 Int
     , name :: ElementID
-    , showName :: Maybe TextStyle
+    , text :: Maybe TextBox
+    , image :: Maybe Image
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement Unit Unit
@@ -72,9 +72,8 @@ data Element a b
     = Stick (Stick a)
     | Button (Button b)
     | Slider (Slider a)
-    | Image Image
-    | TextBox TextBox
     | Indicator Indicator
+    | Empty
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element Unit Unit
     deriving (ToJSON) via Elm.Via2 Element a b
@@ -117,7 +116,7 @@ data Slider a = Slider'
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider Unit
     deriving (ToJSON) via Elm.Via1 Slider a
 
-data Image = Image'
+data Image = Image
     { width :: Word
     , height :: Word
     , url :: Text
@@ -125,7 +124,7 @@ data Image = Image'
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
 
-data TextBox = TextBox'
+data TextBox = TextBox
     { text :: Text
     , style :: TextStyle
     }

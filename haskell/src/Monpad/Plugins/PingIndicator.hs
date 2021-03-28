@@ -16,8 +16,7 @@ showPing :: Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
 showPing vb =
     let onNewConnection = const $ (,mempty) <$> newEmptyMVar
         onPong = putMVar
-        textElementId = ElementID "_internal_ping_text"
-        indicatorElementId = ElementID "_internal_ping_indicator"
+        elementId = ElementID "_internal_ping_indicator"
         (location, size) =
             let ViewBox{..} = vb
                 s = min w h `div` 4
@@ -28,8 +27,12 @@ showPing vb =
         initialUpdate =
             [ AddElement $ FullElement
                 { location
-                , name = indicatorElementId
-                , showName = Nothing
+                , name = elementId
+                , text = Just TextBox
+                    { text = "Ping"
+                    , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
+                    }
+                , image = Nothing
                 , element = Indicator Indicator'
                     { hollowness = 0
                     , arcStart = 0
@@ -39,15 +42,6 @@ showPing vb =
                     , shape = square
                     }
                 }
-            , AddElement $ FullElement
-                { location
-                , name = textElementId
-                , showName = Nothing
-                , element = TextBox TextBox'
-                    { text = "Ping"
-                    , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
-                    }
-                }
             ]
         updates m = SP.cons (const initialUpdate) $ const <$> SP.repeatM do
             time <- takeMVar m
@@ -55,8 +49,8 @@ showPing vb =
                 scaleFactor = negate $ log 0.5 / okPing
                 goodness = exp $ negate (realToFrac time) * scaleFactor -- in range (0, 1]
             pure
-                [ SetText textElementId $ showT time
-                , SetIndicatorColour indicatorElementId $ Colour (1 - goodness) goodness 0 1
+                [ SetText elementId $ showT time
+                , SetIndicatorColour elementId $ Colour (1 - goodness) goodness 0 1
                 ]
      in ServerConfig
             { onNewConnection

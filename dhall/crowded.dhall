@@ -22,7 +22,8 @@ let button =
       λ(linux : ButtonL) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.Element.Button
               { buttonData = { linux, windows = {=}, mac = {=} }
               , colour
@@ -30,7 +31,6 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = None monpad.TextStyle
         }
 
 let button2 =
@@ -39,7 +39,8 @@ let button2 =
       λ(linux : ButtonL) →
       λ(name : Text) →
       λ(showName : Bool) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.Element.Button
               { buttonData = { linux, windows = {=}, mac = {=} }
               , colour = monpad.cols.grey
@@ -47,10 +48,10 @@ let button2 =
               }
         , location = { x, y }
         , name
-        , showName =
+        , text =
             if    showName
-            then  Some monpad.defaultTextStyle
-            else  None monpad.TextStyle
+            then  Some { style = monpad.defaultTextStyle, text = name }
+            else  None monpad.TextBox
         }
 
 let stick =
@@ -59,7 +60,8 @@ let stick =
       λ(name : Text) →
       λ(linuxX : AxisL) →
       λ(linuxY : AxisL) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.Element.Stick
               { radius = 80
               , range = 200
@@ -70,7 +72,6 @@ let stick =
               }
         , location = { x, y }
         , name
-        , showName = None monpad.TextStyle
         }
 
 let slider =
@@ -78,7 +79,8 @@ let slider =
       λ(y : Integer) →
       λ(name : Text) →
       λ(linux : AxisL) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.simpleSlider
               { length = 400
               , width = 90
@@ -90,7 +92,6 @@ let slider =
               }
         , location = { x, y }
         , name
-        , showName = None monpad.TextStyle
         }
 
 in    { elements =

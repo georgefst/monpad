@@ -23,7 +23,8 @@ let button =
       λ(windows : ButtonW) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.Element.Button
               { buttonData = { linux, windows, mac = {=} }
               , colour
@@ -31,7 +32,6 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = None monpad.TextStyle
         }
 
 in    { elements =
@@ -39,7 +39,8 @@ in    { elements =
         , button +500 -250 ButtonL.BtnSouth {=} "Green" monpad.cols.green
         , button +750 +0 ButtonL.BtnEast {=} "Red" monpad.cols.red
         , button +500 +250 ButtonL.BtnNorth {=} "Yellow" monpad.cols.yellow
-        , { element =
+        , monpad.Elem::{
+          , element =
               monpad.Element.Button
                 { buttonData =
                   { linux = ButtonL.BtnMode, windows = {=}, mac = {=} }
@@ -47,10 +48,11 @@ in    { elements =
                 , shape = monpad.Shape.Circle 80
                 }
           , location = { x = +0, y = -300 }
-          , name = "M"
-          , showName = Some monpad.defaultTextStyle
+          , name = "Menu"
+          , text = Some { text = "M", style = monpad.defaultTextStyle }
           }
-        , { element =
+        , monpad.Elem::{
+          , element =
               monpad.Element.Stick
                 { radius = 120
                 , range = 320
@@ -61,7 +63,6 @@ in    { elements =
                 }
           , location = { x = -500, y = +0 }
           , name = "Stick"
-          , showName = None monpad.TextStyle
           }
         ]
       , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }

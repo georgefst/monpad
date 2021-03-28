@@ -23,7 +23,8 @@ let button =
       λ(windows : ButtonW) →
       λ(name : Text) →
       λ(colour : monpad.Colour) →
-        { element =
+        monpad.Elem::{
+        , element =
             monpad.Element.Button
               { buttonData = { linux, windows, mac = {=} }
               , colour
@@ -31,14 +32,14 @@ let button =
               }
         , location = { x, y }
         , name
-        , showName = None monpad.TextStyle
         }
 
 let layoutAll =
         { elements =
           [ button -300 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
           , button +300 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
-          , { element =
+          , monpad.Elem::{
+            , element =
                 monpad.simpleSlider
                   { radius = 90
                   , length = 600
@@ -50,9 +51,9 @@ let layoutAll =
                   }
             , location = { x = +0, y = +1300 }
             , name = "Slider"
-            , showName = None monpad.TextStyle
             }
-          , { element =
+          , monpad.Elem::{
+            , element =
                 monpad.Element.Stick
                   { radius = 140
                   , range = 420
@@ -63,7 +64,6 @@ let layoutAll =
                   }
             , location = { x = +0, y = +650 }
             , name = "Stick"
-            , showName = None monpad.TextStyle
             }
           ]
         , viewBox = { x = -500, y = +0, w = +1000, h = +2000 }

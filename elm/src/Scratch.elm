@@ -101,8 +101,9 @@ flags =
     , layouts =
         [ { elements =
                 [ { location = { x = -600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
                   , name = "indicator"
-                  , showName = Nothing
                   , element =
                         Indicator
                             { hollowness = 0.5
@@ -114,8 +115,9 @@ flags =
                             }
                   }
                 , { location = { x = 900, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
                   , name = "powerbar"
-                  , showName = Nothing
                   , element =
                         Indicator
                             { hollowness = 0
@@ -127,8 +129,9 @@ flags =
                             }
                   }
                 , { location = { x = 600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
                   , name = "stick"
-                  , showName = Nothing
                   , element =
                         Stick
                             { radius = 80
@@ -140,8 +143,9 @@ flags =
                             }
                   }
                 , { location = { x = -300, y = -200 }
+                  , image = Nothing
+                  , text = Nothing
                   , name = "slider"
-                  , showName = Nothing
                   , element =
                         Slider
                             { radius = 40
@@ -155,14 +159,18 @@ flags =
                             }
                   }
                 , { location = { x = 0, y = 350 }
+                  , image = Nothing
                   , name = "button"
-                  , showName =
+                  , text =
                         Just
-                            { bold = True
-                            , italic = True
-                            , underline = True
-                            , colour = toRgba darkGray
-                            , size = 60
+                            { style =
+                                { bold = True
+                                , italic = True
+                                , underline = True
+                                , colour = toRgba darkGray
+                                , size = 60
+                                }
+                            , text = "c'est un button"
                             }
                   , element =
                         Button
@@ -173,13 +181,14 @@ flags =
                   }
                 , { location = { x = -500, y = 0 }
                   , name = "image"
-                  , showName = Nothing
-                  , element =
-                        Image
+                  , element = Empty
+                  , image =
+                        Just
                             { width = 1000
                             , height = 1000
                             , url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
                             }
+                  , text = Nothing
                   }
                 ]
           , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
@@ -188,8 +197,9 @@ flags =
           }
         , { elements =
                 [ { location = { x = -600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
                   , name = "0"
-                  , showName = Nothing
                   , element =
                         Slider
                             { radius = 200

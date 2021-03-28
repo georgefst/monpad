@@ -59,9 +59,8 @@ let Element =
         < Button : Button b
         | Stick : Stick a
         | Slider : Slider a
-        | Image : Image
-        | TextBox : TextBox
         | Indicator : Indicator
+        | Empty
         >
 
 let FullElement =
@@ -70,7 +69,8 @@ let FullElement =
         { element : Element a b
         , location : V2 Integer
         , name : Text
-        , showName : Optional TextStyle
+        , text : Optional TextBox
+        , image : Optional Image
         }
 
 let Layout =
@@ -145,9 +145,8 @@ let mapLayout
                                     (   slider
                                       ⫽ { sliderData = fa slider.sliderData }
                                     )
-                            , Image = (Element a1 b1).Image
-                            , TextBox = (Element a1 b1).TextBox
                             , Indicator = (Element a1 b1).Indicator
+                            , Empty = (Element a1 b1).Empty
                             }
                             fe.element
                       }
@@ -190,6 +189,17 @@ let noTextStyle =
 
 let defaultTextStyle = noTextStyle ⫽ { colour = cols.red, italic = True }
 
+let Elem =
+      λ(a : Type) →
+      λ(b : Type) →
+        { Type = FullElement a b
+        , default =
+          { element = (Element a b).Empty
+          , text = None TextBox
+          , image = None Image
+          }
+        }
+
 in  λ(a : Type) →
     λ(b : Type) →
       { Colour
@@ -201,6 +211,7 @@ in  λ(a : Type) →
       , cols
       , Element = Element a b
       , FullElement = FullElement a b
+      , Elem = Elem a b
       , Layout = Layout a b
       , mapLayout = mapLayout a b
       , simpleSlider = simpleSlider a b

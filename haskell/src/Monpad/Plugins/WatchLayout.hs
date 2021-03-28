@@ -42,7 +42,7 @@ sendLayout exprText = mempty
             snd <$> watchDirectory dir (isModification `conj` isImport)
         flip foldMap evss $ serially
             . traceStream (const $ T.putStrLn "Sending new layout to client")
-            . SP.map (pure . const . SetLayout)
+            . SP.map (const . pure . SetLayout)
             . SP.mapMaybeM (const $ parseLayout exprText)
             . lastOfGroup 100_000
     }

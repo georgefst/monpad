@@ -49,7 +49,7 @@ showPing vb =
                     }
                 }
             ]
-        updates m = SP.cons (map const initialUpdate) $ const <<$>> SP.repeatM do
+        updates m = SP.cons (const initialUpdate) $ const <$> SP.repeatM do
             time <- takeMVar m
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 scaleFactor = negate $ log 0.5 / okPing

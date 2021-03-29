@@ -41,7 +41,6 @@ import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time
 import Data.Time.Clock.POSIX
-import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding (setLocaleEncoding)
@@ -185,8 +184,12 @@ newtype Monpad e s a b x = Monpad
         , MonadReader (Map LayoutID (Layout a b), e, ClientID)
         , MonadState (Layout a b, ElementMaps a b, s)
         )
-deriving via Action (Monpad e s a b) instance (Semigroup (Monpad e s a b ()))
-deriving via Action (Monpad e s a b) instance (Monoid (Monpad e s a b ()))
+deriving via Action (Monpad e s a b) instance {-# OVERLAPS #-} (Semigroup (Monpad e s a b ()))
+deriving via Action (Monpad e s a b) instance {-# OVERLAPS #-} (Monoid (Monpad e s a b ()))
+instance {-# OVERLAPPABLE #-} Semigroup x => (Semigroup (Monpad e s a b x)) where
+    x <> y = (<>) <$> x <*> y
+instance {-# OVERLAPPABLE #-} Monoid x => (Monoid (Monpad e s a b x)) where
+    mempty = mempty @x <$ mempty @(Monpad e s a b ())
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
 runMonpad ls c e s mon = evalStateT
     (runReaderT
@@ -205,11 +208,11 @@ getting rid of some 'asyncly', 'serially' boilerplate
 data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO () -- takes url
     , onNewConnection :: ClientID -> IO (e, s)
-    , onMessage :: Update -> Monpad e s a b ()
-    , onAxis :: a -> Double -> Monpad e s a b ()
+    , onMessage :: Update -> Monpad e s a b [ServerUpdate a b]
+    , onAxis :: a -> Double -> Monpad e s a b [ServerUpdate a b]
     -- ^ the argument here always ranges from -1 to 1, even for sliders
-    , onButton :: b -> Bool -> Monpad e s a b ()
-    , onDroppedConnection :: MonpadException -> Monpad e s a b ()
+    , onButton :: b -> Bool -> Monpad e s a b [ServerUpdate a b]
+    , onDroppedConnection :: MonpadException -> Monpad e s a b [ServerUpdate a b]
     , onPong :: e -> NominalDiffTime -> IO ()
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: e -> Async (s -> [ServerUpdate a b])
@@ -247,15 +250,16 @@ combineConfs sc1 sc2 = ServerConfig
         ((. snd) <$> sc2.updates e2)
     }
   where
-    f :: Monpad ex sx a b () -> Monpad ey sy a b () -> Monpad (ex, ey) (sx, sy) a b ()
+    f :: Monoid x => Monpad ex sx a b x -> Monpad ey sy a b x -> Monpad (ex, ey) (sx, sy) a b x
     f x y = do
         (ml, (ex, ey), c) <- ask
         (l0, me0, (sx, sy)) <- get
         let rx = runReaderT (unMonpad x) (ml, ex, c)
             ry = runReaderT (unMonpad y) (ml, ey, c)
-        (l1, me1, sx') <- liftIO $ snd <$> runStateT rx (l0, me0, sx)
-        (l2, me2, sy') <- liftIO $ snd <$> runStateT ry (l1, me1, sy)
+        (ax, (l1, me1, sx')) <- liftIO $ runStateT rx (l0, me0, sx)
+        (ay, (l2, me2, sy')) <- liftIO $ runStateT ry (l1, me1, sy)
         put (l2, me2, (sx', sy'))
+        pure $ ax <> ay
 
 -- | Maps of element names to axes and buttons.
 data ElementMaps a b = ElementMaps
@@ -322,41 +326,42 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
         let stream = asyncly $ (Left <$> updates e) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
+            handleUpdates us = sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for us \update -> do
+                s <- gets thd3
+                case update of
+                    SetLayout l -> put (l, mkElementMaps l.elements, s)
+                    SwitchLayout i -> asks ((!? i) . fst3) >>= \case
+                        Just l -> put (l, mkElementMaps l.elements, s)
+                        Nothing -> warn $ "layout id not found: " <> i.unwrap
+                    AddElement el -> modify . first $ addToElementMaps el
+                    RemoveElement el -> modify . first $
+                        over #stickMap (Map.delete el)
+                            . over #sliderMap (Map.delete el)
+                            . over #buttonMap (Map.delete el)
+                    SetBackgroundColour{} -> mempty
+                    SetImageURL{} -> mempty
+                    PlayAudioURL{} -> mempty
+                    Vibrate{} -> mempty
+                    SetText{} -> mempty
+                    SetIndicatorHollowness{} -> mempty
+                    SetIndicatorArcStart{} -> mempty
+                    SetIndicatorArcEnd{} -> mempty
+                    SetIndicatorShape{} -> mempty
+                    SetIndicatorCentre{} -> mempty
+                    SetIndicatorColour{} -> mempty
+                    SetSliderPosition{} -> mempty
+                    ResetLayout{} -> mempty
+                pure update
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do
                     s <- gets thd3
-                    sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for (sus s) \update -> do
-                        case update of
-                            SetLayout l -> put (l, mkElementMaps l.elements, s)
-                            SwitchLayout i -> do
-                                asks ((!? i) . fst3) >>= \case
-                                    Just l -> put (l, mkElementMaps l.elements, s)
-                                    Nothing -> warn $ "layout id not found: " <> i.unwrap
-                            AddElement el -> modify . first $ addToElementMaps el
-                            RemoveElement el -> modify . first $
-                                over #stickMap (Map.delete el)
-                                    . over #sliderMap (Map.delete el)
-                                    . over #buttonMap (Map.delete el)
-                            SetBackgroundColour{} -> mempty
-                            SetImageURL{} -> mempty
-                            PlayAudioURL{} -> mempty
-                            Vibrate{} -> mempty
-                            SetText{} -> mempty
-                            SetIndicatorHollowness{} -> mempty
-                            SetIndicatorArcStart{} -> mempty
-                            SetIndicatorArcEnd{} -> mempty
-                            SetIndicatorShape{} -> mempty
-                            SetIndicatorCentre{} -> mempty
-                            SetIndicatorColour{} -> mempty
-                            SetSliderPosition{} -> mempty
-                            ResetLayout{} -> mempty
-                        pure update
+                    handleUpdates $ sus s
                     pure True
                 Right (Right u) -> do
                     ElementMaps{..} <- gets snd3
-                    onMessage u
-                    case u of
+                    handleUpdates =<< onMessage u
+                    handleUpdates =<< case u of
                         ButtonUp t -> lookup' buttonMap t $ flip onButton False
                         ButtonDown t -> lookup' buttonMap t $ flip onButton True
                         StickMove t (V2 x y) -> lookup' stickMap t \(x', y') -> onAxis x' x >> onAxis y' y
@@ -365,8 +370,10 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                   where
                     lookup' m t f = case m !? t of
                         Just b -> f b
-                        Nothing -> warn $ "element id not found: " <> t.unwrap
-                Right (Left err) -> onDroppedConnection err >> pure False
+                        Nothing -> warn ("element id not found: " <> t.unwrap) >> mempty
+                Right (Left err) -> do
+                    handleUpdates =<< onDroppedConnection err
+                    pure False
       where
         sendUpdates conn = liftIO . WS.sendTextData conn . encode
         getUpdate conn = liftIO $ try (WS.receiveData conn) <&> \case
@@ -426,7 +433,8 @@ test = do
         , onMessage = \u -> do
             c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
-        , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c)
+            mempty
+        , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c) >> mempty
         , onPong = const $ pPrint . ("pong" :: Text,)
         }
 testExt :: IO ()

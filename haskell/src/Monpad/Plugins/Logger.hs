@@ -22,6 +22,7 @@ logImportantStuff f = mempty
     , onDroppedConnection = const do
         ClientID i <- asks thd3
         liftIO $ f $ "Client disconnected: " <> i
+        mempty
     }
 
 logUpdates :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
@@ -30,4 +31,5 @@ logUpdates f = mempty
         ClientID c <- asks thd3
         liftIO $ f $ "Message received from client: " <> c
         pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
+        mempty
     }

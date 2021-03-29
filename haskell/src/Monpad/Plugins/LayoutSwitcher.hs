@@ -2,8 +2,6 @@
 
 module Monpad.Plugins.LayoutSwitcher (plugin) where
 
-import Control.Concurrent
-import Control.Monad.Reader
 import Control.Monad.State
 import Data.Composition
 import Data.Tuple.Extra
@@ -13,7 +11,6 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream ((:>)))
 import Data.Stream.Infinite qualified as Stream
-import Streamly.Prelude qualified as SP
 
 import Monpad
 import Monpad.Plugins
@@ -22,13 +19,13 @@ import Monpad.Plugins.PingIndicator qualified as PI
 import Monpad.Plugins.WatchLayout qualified as WL
 
 plugin :: b -> NonEmpty (LayoutID, ViewBox) -> Plugin a b
-plugin = Plugin .: switcher
+plugin = Plugin .: switcher @()
 
 type LayoutData = (LayoutID, ViewBox)
 
-switcher :: b -> NonEmpty LayoutData -> ServerConfig (MVar ()) (Stream LayoutData) a b
+switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream LayoutData) a b
 switcher buttonData ls =
-    let onNewConnection = const $ (,Stream.cycle ls) <$> newEmptyMVar
+    let onNewConnection = const $ pure (mempty, Stream.cycle ls)
         elementId = ElementID "_internal_switcher_button"
         initialUpdate l vb =
             let ViewBox{..} = vb
@@ -56,15 +53,13 @@ switcher buttonData ls =
                 ]
      in ServerConfig
             { onNewConnection
-            , updates = \m -> serially $ SP.cons (const $ uncurry initialUpdate $ NE.head ls) $ SP.repeatM do
-                takeMVar m -- wait for a ButtonUp event
-                pure \((l, vb) :> _) -> SwitchLayout l : initialUpdate l vb
+            , updates = const . serially . pure . const . uncurry initialUpdate $ NE.head ls
             , onStart = mempty
             , onMessage = \case
                 ButtonUp t | t == elementId -> do
                     modify $ third3 Stream.tail
-                    m <- asks snd3
-                    liftIO $ putMVar m ()
+                    (l, vb) :> _ <- gets thd3
+                    pure $ SwitchLayout l : initialUpdate l vb
                 _ -> mempty
             , onAxis = mempty
             , onButton = mempty

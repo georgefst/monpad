@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Main (main) where
 
@@ -6,6 +7,7 @@ import Control.Monad.Extra
 import Data.Char
 import Data.Functor
 import Data.List
+import Data.Tuple.Extra
 import Options.Applicative
 import System.Directory
 import System.FilePath
@@ -22,6 +24,7 @@ import GHC.IO.Encoding (setLocaleEncoding, utf8)
 
 import Monpad
 import Monpad.Plugins
+import Monpad.Plugins.LayoutSwitcher qualified as LayoutSwitcher
 import Monpad.Plugins.Logger qualified as Logger
 import Monpad.Plugins.PingIndicator qualified as PingIndicator
 import Monpad.Plugins.QR qualified as QR
@@ -122,17 +125,20 @@ main = do
           where
             writeQR path url = withPlugin (`onStart` url) $ QR.plugin path
         Nothing -> if systemDevice
-            then join (run . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
-            else run @() @() @Unit @Unit mempty =<< layoutsFromDhall dhallLayouts
+            then join (run OS.keyUnknown . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
+            else run @() @() @Unit @Unit mempty mempty =<< layoutsFromDhall dhallLayouts
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
-                ServerConfig e s a b -> Layouts a b -> IO ()
-            run sc ls = withPlugin (server pingFrequency port loginImageUrl assetsDir ls) $ plugins
+                b -> ServerConfig e s a b -> Layouts a b -> IO ()
+            run unknown sc ls = withPlugin (server pingFrequency port loginImageUrl assetsDir ls) $ plugins
                 $ (Logger.plugin T.putStrLn quiet :|)
-                $ applyWhen displayPing ((PingIndicator.plugin . viewBox $ NE.head ls) :)
+                $ applyWhen displayPing (PingIndicator.plugin vb :)
                 $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
                 $ maybe id ((:) . QR.plugin) qrPath
+                $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown (((.name) &&& (.viewBox)) <$> ls) :)
                 [ Plugin sc ]
+              where
+                vb = viewBox $ NE.head ls
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 -- | Make an absolute path relative, at all costs.

@@ -69,3 +69,6 @@ data Axis
     = Abs AbsoluteAxis
     | Rel RelativeAxis
     deriving (Generic, FromDhall)
+
+keyUnknown :: Key
+keyUnknown = KeyUnknown

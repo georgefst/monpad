@@ -48,7 +48,9 @@ common common
         pretty-simple ^>= 4.0,
         random ^>= 1.2.0,
         record-hasfield ^>= 1.0,
+        safe ^>= 0.3.19,
         streamly ^>= 0.7.2,
+        streams ^>= 3.3,
         text ^>= 1.2.3,
         time ^>= 1.9.3,
         transformers ^>= 0.5.6,
@@ -93,6 +95,7 @@ library
     exposed-modules:
         Monpad
         Monpad.Plugins
+        Monpad.Plugins.LayoutSwitcher
         Monpad.Plugins.Logger
         Monpad.Plugins.PingIndicator
         Monpad.Plugins.QR

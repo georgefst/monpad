@@ -2,8 +2,6 @@ module Monpad.Plugins.PingIndicator (plugin) where
 
 import Util.Util
 
-import Streamly.Prelude qualified as SP
-
 import Monpad
 import Monpad.Plugins
 
@@ -12,7 +10,7 @@ plugin vb = Plugin $ showPing @() @() vb
 
 showPing :: (Monoid e, Monoid s) => ViewBox -> ServerConfig e s a b
 showPing vb =
-    let onNewConnection = mempty
+    let onNewConnection = const $ pure (mempty, mempty, [initialUpdate])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 scaleFactor = negate $ log 0.5 / okPing
@@ -28,30 +26,27 @@ showPing vb =
                 , fromIntegral s
                 )
         square = Rectangle $ V2 size size
-        initialUpdate =
-            [ AddElement $ FullElement
-                { location
-                , name = elementId
-                , text = Just TextBox
-                    { text = "Ping"
-                    , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
-                    }
-                , image = Nothing
-                , element = Indicator Indicator'
-                    { hollowness = 0
-                    , arcStart = 0
-                    , arcEnd = 1
-                    , centre = 0
-                    , colour = Colour 1 1 1 1 -- white
-                    , shape = square
-                    }
+        initialUpdate = AddElement $ FullElement
+            { location
+            , name = elementId
+            , text = Just TextBox
+                { text = "Ping"
+                , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
                 }
-            ]
-        updates = const $ SP.cons (const initialUpdate) mempty
+            , image = Nothing
+            , element = Indicator Indicator'
+                { hollowness = 0
+                , arcStart = 0
+                , arcEnd = 1
+                , centre = 0
+                , colour = Colour 1 1 1 1 -- white
+                , shape = square
+                }
+            }
      in ServerConfig
             { onNewConnection
             , onPong
-            , updates
+            , updates = mempty
             , onStart = mempty
             , onMessage = mempty
             , onAxis = mempty

@@ -327,7 +327,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let stream = asyncly $ (Left <$> SP.cons (const u0) (updates e))
                 <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-            handleUpdates us = sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for us \update -> do
+            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) <=< traverse \update -> do
                 s <- gets thd3
                 case update of
                     SetLayout l -> put (l, mkElementMaps l.elements, s)

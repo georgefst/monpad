@@ -13,9 +13,6 @@ import Data.Stream.Infinite qualified as Stream
 
 import Monpad
 import Monpad.Plugins
-import Monpad.Plugins.Logger qualified as L
-import Monpad.Plugins.PingIndicator qualified as PI
-import Monpad.Plugins.WatchLayout qualified as WL
 
 plugin :: b -> NonEmpty (LayoutID, ViewBox) -> Plugin a b
 plugin = Plugin .: switcher @()

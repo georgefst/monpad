@@ -14,7 +14,7 @@ plugin vb = Plugin $ showPing @() vb
 
 showPing :: Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
 showPing vb =
-    let onNewConnection = const $ (,mempty) <$> newEmptyMVar
+    let onNewConnection = const $ (,mempty,[]) <$> newEmptyMVar
         onPong = putMVar
         elementId = ElementID "_internal_ping_indicator"
         (location, size) =

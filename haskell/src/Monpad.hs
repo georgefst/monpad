@@ -207,7 +207,7 @@ getting rid of some 'asyncly', 'serially' boilerplate
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO () -- takes url
-    , onNewConnection :: ClientID -> IO (e, s)
+    , onNewConnection :: ClientID -> IO (e, s, [ServerUpdate a b])
     , onMessage :: Update -> Monpad e s a b [ServerUpdate a b]
     , onAxis :: a -> Double -> Monpad e s a b [ServerUpdate a b]
     -- ^ the argument here always ranges from -1 to 1, even for sliders
@@ -226,7 +226,7 @@ combineConfs sc1 sc2 = ServerConfig
     { onStart = pure (<>)
         <*> sc1.onStart
         <*> sc2.onStart
-    , onNewConnection = pure (pure \(e1, s1) (e2, s2) -> ((e1, e2), (s1, s2)))
+    , onNewConnection = pure (pure \(e1, s1, u1) (e2, s2, u2) -> ((e1, e2), (s1, s2), u1 ++ u2))
         <<*>> sc1.onNewConnection
         <<*>> sc2.onNewConnection
     , onMessage = pure f
@@ -316,7 +316,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
       where err = "no username parameter"
     Just clientId -> do
         lastPing <- newIORef Nothing
-        (e, s0) <- onNewConnection clientId
+        (e, s0, u0) <- onNewConnection clientId
         let onPing = writeIORef lastPing . Just =<< getPOSIXTime
             onPong' = readIORef lastPing >>= \case
                 Nothing -> warn "pong before ping"
@@ -325,7 +325,8 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     onPong e $ t1 - t0
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
-        let stream = asyncly $ (Left <$> updates e) <> (Right <$> serially (SP.repeatM $ getUpdate conn))
+        let stream = asyncly $ (Left <$> SP.cons (const u0) (updates e))
+                <> (Right <$> serially (SP.repeatM $ getUpdate conn))
             handleUpdates us = sendUpdates conn . map (bimap (const Unit) (const Unit)) =<< for us \update -> do
                 s <- gets thd3
                 case update of
@@ -429,7 +430,7 @@ test = do
         { onStart = pPrint . ("started" :: Text,)
         , onNewConnection = \c -> do
             pPrint ("connected" :: Text, c)
-            pure ((), ())
+            pure ((), (), [])
         , onMessage = \u -> do
             c <- asks thd3
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)

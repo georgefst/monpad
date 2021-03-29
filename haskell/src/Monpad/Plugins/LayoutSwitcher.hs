@@ -5,7 +5,6 @@ module Monpad.Plugins.LayoutSwitcher (plugin) where
 import Control.Monad.State
 import Data.Composition
 import Data.Tuple.Extra
-import Streamly
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty.Extra qualified as NE
@@ -25,7 +24,7 @@ type LayoutData = (LayoutID, ViewBox)
 
 switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream LayoutData) a b
 switcher buttonData ls =
-    let onNewConnection = const $ pure (mempty, Stream.cycle ls)
+    let onNewConnection = const $ pure (mempty, Stream.cycle ls, uncurry initialUpdate $ NE.head ls)
         elementId = ElementID "_internal_switcher_button"
         initialUpdate l vb =
             let ViewBox{..} = vb
@@ -53,7 +52,7 @@ switcher buttonData ls =
                 ]
      in ServerConfig
             { onNewConnection
-            , updates = const . serially . pure . const . uncurry initialUpdate $ NE.head ls
+            , updates = mempty
             , onStart = mempty
             , onMessage = \case
                 ButtonUp t | t == elementId -> do

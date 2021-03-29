@@ -24,7 +24,7 @@ type LayoutData = (LayoutID, ViewBox)
 
 switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream LayoutData) a b
 switcher buttonData ls =
-    let onNewConnection = const $ pure (mempty, Stream.cycle ls, uncurry initialUpdate $ NE.head ls)
+    let onNewConnection = const $ pure (mempty, Stream.cycle ls, pure . uncurry initialUpdate $ NE.head ls)
         elementId = ElementID "_internal_switcher_button"
         initialUpdate l vb =
             let ViewBox{..} = vb
@@ -34,7 +34,7 @@ switcher buttonData ls =
                     , fromIntegral s
                     )
                 square = Rectangle $ V2 size size
-             in [ AddElement FullElement
+             in AddElement FullElement
                     { location
                     , name = elementId
                     , element = Button Button'
@@ -43,13 +43,11 @@ switcher buttonData ls =
                         , buttonData
                         }
                     , text = Just TextBox
-                        { text = "Layout"
+                        { text = l.unwrap
                         , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
                         }
                     , image = Nothing
                     }
-                , SetText elementId l.unwrap
-                ]
      in ServerConfig
             { onNewConnection
             , updates = mempty
@@ -58,7 +56,7 @@ switcher buttonData ls =
                 ButtonUp t | t == elementId -> do
                     modify $ third3 Stream.tail
                     (l, vb) :> _ <- gets thd3
-                    pure $ SwitchLayout l : initialUpdate l vb
+                    pure [SwitchLayout l, initialUpdate l vb]
                 _ -> mempty
             , onAxis = mempty
             , onButton = mempty

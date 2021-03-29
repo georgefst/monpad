@@ -20,6 +20,7 @@ module Monpad (
     module Layout
 ) where
 
+import Control.Concurrent
 import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.State
@@ -213,7 +214,7 @@ data ServerConfig e s a b = ServerConfig
     -- ^ the argument here always ranges from -1 to 1, even for sliders
     , onButton :: b -> Bool -> Monpad e s a b [ServerUpdate a b]
     , onDroppedConnection :: MonpadException -> Monpad e s a b [ServerUpdate a b]
-    , onPong :: e -> NominalDiffTime -> IO ()
+    , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: e -> Async (s -> [ServerUpdate a b])
     }
@@ -317,16 +318,18 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
     Just clientId -> do
         lastPing <- newIORef Nothing
         (e, s0, u0) <- onNewConnection clientId
+        extraUpdates <- newEmptyMVar
         let onPing = writeIORef lastPing . Just =<< getPOSIXTime
             onPong' = readIORef lastPing >>= \case
                 Nothing -> warn "pong before ping"
                 Just t0 -> do
                     t1 <- getPOSIXTime
-                    onPong e $ t1 - t0
+                    putMVar extraUpdates =<< onPong e (t1 - t0)
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
-        let stream = asyncly $ (Left <$> SP.cons (const u0) (updates e))
-                <> (Right <$> serially (SP.repeatM $ getUpdate conn))
+        let stream = asyncly $
+                (Left <$> SP.cons (const u0) (updates e) <> SP.repeatM (const <$> takeMVar extraUpdates))
+                    <> (Right <$> serially (SP.repeatM $ getUpdate conn))
             handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) <=< traverse \update -> do
                 s <- gets thd3
                 case update of
@@ -436,7 +439,7 @@ test = do
             pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
             mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c) >> mempty
-        , onPong = const $ pPrint . ("pong" :: Text,)
+        , onPong = const $ ([] <$) . pPrint . ("pong" :: Text,)
         }
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< sequence (defaultSimple :| [])

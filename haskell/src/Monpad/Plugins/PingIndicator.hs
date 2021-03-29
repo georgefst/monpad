@@ -1,7 +1,5 @@
 module Monpad.Plugins.PingIndicator (plugin) where
 
-import Data.Time
-import Control.Concurrent
 import Util.Util
 
 import Streamly.Prelude qualified as SP
@@ -10,12 +8,18 @@ import Monpad
 import Monpad.Plugins
 
 plugin :: ViewBox -> Plugin a b
-plugin vb = Plugin $ showPing @() vb
+plugin vb = Plugin $ showPing @() @() vb
 
-showPing :: Monoid s => ViewBox -> ServerConfig (MVar NominalDiffTime) s a b
+showPing :: (Monoid e, Monoid s) => ViewBox -> ServerConfig e s a b
 showPing vb =
-    let onNewConnection = const $ (,mempty,[]) <$> newEmptyMVar
-        onPong = putMVar
+    let onNewConnection = mempty
+        onPong = const \time -> pure
+            let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
+                scaleFactor = negate $ log 0.5 / okPing
+                goodness = exp $ negate (realToFrac time) * scaleFactor -- in range (0, 1]
+            in  [ SetText elementId $ showT time
+                , SetIndicatorColour elementId $ Colour (1 - goodness) goodness 0 1
+                ]
         elementId = ElementID "_internal_ping_indicator"
         (location, size) =
             let ViewBox{..} = vb
@@ -43,15 +47,7 @@ showPing vb =
                     }
                 }
             ]
-        updates m = SP.cons (const initialUpdate) $ const <$> SP.repeatM do
-            time <- takeMVar m
-            let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
-                scaleFactor = negate $ log 0.5 / okPing
-                goodness = exp $ negate (realToFrac time) * scaleFactor -- in range (0, 1]
-            pure
-                [ SetText elementId $ showT time
-                , SetIndicatorColour elementId $ Colour (1 - goodness) goodness 0 1
-                ]
+        updates = const $ SP.cons (const initialUpdate) mempty
      in ServerConfig
             { onNewConnection
             , onPong

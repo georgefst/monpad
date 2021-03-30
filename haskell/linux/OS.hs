@@ -44,15 +44,17 @@ conf layout = mempty
             , idVendor = Just monpadId
             , idProduct = Just monpadId
             }
-        return (pure dev, ())
+        return (pure dev, (), [])
     , onAxis = \AxisInfo{..} x -> do
         devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d $ pure @[] case axis of
             Abs a -> AbsoluteEvent a $ EventValue $ round $ (x + 1) * multiplier / 2
             Rel a -> RelativeEvent a $ EventValue $ round $ x * multiplier
+        mempty
     , onButton = \key up -> do
         devs <- asks snd3
         liftIO $ for_ devs $ \d -> writeBatch d [KeyEvent key $ bool Released Pressed up]
+        mempty
     }
 
 -- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")

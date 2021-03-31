@@ -106,3 +106,13 @@ scaleVec2 factors v =
 angleVec2 : Vec2 -> Float
 angleVec2 v =
     atan (getY v / getX v)
+
+
+mapX : (Float -> Float) -> Vec2 -> Vec2
+mapX f v =
+    vec2 (f <| getX v) (getY v)
+
+
+mapY : (Float -> Float) -> Vec2 -> Vec2
+mapY f v =
+    vec2 (getX v) (f <| getY v)

@@ -180,43 +180,28 @@ viewElement model element =
     let
         toOffset =
             let
-                w0 =
-                    toFloat model.windowSize.x
+                w =
+                    vec2FromIntRecord model.windowSize
 
-                h0 =
-                    toFloat model.windowSize.y
+                v0 =
+                    vec2 (toFloat model.layout.layout.viewBox.w) (toFloat model.layout.layout.viewBox.h)
 
-                w1 =
-                    toFloat model.layout.layout.viewBox.w
+                -- scale 'v0' down to fit within 'w'
+                v1 =
+                    v0 |> Vec2.scale sf
 
-                h1 =
-                    toFloat model.layout.layout.viewBox.h
+                sf =
+                    min (Vec2.getX w / Vec2.getX v0) (Vec2.getY w / Vec2.getY v0)
 
-                rw =
-                    w0 / w1
-
-                rh =
-                    h0 / h1
-
-                -- adjust for when aspect ratio of layout's viewbox doesn't match page
-                ( w2, h2 ) =
-                    if rw < rh then
-                        ( w0, h1 * rw )
-
-                    else
-                        ( w1 * rh, h0 )
-
-                bottomLeft =
-                    vec2FromIntRecord model.layout.layout.viewBox
+                -- pagePos counts down from the top, whereas our other coordinate systems count up from the bottom
+                invertPagePos =
+                    mapY negate >> Vec2.add (vec2 0 <| Vec2.getY w)
 
                 pageToSvg =
-                    Vec2.add (Vec2.scale (1 / 2) <| vec2 (w2 - w0) (h2 - h0))
-                        >> scaleVec2
-                            { sfX = w1 / w2
-                            , sfY = -h1 / h2
-                            }
-                        >> Vec2.add bottomLeft
-                        >> Vec2.add (vec2 0 h1)
+                    invertPagePos
+                        >> Vec2.add (Vec2.scale (1 / 2) <| Vec2.sub v1 w)
+                        >> Vec2.scale (1 / sf)
+                        >> Vec2.add (vec2FromIntRecord model.layout.layout.viewBox)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
 

@@ -183,15 +183,12 @@ viewElement model element =
                 w =
                     vec2FromIntRecord model.windowSize
 
-                v0 =
+                v =
                     vec2 (toFloat model.layout.layout.viewBox.w) (toFloat model.layout.layout.viewBox.h)
 
-                -- scale 'v0' down to fit within 'w'
-                v1 =
-                    v0 |> Vec2.scale sf
-
+                -- how far we need to scale v down to fit within w
                 sf =
-                    min (Vec2.getX w / Vec2.getX v0) (Vec2.getY w / Vec2.getY v0)
+                    min (Vec2.getX w / Vec2.getX v) (Vec2.getY w / Vec2.getY v)
 
                 -- pagePos counts down from the top, whereas our other coordinate systems count up from the bottom
                 invertPagePos =
@@ -199,8 +196,8 @@ viewElement model element =
 
                 pageToSvg =
                     invertPagePos
-                        >> Vec2.add (Vec2.scale (1 / 2) <| Vec2.sub v1 w)
                         >> Vec2.scale (1 / sf)
+                        >> Vec2.add (Vec2.scale (1 / 2) <| Vec2.sub v (Vec2.scale (1 / sf) w))
                         >> Vec2.add (vec2FromIntRecord model.layout.layout.viewBox)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg

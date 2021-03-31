@@ -3,7 +3,7 @@ module Monpad.Plugins.PingIndicator (plugin) where
 import Util.Util
 
 import Data.Colour (Colour)
-import Data.Colour.RGBSpace (RGB (..), uncurryRGB)
+import Data.Colour.RGBSpace (uncurryRGB)
 import Data.Colour.SRGB (sRGB, toSRGB)
 import Data.Convertible (convert)
 import Data.Prizm.Color as Prizm
@@ -73,11 +73,3 @@ toPrizm = convert @Prizm.RGB . uncurryRGB mkRGB . fmap (round . (* 255)) . toSRG
 fromPrizm :: Double -> CIE.LCH -> Monpad.Colour
 fromPrizm alpha = (\(ColorCoord (red, green, blue)) -> Colour{..}) .
     fmap ((/ 255) . fromIntegral) . unRGB . convert @_ @Prizm.RGB
-
-convertColour :: Data.Colour.Colour Double -> Monpad.Colour
-convertColour c = let Data.Colour.RGBSpace.RGB{..} = toSRGB c in Colour
-    { red = channelRed
-    , green = channelGreen
-    , blue = channelBlue
-    , alpha = 1
-    }

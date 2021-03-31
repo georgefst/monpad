@@ -101,6 +101,7 @@ library
         Monpad.Plugins.QR
         Monpad.Plugins.WatchLayout
     other-modules:
+        Test
         Embed
         DhallHack
         Layout

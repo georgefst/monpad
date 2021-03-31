@@ -13,8 +13,6 @@ module Monpad (
     V2 (..),
     Unit (..),
     elm,
-    test,
-    testExt,
     defaultDhall,
     defaultSimple,
     module Layout
@@ -30,7 +28,6 @@ import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.IORef
 import Data.List
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
@@ -44,7 +41,6 @@ import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
-import GHC.IO.Encoding (setLocaleEncoding)
 import Generic.Data (Generically (..))
 import Generic.Functor
 import Generics.SOP qualified as SOP
@@ -64,7 +60,6 @@ import Servant.HTML.Lucid
 import Streamly
 import Streamly.Internal.Prelude qualified as SP
 import System.IO
-import Text.Pretty.Simple
 
 import DhallHack
 import Embed
@@ -415,34 +410,6 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     , Elm.encodedTypes @(V2 Int)
     , Elm.encodedTypes @Unit
     ]
-
--- 'runghc Build.hs assets' before using this
-test :: IO ()
-test = do
-    setLocaleEncoding utf8
-    layouts <- sequence $ defaultSimple :| []
-    server
-        30
-        8000
-        Nothing
-        (Just "../dist/assets")
-        layouts
-        config
-  where
-    config = mempty
-        { onStart = pPrint . ("started" :: Text,)
-        , onNewConnection = \c -> do
-            pPrint ("connected" :: Text, c)
-            pure ((), (), [])
-        , onMessage = \u -> do
-            c <- asks thd3
-            pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} (c, u)
-            mempty
-        , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c) >> mempty
-        , onPong = const $ ([] <$) . pPrint . ("pong" :: Text,)
-        }
-testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< sequence (defaultSimple :| [])
 
 {- Util -}
 

@@ -123,21 +123,23 @@ main = do
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< layoutsFromDhall dhallLayouts
           where
-            writeQR path url = withPlugin (`onStart` url) $ QR.plugin path
+            writeQR path url = withPlugin (QR.plugin path) (`onStart` url)
         Nothing -> if systemDevice
             then join (run OS.keyUnknown . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
             else run @() @() @Unit @Unit mempty mempty =<< layoutsFromDhall dhallLayouts
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
                 b -> ServerConfig e s a b -> Layouts a b -> IO ()
-            run unknown sc ls = withPlugin (server pingFrequency port loginImageUrl assetsDir ls) $ plugins
-                $ (Logger.plugin T.putStrLn quiet :|)
-                $ applyWhen displayPing (PingIndicator.plugin vb :)
-                $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
-                $ maybe id ((:) . QR.plugin) qrPath
-                $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown (((.name) &&& (.viewBox)) <$> ls) :)
-                [ Plugin sc ]
+            --TODO with `ImpredicativeTypes`, we can use 'flip withPlugin'
+            run unknown sc ls = withPlugin ps $ server pingFrequency port loginImageUrl assetsDir ls
               where
+                ps = plugins
+                    $ (Logger.plugin T.putStrLn quiet :|)
+                    $ applyWhen displayPing (PingIndicator.plugin vb :)
+                    $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
+                    $ maybe id ((:) . QR.plugin) qrPath
+                    $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown (((.name) &&& (.viewBox)) <$> ls) :)
+                    [ Plugin sc ]
                 vb = viewBox $ NE.head ls
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\

@@ -21,14 +21,13 @@ test ps = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
     withPlugin
-        ( server
+        (plugins $ Plugin config :| ps)
+        $ server
             30
             8000
             Nothing
             (Just "../dist/assets")
             layouts
-        )
-        (plugins $ Plugin config :| ps)
   where
     config =
         mempty

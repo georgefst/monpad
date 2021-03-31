@@ -118,6 +118,8 @@ library
     build-depends:
         aeson ^>= 1.5,
         bifunctors ^>= 5.5.7,
+        colour ^>= 2.3.5,
+        convertible ^>= 1.1.1,
         elm-syntax ^>= 0.3.0,
         generic-data ^>= 0.9.2,
         generic-functor ^>= 0.2,
@@ -129,6 +131,7 @@ library
         lucid ^>= 2.9.12,
         network ^>= 3.1.1.1,
         prettyprinter ^>= 1.7.0,
+        prizm ^>= 3.0.0,
         qrcode-core ^>= 0.9.4,
         qrcode-juicypixels ^>= 0.8.2,
         reducers ^>= 3.12.3,

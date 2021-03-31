@@ -2,6 +2,13 @@ module Monpad.Plugins.PingIndicator (plugin) where
 
 import Util.Util
 
+import Data.Colour (Colour)
+import Data.Colour.RGBSpace (RGB (..), uncurryRGB)
+import Data.Colour.SRGB (sRGB, toSRGB)
+import Data.Convertible (convert)
+import Data.Prizm.Color as Prizm
+import Data.Prizm.Color.CIE as CIE
+
 import Monpad
 import Monpad.Plugins
 
@@ -13,9 +20,14 @@ showPing vb =
     let onNewConnection = const $ pure (mempty, mempty, [initialUpdate])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
-                goodness = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
+                goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
+                r = sRGB 0.85 0.28 0.28
+                y = sRGB 0.94 0.95 0.33
+                g = sRGB 0.2 0.72 0.2
             in  [ SetText elementId $ showT time
-                , SetIndicatorColour elementId $ Colour (1 - goodness) goodness 0 1
+                , SetIndicatorColour elementId $ fromPrizm 1 if goodness < 0.5
+                    then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
+                    else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
                 ]
         elementId = ElementID "_internal_ping_indicator"
         (location, size) =
@@ -52,3 +64,20 @@ showPing vb =
             , onButton = mempty
             , onDroppedConnection = mempty
             }
+
+{- Util -}
+
+toPrizm :: Data.Colour.Colour Double -> CIE.LCH
+toPrizm = convert @Prizm.RGB . uncurryRGB mkRGB . fmap (round . (* 255)) . toSRGB
+
+fromPrizm :: Double -> CIE.LCH -> Monpad.Colour
+fromPrizm alpha = (\(ColorCoord (red, green, blue)) -> Colour{..}) .
+    fmap ((/ 255) . fromIntegral) . unRGB . convert @_ @Prizm.RGB
+
+convertColour :: Data.Colour.Colour Double -> Monpad.Colour
+convertColour c = let Data.Colour.RGBSpace.RGB{..} = toSRGB c in Colour
+    { red = channelRed
+    , green = channelGreen
+    , blue = channelBlue
+    , alpha = 1
+    }

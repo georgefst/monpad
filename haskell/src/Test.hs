@@ -11,21 +11,24 @@ import Text.Pretty.Simple
 
 import DhallHack
 import Monpad
+import Monpad.Plugins
 import Orphans.Elm ()
 import Orphans.Generic ()
 import Orphans.V2 ()
 
-test :: IO ()
-test = do
+test :: [Plugin () ()] -> IO ()
+test ps = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
-    server
-        30
-        8000
-        Nothing
-        (Just "../dist/assets")
-        layouts
-        config
+    withPlugin
+        ( server
+            30
+            8000
+            Nothing
+            (Just "../dist/assets")
+            layouts
+        )
+        (plugins $ Plugin config :| ps)
   where
     config =
         mempty

@@ -63,6 +63,7 @@ in    { elements =
                 }
           , location = { x = -500, y = +0 }
           , name = "Stick"
+          , image = Some {height = 500, width = 500, url = "monpad/img.png"}
           }
         ]
       , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }

@@ -37,6 +37,7 @@ import Data.Map qualified as Map
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
@@ -63,7 +64,9 @@ import Servant.API.WebSocket
 import Servant.HTML.Lucid
 import Streamly
 import Streamly.Internal.Prelude qualified as SP
+import System.Directory
 import System.IO
+import System.Random
 import Text.Pretty.Simple
 
 import DhallHack
@@ -440,7 +443,14 @@ test = do
             mempty
         , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c) >> mempty
         , onPong = const $ ([] <$) . pPrint . ("pong" :: Text,)
+        , updates = const $ serially $ flip SP.mapM (SP.fromFoldable imgs) \img -> do
+            threadDelay 1_000_000
+            copyFile ("../screenshots/" <> img <> ".png") "../dist/assets/img.png"
+            randomString <- replicateM 8 $ randomRIO ('0', '9')
+            pure $ const $ pure $ SetImageURL (ElementID "Stick") $ "monpad/img.png?" <> T.pack randomString
         }
+    imgs = cycle ["default", "numpad", "sliders"]
+
 testExt :: IO ()
 testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< sequence (defaultSimple :| [])
 

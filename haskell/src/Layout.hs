@@ -37,8 +37,8 @@ layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
 layoutFromDhall = input auto
 
 newtype LayoutID = LayoutID {unwrap :: Text}
-    deriving stock (Show)
     deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)
+    deriving Show via (ShowNewtypeWithoutRecord "LayoutID" Text)
 
 data Layout a b = Layout
     { elements :: [FullElement a b]

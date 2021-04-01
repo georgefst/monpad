@@ -157,15 +157,14 @@ view model =
     }
 
 
-viewImage : Image -> List (Collage Msgs) -> Collage Msgs
-viewImage img extra =
-    html (both toFloat ( img.width, img.height ))
-        (Html.img [ H.src img.url, H.width img.width, H.height img.height ] [])
-        |> impose (stack extra)
+viewImage : Image -> Collage Msgs
+viewImage img =
+    html (both toFloat ( img.width, img.height )) <|
+        Html.img [ H.src img.url, H.width img.width, H.height img.height ] []
 
 
-viewText : TextBox -> List (Collage Msgs) -> Collage Msgs
-viewText x extra =
+viewText : TextBox -> Collage Msgs
+viewText x =
     Text.fromString x.text
         |> Text.size x.style.size
         |> Text.color (Color.fromRgba x.style.colour)
@@ -173,7 +172,6 @@ viewText x extra =
         |> applyWhen x.style.italic (Text.shape Text.Italic)
         |> applyWhen x.style.underline (Text.line Text.Under)
         |> Collage.rendered
-        |> impose (stack extra)
 
 
 viewElement : Model -> FullElement -> Collage Msgs
@@ -205,8 +203,8 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            maybe [] (\x -> [ viewText x [] ]) element.text
-                ++ maybe [] (\x -> [ viewImage x [] ]) element.image
+            maybe [] (singleton << viewText) element.text
+                ++ maybe [] (singleton << viewImage) element.image
     in
     extra
         |> (case element.element of

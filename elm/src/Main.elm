@@ -31,7 +31,7 @@ import Collage.Text as Text
 import Color exposing (..)
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes as H exposing (style)
 import Html.Events exposing (..)
 import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as JD
@@ -159,7 +159,8 @@ view model =
 
 viewImage : Image -> List (Collage Msgs) -> Collage Msgs
 viewImage img extra =
-    image (both toFloat ( img.width, img.height )) img.url
+    html (both toFloat ( img.width, img.height ))
+        (Html.img [ H.src img.url, H.width img.width, H.height img.height ] [])
         |> impose (stack extra)
 
 

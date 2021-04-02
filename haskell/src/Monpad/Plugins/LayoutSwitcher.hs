@@ -4,7 +4,9 @@ module Monpad.Plugins.LayoutSwitcher (plugin) where
 
 import Control.Monad.State
 import Data.Composition
+import Data.Foldable
 import Data.Tuple.Extra
+import Util.Util
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty.Extra qualified as NE
@@ -19,9 +21,15 @@ plugin = Plugin .: switcher @()
 
 type LayoutData = (LayoutID, ViewBox)
 
-switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream LayoutData) a b
+switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream (LayoutData, Bool)) a b
 switcher buttonData ls =
-    let onNewConnection = const $ pure (mempty, Stream.cycle ls, pure . uncurry initialUpdate $ NE.head ls)
+    let onNewConnection = const $ pure
+            ( mempty
+            , Stream.prepend
+                (zip (toList ls) (repeat True))
+                (Stream.cycle $ NE.zip ls (NE.repeat False))
+            , pure . uncurry initialUpdate $ NE.head ls
+            )
         elementId = ElementID "_internal_switcher_button"
         initialUpdate l vb =
             let ViewBox{..} = vb
@@ -52,8 +60,10 @@ switcher buttonData ls =
             , onMessage = \case
                 ButtonUp t | t == elementId -> do
                     modify $ third3 Stream.tail
-                    (l, vb) :> _ <- gets thd3
-                    pure [SwitchLayout l, initialUpdate l vb]
+                    ((l, vb), new) :> _ <- gets thd3
+                    pure $
+                        applyWhen new (++ [initialUpdate l vb])
+                        [SwitchLayout l]
                 _ -> mempty
             , onAxis = mempty
             , onButton = mempty

@@ -174,6 +174,7 @@ viewText vb x =
             , style "align-items" "center"
             , style "justify-content" "center"
             , style "height" "100%"
+            , style "user-select" "none"
             ]
             [ div
                 [ style "font-size" <| String.fromInt x.style.size ++ "px"

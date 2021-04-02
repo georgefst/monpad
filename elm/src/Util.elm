@@ -18,6 +18,15 @@ both f ( x, y ) =
     ( f x, f y )
 
 
+bool : a -> a -> Bool -> a
+bool f t x =
+    if x then
+        t
+
+    else
+        f
+
+
 maybe : a -> (b -> a) -> Maybe b -> a
 maybe e f x =
     case x of

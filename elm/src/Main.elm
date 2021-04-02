@@ -27,7 +27,6 @@ import Collage exposing (..)
 import Collage.Events as Collage
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svgExplicit)
-import Collage.Text as Text
 import Color exposing (..)
 import Dict exposing (Dict)
 import Html exposing (..)
@@ -163,15 +162,29 @@ viewImage img =
         Html.img [ H.src img.url, H.width img.width, H.height img.height ] []
 
 
-viewText : TextBox -> Collage Msgs
-viewText x =
-    Text.fromString x.text
-        |> Text.size x.style.size
-        |> Text.color (Color.fromRgba x.style.colour)
-        |> applyWhen x.style.bold (Text.weight Text.Bold)
-        |> applyWhen x.style.italic (Text.shape Text.Italic)
-        |> applyWhen x.style.underline (Text.line Text.Under)
-        |> Collage.rendered
+{-| We use a flexbox to center the text.
+Rather than attempting to calculate the actual text size, we just set it to the maximum possible
+(which is the size of the viewbox).
+-}
+viewText : ViewBox -> TextBox -> Collage Msgs
+viewText vb x =
+    html ( toFloat vb.w, toFloat vb.w ) <|
+        div
+            [ style "display" "flex"
+            , style "align-items" "center"
+            , style "justify-content" "center"
+            , style "height" "100%"
+            ]
+            [ div
+                [ style "font-size" <| String.fromInt x.style.size ++ "px"
+                , style "font-weight" <| bool "normal" "bold" x.style.bold
+                , style "font-style" <| bool "normal" "italic" x.style.italic
+                , style "text-decoration" <| bool "none" "underline" x.style.underline
+                , style "color" <| Color.toCssString <| fromRgba x.style.colour
+                , style "font-family" "sans-serif"
+                ]
+                [ Html.text x.text ]
+            ]
 
 
 viewElement : Model -> FullElement -> Collage Msgs
@@ -203,7 +216,7 @@ viewElement model element =
 
         -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
         extra =
-            maybe [] (singleton << viewText) element.text
+            maybe [] (singleton << viewText model.layout.layout.viewBox) element.text
                 ++ maybe [] (singleton << viewImage) element.image
     in
     extra

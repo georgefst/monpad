@@ -31,9 +31,10 @@ main =
             | load = \_ _ _ -> Main.load flags
             , subscriptions =
                 \model ->
-                    -- withDefault Sub.none <| getAt 1
-                    Sub.batch
-                        [ sub 3000 30 model <|
+                    -- Sub.batch
+                    withDefault Sub.none <| getAt 0
+                        [ app.subscriptions model
+                        , sub 3000 30 model <|
                             \x ->
                                 List.map Main.ServerUpdate
                                     [ SetIndicatorArcStart "indicator" x
@@ -77,7 +78,6 @@ main =
 
                                 else
                                     []
-                        , app.subscriptions model
                         ]
         }
 

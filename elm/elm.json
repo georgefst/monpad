@@ -1,7 +1,8 @@
 {
     "type": "application",
     "source-directories": [
-        "src"
+        "src",
+        "../../elm-collage/src"
     ],
     "elm-version": "0.19.1",
     "dependencies": {
@@ -20,13 +21,12 @@
             "elm-explorations/linear-algebra": "1.0.3",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "noahzgordon/elm-color-extra": "1.0.2",
-            "timjs/elm-collage": "2.0.2"
+            "elm/svg": "1.0.1"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/regex": "1.0.0",
-            "elm/svg": "1.0.1",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "fredcy/elm-parseint": "2.0.1",

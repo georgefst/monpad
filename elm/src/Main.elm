@@ -158,7 +158,7 @@ view model =
 
 viewImage : Image -> Collage Msgs
 viewImage img =
-    html (both toFloat ( img.width, img.height )) <|
+    html (both toFloat ( img.width, img.height )) [style "pointer-events" "none"] <|
         Html.img [ H.src img.url, H.width img.width, H.height img.height ] []
 
 
@@ -168,7 +168,7 @@ Rather than attempting to calculate the actual text size, we just set it to the 
 -}
 viewText : ViewBox -> TextBox -> Collage Msgs
 viewText vb x =
-    html (both toFloat ( vb.w, vb.h )) <|
+    html (both toFloat ( vb.w, vb.h )) [style "pointer-events" "none"] <|
         div
             [ style "display" "flex"
             , style "align-items" "center"

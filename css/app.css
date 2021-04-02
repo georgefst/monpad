@@ -6,6 +6,9 @@ It would presumably be a straightforward thing to add, but that library is curre
 
 This works for now because the only `foreignObject`s we have are for images and text, which are precisely where we do
 want pointer events disabled.
+
+Another reason this is horrible is that `elm reactor` becomes basically unusable, since we need this CSS file for
+correct behaviour.
 */
 
 foreignObject {

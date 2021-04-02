@@ -214,38 +214,34 @@ viewElement model element =
                         >> Vec2.add (vec2FromIntRecord model.layout.layout.viewBox)
             in
             flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
-
-        -- stuff imposed on top of the element, which forms part of it for the sake of detecting pointer events etc.
-        extra =
-            maybe [] (singleton << viewText model.layout.layout.viewBox) element.text
-                ++ maybe [] (singleton << viewImage) element.image
     in
-    extra
-        |> (case element.element of
-                Element.Button x ->
-                    viewButton element.name x <| Set.member element.name model.layout.pressed
+    (case element.element of
+        Element.Button x ->
+            viewButton element.name x <| Set.member element.name model.layout.pressed
 
-                Element.Stick x ->
-                    viewStick element.name x toOffset <|
-                        withDefault zeroVec2 <|
-                            Dict.get element.name model.layout.stickPos
+        Element.Stick x ->
+            viewStick element.name x toOffset <|
+                withDefault zeroVec2 <|
+                    Dict.get element.name model.layout.stickPos
 
-                Element.Slider x ->
-                    viewSlider element.name x toOffset <|
-                        withDefault x.initialPosition <|
-                            Dict.get element.name model.layout.sliderPos
+        Element.Slider x ->
+            viewSlider element.name x toOffset <|
+                withDefault x.initialPosition <|
+                    Dict.get element.name model.layout.sliderPos
 
-                Element.Indicator x ->
-                    viewIndicator element.name x
+        Element.Indicator x ->
+            viewIndicator element.name x
 
-                Element.Empty ->
-                    stack
-           )
+        Element.Empty ->
+            stack []
+    )
+        |> maybe identity (impose << viewImage) element.image
+        |> maybe identity (impose << viewText model.layout.layout.viewBox) element.text
         |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 
 
-viewButton : String -> Button -> Bool -> List (Collage Msgs) -> Collage Msgs
-viewButton name button pressed extra =
+viewButton : String -> Button -> Bool -> Collage Msgs
+viewButton name button pressed =
     let
         shape =
             case button.shape of
@@ -260,15 +256,14 @@ viewButton name button pressed extra =
             ( uniform <| applyWhen pressed darkColor <| fromRgba button.colour
             , solid thick <| uniform black
             )
-        |> impose (stack extra)
         |> onPointerDown (always <| ButtonDown name)
             { onMove = always []
             , onRelease = [ Update <| ButtonUp name ]
             }
 
 
-viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> List (Collage Msgs) -> Collage Msgs
-viewStick name stick toOffset stickPos extra =
+viewStick : String -> Stick -> (Vec2 -> Vec2) -> Vec2 -> Collage Msgs
+viewStick name stick toOffset stickPos =
     let
         range =
             toFloat stick.range
@@ -292,15 +287,16 @@ viewStick name stick toOffset stickPos extra =
         small =
             circle rad |> styled1 stick.stickColour
     in
-    stack (extra ++ [ small |> shift (unVec2 <| Vec2.scale range stickPos), big ])
+    big
+        |> impose (small |> shift (unVec2 <| Vec2.scale range stickPos))
         |> onPointerDown (StickMove name << getOffset)
             { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
             , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
             }
 
 
-viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> List (Collage Msgs) -> Collage Msgs
-viewSlider name slider toOffset pos extra =
+viewSlider : String -> Slider -> (Vec2 -> Vec2) -> Float -> Collage Msgs
+viewSlider name slider toOffset pos =
     let
         width =
             toFloat slider.width
@@ -330,7 +326,8 @@ viewSlider name slider toOffset pos extra =
                 |> rotate (angleVec2 v - pi / 2)
                 |> shift (unVec2 <| Vec2.scale (1 / 2) v)
     in
-    stack (extra ++ [ stick |> shift (unVec2 <| Vec2.scale pos v), background ])
+    background
+        |> impose (stick |> shift (unVec2 <| Vec2.scale pos v))
         |> onPointerDown (SliderMove name << getOffset)
             { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
             , onRelease =
@@ -342,8 +339,8 @@ viewSlider name slider toOffset pos extra =
             }
 
 
-viewIndicator : String -> Indicator -> List (Collage Msgs) -> Collage Msgs
-viewIndicator _ ind extra =
+viewIndicator : String -> Indicator -> Collage Msgs
+viewIndicator _ ind =
     let
         a =
             ind.arcStart
@@ -422,7 +419,6 @@ viewIndicator _ ind extra =
         |> List.map (unVec2 << scale)
         |> polygon
         |> styled1 ind.colour
-        |> impose (stack extra)
 
 
 viewFullscreenButton : ViewBox -> Collage (List Msg)

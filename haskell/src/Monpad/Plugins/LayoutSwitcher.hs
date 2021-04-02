@@ -41,7 +41,7 @@ switcher buttonData ls =
                         }
                     , text = Just TextBox
                         { text = l.unwrap
-                        , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
+                        , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False "sans-serif"
                         }
                     , image = Nothing
                     }

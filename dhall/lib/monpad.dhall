@@ -8,6 +8,7 @@ let TextStyle =
       , bold : Bool
       , italic : Bool
       , underline : Bool
+      , font : Text
       }
 
 let ViewBox = { x : Integer, y : Integer, w : Integer, h : Integer }
@@ -185,7 +186,8 @@ let noTextStyle =
       , bold = False
       , italic = False
       , underline = False
-      }
+      , font = "sans-serif"
+      } : TextStyle
 
 let defaultTextStyle = noTextStyle ⫽ { colour = cols.red, italic = True }
 

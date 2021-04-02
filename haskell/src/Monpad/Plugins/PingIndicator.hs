@@ -42,7 +42,7 @@ showPing vb =
             , name = elementId
             , text = Just TextBox
                 { text = "Ping"
-                , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False
+                , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False "sans-serif"
                 }
             , image = Nothing
             , element = Indicator Indicator'

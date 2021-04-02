@@ -177,6 +177,8 @@ data TextStyle = TextStyle
     , bold :: Bool
     , italic :: Bool
     , underline :: Bool
+    , font :: Text
+    -- ^ this is used directly as the value of the HTML `font-family` attribute
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextStyle

@@ -169,6 +169,7 @@ flags =
                                 , underline = True
                                 , colour = toRgba darkGray
                                 , size = 60
+                                , font = "sans-serif"
                                 }
                             , text = "c'est un button"
                             }

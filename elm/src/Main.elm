@@ -182,7 +182,7 @@ viewText vb x =
                 , style "font-style" <| bool "normal" "italic" x.style.italic
                 , style "text-decoration" <| bool "none" "underline" x.style.underline
                 , style "color" <| Color.toCssString <| fromRgba x.style.colour
-                , style "font-family" "sans-serif"
+                , style "font-family" x.style.font
                 ]
                 [ Html.text x.text ]
             ]

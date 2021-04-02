@@ -62,6 +62,7 @@ import Servant.HTML.Lucid
 import Streamly
 import Streamly.Internal.Prelude qualified as SP
 import System.IO
+import Util.Util
 
 import DhallHack
 import Embed
@@ -70,7 +71,6 @@ import Orphans.Elm ()
 import Orphans.Generic ()
 import Orphans.V2 ()
 import Util
-import Util.Util
 import Util.Elm (Unit (Unit))
 import Util.Elm qualified as Elm
 

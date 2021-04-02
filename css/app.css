@@ -1,0 +1,13 @@
+/*
+TODO This may be our worst hack yet...
+
+The issue is that `elm-collage` doesn't let us add styles to an SVG `foreignObject` directly.
+It would presumably be a straightforward thing to add, but that library is currently unmaintained.
+
+This works for now because the only `foreignObject`s we have are for images and text, which are precisely where we do
+want pointer events disabled.
+*/
+
+foreignObject {
+    pointer-events: none;
+}

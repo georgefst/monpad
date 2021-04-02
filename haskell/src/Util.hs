@@ -64,7 +64,7 @@ lastOfGroup interval = f2 . asyncly . f1
   where
     -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
     f1 = SP.concatMapWith (<>) \x ->
-        SP.yieldM (pure Nothing) <> SP.yieldM (threadDelay interval >> pure (Just x))
+        SP.cons Nothing $ SP.yieldM (threadDelay interval >> pure (Just x))
     -- ignore any event which appears within `interval` of a 'Nothing'
     f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) -> \case
         Just x -> do

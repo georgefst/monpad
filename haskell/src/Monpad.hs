@@ -182,12 +182,8 @@ newtype Monpad e s a b x = Monpad
         , MonadReader (Map LayoutID (Layout a b), e, ClientID)
         , MonadState (Layout a b, ElementMaps a b, s)
         )
-deriving via Action (Monpad e s a b) instance {-# OVERLAPS #-} (Semigroup (Monpad e s a b ()))
-deriving via Action (Monpad e s a b) instance {-# OVERLAPS #-} (Monoid (Monpad e s a b ()))
-instance {-# OVERLAPPABLE #-} Semigroup x => (Semigroup (Monpad e s a b x)) where
-    x <> y = (<>) <$> x <*> y
-instance {-# OVERLAPPABLE #-} Monoid x => (Monoid (Monpad e s a b x)) where
-    mempty = mempty @x <$ mempty @(Monpad e s a b ())
+deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e s a b x))
+deriving via Mon (Monpad e s a b) x instance Monoid x => (Monoid (Monpad e s a b x))
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO x
 runMonpad ls c e s mon = evalStateT
     (runReaderT

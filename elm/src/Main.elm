@@ -168,7 +168,7 @@ Rather than attempting to calculate the actual text size, we just set it to the 
 -}
 viewText : ViewBox -> TextBox -> Collage Msgs
 viewText vb x =
-    html ( toFloat vb.w, toFloat vb.w ) <|
+    html (both toFloat ( vb.w, vb.w )) <|
         div
             [ style "display" "flex"
             , style "align-items" "center"

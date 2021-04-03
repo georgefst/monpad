@@ -6,7 +6,6 @@ import Data.Bool (bool)
 import Data.Either (partitionEithers)
 import Data.Foldable (for_)
 import Data.Functor ((<&>))
-import Data.List.NonEmpty qualified as NE
 import Data.Tuple.Extra (snd3)
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
@@ -21,9 +20,9 @@ import Monpad
 import Orphans.Evdev ()
 
 conf :: ServerConfig [Device] () AxisInfo Key
-conf (NE.head -> layout) = mempty
+conf layouts = mempty
     { onNewConnection = \(ClientID clientId) -> do
-        let (as, bs) = allAxesAndButs layout
+        let (as, bs) = foldMap allAxesAndButs layouts
             (aas, ras) = partitionEithers $ as <&> \case
                 AxisInfo{axis = Abs a, ..} -> Left
                     ( a

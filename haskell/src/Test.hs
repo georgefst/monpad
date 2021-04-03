@@ -21,7 +21,7 @@ test ps = do
     setLocaleEncoding utf8
     layouts <- sequence $ defaultSimple :| []
     withPlugin
-        (plugins $ Plugin config :| ps)
+        (plugins $ Plugin (const config) :| ps)
         $ server
             30
             8000

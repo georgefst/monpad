@@ -5,7 +5,8 @@ module Monpad (
     serverExtWs,
     Monpad,
     runMonpad,
-    ServerConfig (..),
+    ServerConfig,
+    ServerConfig' (..),
     combineConfs,
     ClientID (..),
     Update (..),
@@ -201,7 +202,8 @@ data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeE
 getting rid of some 'asyncly', 'serially' boilerplate
 -}
 -- | `e` is a fixed environment. 's' is an updateable state.
-data ServerConfig e s a b = ServerConfig
+type ServerConfig e s a b = Layouts a b -> ServerConfig' e s a b
+data ServerConfig' e s a b = ServerConfig
     { onStart :: Text -> IO () -- takes url
     , onNewConnection :: ClientID -> IO (e, s, [ServerUpdate a b])
     , onMessage :: Update -> Monpad e s a b [ServerUpdate a b]
@@ -214,11 +216,11 @@ data ServerConfig e s a b = ServerConfig
     , updates :: e -> Async (s -> [ServerUpdate a b])
     }
     deriving Generic
-    deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
+    deriving (Semigroup, Monoid) via Generically (ServerConfig' e s a b)
 
 -- | Run two `ServerConfig`s with different states and environments.
 combineConfs :: ServerConfig e1 s1 a b -> ServerConfig e2 s2 a b -> ServerConfig (e1, e2) (s1, s2) a b
-combineConfs sc1 sc2 = ServerConfig
+combineConfs sc1' sc2' ls = ServerConfig
     { onStart = pure (<>)
         <*> sc1.onStart
         <*> sc2.onStart
@@ -246,6 +248,8 @@ combineConfs sc1 sc2 = ServerConfig
         ((. snd) <$> sc2.updates e2)
     }
   where
+    sc1 = sc1' ls
+    sc2 = sc2' ls
     f :: Monoid x => Monpad ex sx a b x -> Monpad ey sy a b x -> Monpad (ex, ey) (sx, sy) a b x
     f x y = do
         (ml, (ex, ey), c) <- ask
@@ -277,7 +281,7 @@ addToElementMaps e = case e.element of
     Empty -> id
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server pingFrequency port loginImage assetsDir layouts conf = do
+server pingFrequency port loginImage assetsDir layouts (($ layouts) -> conf) = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf
@@ -306,7 +310,7 @@ httpServer wsPort loginImage assetsDir layouts =
             serveDirectoryWebApp
             assetsDir
 
-websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
+websocketServer :: Int -> Layouts a b -> ServerConfig' e s a b -> Server WsApi
 websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending0 (encodeUtf8 err)
       where err = "no username parameter"

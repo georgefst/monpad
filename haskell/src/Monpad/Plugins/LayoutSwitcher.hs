@@ -3,12 +3,10 @@
 module Monpad.Plugins.LayoutSwitcher (plugin) where
 
 import Control.Monad.State
-import Data.Composition
 import Data.Foldable
 import Data.Tuple.Extra
 import Util.Util
 
-import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream ((:>)))
 import Data.Stream.Infinite qualified as Stream
@@ -16,13 +14,11 @@ import Data.Stream.Infinite qualified as Stream
 import Monpad
 import Monpad.Plugins
 
-plugin :: b -> NonEmpty (LayoutID, ViewBox) -> Plugin a b
-plugin = Plugin .: switcher @()
+plugin :: b -> Plugin a b
+plugin = Plugin . switcher @()
 
-type LayoutData = (LayoutID, ViewBox)
-
-switcher :: Monoid e => b -> NonEmpty LayoutData -> ServerConfig e (Stream (LayoutData, Bool)) a b
-switcher buttonData ls =
+switcher :: Monoid e => b -> ServerConfig e (Stream ((LayoutID, ViewBox), Bool)) a b
+switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
     let onNewConnection = const $ pure
             ( mempty
             , Stream.prepend

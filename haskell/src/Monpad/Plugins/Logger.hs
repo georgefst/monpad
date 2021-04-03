@@ -14,7 +14,7 @@ plugin :: (Text -> IO ()) -> Bool -> Plugin a b
 plugin f quiet = Plugin @() @() . applyWhen (not quiet) (logUpdates f <>) $ logImportantStuff f
 
 logImportantStuff :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
-logImportantStuff f = mempty
+logImportantStuff f = const mempty
     { onStart = \url -> f $ "Monpad server started at " <> url
     , onNewConnection = \(ClientID i) -> do
         f $ "New client: " <> i
@@ -26,7 +26,7 @@ logImportantStuff f = mempty
     }
 
 logUpdates :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
-logUpdates f = mempty
+logUpdates f = const mempty
     { onMessage = \m -> do
         ClientID c <- asks thd3
         liftIO $ f $ "Message received from client: " <> c

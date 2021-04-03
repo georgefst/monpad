@@ -3,11 +3,9 @@
 
 module Main (main) where
 
-import Control.Monad.Extra
 import Data.Char
 import Data.Functor
 import Data.List
-import Data.Tuple.Extra
 import Options.Applicative
 import System.Directory
 import System.FilePath
@@ -123,9 +121,9 @@ main = do
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< layoutsFromDhall dhallLayouts
           where
-            writeQR path url = withPlugin (QR.plugin path) (`onStart` url)
+            writeQR path url = withPlugin (QR.plugin path) \sc -> onStart (sc $ error "QR plugin ignores layouts") url
         Nothing -> if systemDevice
-            then join (run OS.keyUnknown . OS.conf . NE.head) =<< layoutsFromDhall dhallLayouts
+            then run OS.keyUnknown OS.conf =<< layoutsFromDhall dhallLayouts
             else run @() @() @Unit @Unit mempty mempty =<< layoutsFromDhall dhallLayouts
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
@@ -135,12 +133,11 @@ main = do
               where
                 ps = plugins
                     $ (Logger.plugin T.putStrLn quiet :|)
-                    $ applyWhen displayPing (PingIndicator.plugin vb :)
+                    $ applyWhen displayPing (PingIndicator.plugin :)
                     $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
                     $ maybe id ((:) . QR.plugin) qrPath
-                    $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown (((.name) &&& (.viewBox)) <$> ls) :)
+                    $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown :)
                     [ Plugin sc ]
-                vb = viewBox $ NE.head ls
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 -- | Make an absolute path relative, at all costs.

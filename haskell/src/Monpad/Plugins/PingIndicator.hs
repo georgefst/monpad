@@ -6,17 +6,18 @@ import Data.Colour (Colour)
 import Data.Colour.RGBSpace (uncurryRGB)
 import Data.Colour.SRGB (sRGB, toSRGB)
 import Data.Convertible (convert)
+import Data.List.NonEmpty qualified as NE
 import Data.Prizm.Color as Prizm
 import Data.Prizm.Color.CIE as CIE
 
 import Monpad
 import Monpad.Plugins
 
-plugin :: ViewBox -> Plugin a b
-plugin vb = Plugin $ showPing @() @() vb
+plugin :: Plugin a b
+plugin = Plugin $ showPing @() @()
 
-showPing :: (Monoid e, Monoid s) => ViewBox -> ServerConfig e s a b
-showPing vb =
+showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
+showPing (NE.head -> Layout{..}) =
     let onNewConnection = const $ pure (mempty, mempty, [initialUpdate])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
@@ -31,7 +32,7 @@ showPing vb =
                 ]
         elementId = ElementID "_internal_ping_indicator"
         (location, size) =
-            let ViewBox{..} = vb
+            let ViewBox{..} = viewBox
                 s = min w h `div` 4
              in ( V2 (x + w - s `div` 2) (y + h - s `div` 2)
                 , fromIntegral s

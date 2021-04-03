@@ -62,7 +62,7 @@ rules = do
                             `catchPermissionError` \_ -> pure True
                     when noLinkPermission $ putWarn "No permission to create symbolic links - copying instead" >> copy
 
-    -- executables e.g. 'dist/monpad-ext-ws'
+    -- executables e.g. 'dist/monpad'
     (distDir </> "*") %> \f -> do
         need assets
         needDirExcept hsBuildDir hsDir

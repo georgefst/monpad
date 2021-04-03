@@ -48,7 +48,7 @@ main = do
 
 rules :: Rules ()
 rules = do
-    want [monpad]
+    want [monpad <.> exe]
 
     forM_ linkedAssets \(file, link) ->
         link %> \_ -> do
@@ -62,18 +62,23 @@ rules = do
                             `catchPermissionError` \_ -> pure True
                     when noLinkPermission $ putWarn "No permission to create symbolic links - copying instead" >> copy
 
+    let haskell exeName path flags = do
+            need assets
+            needDirExcept hsBuildDir hsDir
+            cmd_
+                (Cwd hsDir)
+                "cabal build"
+                ("exe:" <> exeName)
+                ("--flags=" <> flags)
+                ("--builddir=" <> (".." </> hsBuildDir))
+            getDirectoryFiles "" [hsBuildDir <//> exeName <.> exe] >>= \case
+                [] -> error "No matches"
+                [path'] -> copyFileChanged path' path
+                fs -> error $ "Multiple matches: " <> intercalate ", " fs
+
     -- executables e.g. 'dist/monpad'
     (distDir </> "*") %> \f -> do
-        need assets
-        needDirExcept hsBuildDir hsDir
-        cmd_
-            (Cwd hsDir)
-            ("cabal build --flags=release exe:" <> takeBaseName f)
-            ("--builddir=" <> (".." </> hsBuildDir))
-        getDirectoryFiles "" [hsBuildDir <//> takeFileName f] >>= \case
-            [] -> error "No matches"
-            [f'] -> copyFileChanged f' f
-            fs -> error $ "Multiple matches: " <> intercalate ", " fs
+        haskell (takeBaseName f) f "release"
 
     let elm opts = do
             needDirExcept elmBuildDir elmDir
@@ -95,6 +100,7 @@ rules = do
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression
 
+    "debug" ~> haskell "monpad" ("dist" </> "monpad-debug" <.> exe) "" --unoptimised, non-portable
     "elm" ~> need [elmJS]
     "elm-debug" ~> elm ""
     "dhall" ~> do
@@ -118,9 +124,8 @@ rules = do
 
 {- Constants -}
 
-monpadExe, monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
-monpadExe = "monpad" <.> exe
-monpad = distDir </> monpadExe
+monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
+monpad = distDir </> "monpad"
 shakeDir = ".shake"
 distDir = "dist"
 rscDir = hsDir </> "rsc"

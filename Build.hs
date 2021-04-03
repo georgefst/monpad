@@ -93,10 +93,10 @@ rules = do
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression
 
-    --unoptimised, and needs to be positioned relative to `rsc`
+    -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
         haskell "monpad" ("dist" </> "monpad-debug" <.> exe) ""
-        trySymlink rscDir "dist/rsc"
+        trySymlink rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]
     "elm-debug" ~> elm ""
@@ -121,11 +121,12 @@ rules = do
 
 {- Constants -}
 
-monpad, shakeDir, distDir, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
+monpad, shakeDir, distDir, rsc, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
 monpad = distDir </> "monpad"
 shakeDir = ".shake"
 distDir = "dist"
-rscDir = hsDir </> "rsc"
+rsc = "rsc"
+rscDir = hsDir </> rsc
 hsDir = "haskell"
 hsBuildDir = ".build" </> "hs"
 elmDir = "elm"

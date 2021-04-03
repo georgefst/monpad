@@ -27,8 +27,8 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.Foldable hiding (for_)
 import Data.IORef
-import Data.List
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
@@ -40,6 +40,7 @@ import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time
 import Data.Time.Clock.POSIX
+import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
 import GHC.Generics (Generic)
 import Generic.Data (Generically (..))
@@ -280,8 +281,19 @@ addToElementMaps e = case e.element of
     Indicator _ -> id
     Empty -> id
 
+uniqueNames :: Layouts a b -> Layouts a b
+uniqueNames ls = flip evalState allNames $ for ls \l ->
+    state (Map.insertLookupWithKey (\_ _ old -> old + 1) l.name err) >>= \case
+        Nothing -> err
+        Just 0 -> pure l
+        Just n -> pure l{name = LayoutID $ l.name.unwrap <> " [" <> showT n <> "]"}
+  where
+    -- the state map stores the number of occurrences of each name seen so far
+    allNames = Map.fromList $ zip ((.name) <$> toList ls) (repeat (0 :: Int))
+    err = error "broken invariant in `uniqueNames` - all names should be in map by construction"
+
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server pingFrequency port loginImage assetsDir layouts (($ layouts) -> conf) = do
+server pingFrequency port loginImage assetsDir (uniqueNames -> layouts) (($ layouts) -> conf) = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf

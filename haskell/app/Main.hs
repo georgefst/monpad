@@ -128,7 +128,7 @@ main = do
           where
             run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
                 b -> ServerConfig e s a b -> Layouts a b -> IO ()
-            --TODO with `ImpredicativeTypes`, we can use 'flip withPlugin'
+            --TODO with `ImpredicativeTypes`, we can use 'flip withPlugin' (and/or go point-free?)
             run unknown sc ls = withPlugin ps $ server pingFrequency port loginImageUrl assetsDir ls
               where
                 ps = plugins

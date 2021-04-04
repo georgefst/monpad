@@ -176,13 +176,14 @@ viewText vb x =
             , style "height" "100%"
             , style "user-select" "none"
             ]
-            [ div
+            [ pre
                 [ style "font-size" <| String.fromInt x.style.size ++ "px"
                 , style "font-weight" <| bool "normal" "bold" x.style.bold
                 , style "font-style" <| bool "normal" "italic" x.style.italic
                 , style "text-decoration" <| bool "none" "underline" x.style.underline
                 , style "color" <| Color.toCssString <| fromRgba x.style.colour
                 , style "font-family" x.style.font
+                , style "text-align" "center"
                 ]
                 [ Html.text x.text ]
             ]

@@ -211,6 +211,7 @@ in  λ(a : Type) →
     λ(b : Type) →
       { Colour
       , TextStyle
+      , TextShadow
       , noTextStyle
       , defaultTextStyle
       , V2

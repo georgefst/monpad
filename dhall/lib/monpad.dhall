@@ -2,18 +2,21 @@ let Prelude = ./Prelude.dhall
 
 let Colour = { red : Double, green : Double, blue : Double, alpha : Double }
 
+let V2 = λ(a : Type) → { x : a, y : a }
+
+let TextShadow = { offset : V2 Integer, blur : Natural, colour : Colour }
+
 let TextStyle =
       { size : Natural
       , colour : Colour
       , bold : Bool
       , italic : Bool
       , underline : Bool
+      , shadow : Optional TextShadow
       , font : Text
       }
 
 let ViewBox = { x : Integer, y : Integer, w : Integer, h : Integer }
-
-let V2 = λ(a : Type) → { x : a, y : a }
 
 let Shape = < Circle : Natural | Rectangle : V2 Natural >
 
@@ -181,13 +184,15 @@ let simpleSlider =
         : Element a b
 
 let noTextStyle =
-      { size = 30
-      , colour = cols.black
-      , bold = False
-      , italic = False
-      , underline = False
-      , font = "sans-serif"
-      } : TextStyle
+        { size = 30
+        , colour = cols.black
+        , bold = False
+        , italic = False
+        , underline = False
+        , shadow = None TextShadow
+        , font = "sans-serif"
+        }
+      : TextStyle
 
 let defaultTextStyle = noTextStyle ⫽ { colour = cols.red, italic = True }
 

@@ -39,6 +39,7 @@ import List.Extra exposing (..)
 import Loadable
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Maybe exposing (..)
+import Maybe.Extra as Maybe
 import Platform.Cmd as Cmd
 import Ports exposing (..)
 import Set exposing (Set)
@@ -177,14 +178,28 @@ viewText vb x =
             , style "user-select" "none"
             ]
             [ pre
-                [ style "font-size" <| String.fromInt x.style.size ++ "px"
-                , style "font-weight" <| bool "normal" "bold" x.style.bold
-                , style "font-style" <| bool "normal" "italic" x.style.italic
-                , style "text-decoration" <| bool "none" "underline" x.style.underline
-                , style "color" <| Color.toCssString <| fromRgba x.style.colour
-                , style "font-family" x.style.font
-                , style "text-align" "center"
-                ]
+                ([ style "font-size" <| String.fromInt x.style.size ++ "px"
+                 , style "font-weight" <| bool "normal" "bold" x.style.bold
+                 , style "font-style" <| bool "normal" "italic" x.style.italic
+                 , style "text-decoration" <| bool "none" "underline" x.style.underline
+                 , style "color" <| Color.toCssString <| fromRgba x.style.colour
+                 , style "font-family" x.style.font
+                 , style "text-align" "center"
+                 ]
+                    ++ Maybe.values
+                        [ x.style.shadow
+                            |> Maybe.map
+                                (\shadow ->
+                                    style "text-shadow" <|
+                                        String.join " "
+                                            [ String.fromInt shadow.offset.x ++ "px"
+                                            , String.fromInt -shadow.offset.y ++ "px"
+                                            , String.fromInt shadow.blur ++ "px"
+                                            , Color.toCssString <| fromRgba shadow.colour
+                                            ]
+                                )
+                        ]
+                )
                 [ Html.text x.text ]
             ]
 

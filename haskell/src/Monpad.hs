@@ -417,6 +417,7 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     , Elm.encodedTypes @(Button ())
     , Elm.encodedTypes @Image
     , Elm.encodedTypes @TextBox
+    , Elm.encodedTypes @TextShadow
     , Elm.encodedTypes @Indicator
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)

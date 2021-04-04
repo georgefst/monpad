@@ -186,19 +186,24 @@ viewText vb x =
                  , style "font-family" x.style.font
                  , style "text-align" "center"
                  ]
-                    ++ Maybe.values
-                        [ x.style.shadow
-                            |> Maybe.map
-                                (\shadow ->
-                                    style "text-shadow" <|
-                                        String.join " "
-                                            [ String.fromInt shadow.offset.x ++ "px"
-                                            , String.fromInt -shadow.offset.y ++ "px"
-                                            , String.fromInt shadow.blur ++ "px"
-                                            , Color.toCssString <| fromRgba shadow.colour
-                                            ]
-                                )
-                        ]
+                    ++ (if List.isEmpty x.style.shadow then
+                            []
+
+                        else
+                            [ style "text-shadow" <|
+                                String.join ", " <|
+                                    List.map
+                                        (\shadow ->
+                                            String.join " "
+                                                [ String.fromInt shadow.offset.x ++ "px"
+                                                , String.fromInt -shadow.offset.y ++ "px"
+                                                , String.fromInt shadow.blur ++ "px"
+                                                , Color.toCssString <| fromRgba shadow.colour
+                                                ]
+                                        )
+                                        x.style.shadow
+                            ]
+                       )
                 )
                 [ Html.text x.text ]
             ]

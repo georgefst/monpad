@@ -12,7 +12,7 @@ type alias TextStyle  =
     , bold : Bool
     , italic : Bool
     , underline : Bool
-    , shadow : Maybe Auto.TextShadow.TextShadow
+    , shadow : List Auto.TextShadow.TextShadow
     , font : String }
 
 
@@ -24,5 +24,5 @@ decode =
     Json.Decode.Pipeline.required "bold" Json.Decode.bool |>
     Json.Decode.Pipeline.required "italic" Json.Decode.bool |>
     Json.Decode.Pipeline.required "underline" Json.Decode.bool |>
-    Json.Decode.Pipeline.required "shadow" (Json.Decode.nullable Auto.TextShadow.decode) |>
+    Json.Decode.Pipeline.required "shadow" (Json.Decode.list Auto.TextShadow.decode) |>
     Json.Decode.Pipeline.required "font" Json.Decode.string

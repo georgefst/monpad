@@ -177,7 +177,7 @@ data TextStyle = TextStyle
     , bold :: Bool
     , italic :: Bool
     , underline :: Bool
-    , shadow :: Maybe TextShadow
+    , shadow :: [TextShadow]
     , font :: Text
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }

@@ -12,7 +12,7 @@ let TextStyle =
       , bold : Bool
       , italic : Bool
       , underline : Bool
-      , shadow : Optional TextShadow
+      , shadow : List TextShadow
       , font : Text
       }
 
@@ -189,7 +189,7 @@ let noTextStyle =
         , bold = False
         , italic = False
         , underline = False
-        , shadow = None TextShadow
+        , shadow = [] : List TextShadow
         , font = "sans-serif"
         }
       : TextStyle

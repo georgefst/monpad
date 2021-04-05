@@ -28,6 +28,7 @@ type ServerUpdate
     | SetIndicatorCentre String Math.Vector2.Vec2
     | SetIndicatorColour String Auto.Colour.Colour
     | SetSliderPosition String Float
+    | SetButtonColour String Auto.Colour.Colour
     | ResetLayout Auto.ResetLayout.ResetLayout
 
 
@@ -74,5 +75,8 @@ decode =
     , Json.Decode.field "setSliderPosition" (Json.Decode.succeed SetSliderPosition |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
+    , Json.Decode.field "setButtonColour" (Json.Decode.succeed SetButtonColour |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
     , Json.Decode.succeed ResetLayout |>
     Json.Decode.Pipeline.required "resetLayout" Auto.ResetLayout.decode ]

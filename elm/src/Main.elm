@@ -666,6 +666,25 @@ serverUpdate u model =
                                     fe
                             )
             }
+
+        updateButton name f =
+            { layout
+                | elements =
+                    layout.elements
+                        |> List.map
+                            (\fe ->
+                                if fe.name == name then
+                                    case fe.element of
+                                        Element.Button x ->
+                                            { fe | element = Element.Button <| f x }
+
+                                        _ ->
+                                            fe
+
+                                else
+                                    fe
+                            )
+            }
     in
     case u of
         SetImageURL id url ->
@@ -798,6 +817,11 @@ serverUpdate u model =
 
         SetSliderPosition name x ->
             ( { model | layout = { layoutState | sliderPos = Dict.insert name x layoutState.sliderPos } }
+            , Cmd.none
+            )
+
+        SetButtonColour name x ->
+            ( { model | layout = { layoutState | layout = updateButton name (\e -> { e | colour = x }) } }
             , Cmd.none
             )
 

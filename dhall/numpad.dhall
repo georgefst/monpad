@@ -19,6 +19,7 @@ let button =
         , name
         , text = Some { style = monpad.defaultTextStyle, text = name }
         , image = None monpad.Image
+        , hidden = False
         }
 
 in    { elements =

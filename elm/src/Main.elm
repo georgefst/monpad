@@ -211,54 +211,58 @@ viewText vb x =
 
 viewElement : Model -> FullElement -> Collage Msgs
 viewElement model element =
-    let
-        toOffset =
-            let
-                w =
-                    vec2FromIntRecord model.windowSize
+    if element.hidden then
+        stack []
 
-                v =
-                    vec2 (toFloat model.layout.layout.viewBox.w) (toFloat model.layout.layout.viewBox.h)
+    else
+        let
+            toOffset =
+                let
+                    w =
+                        vec2FromIntRecord model.windowSize
 
-                -- how far we need to scale v down to fit within w
-                sf =
-                    min (Vec2.getX w / Vec2.getX v) (Vec2.getY w / Vec2.getY v)
+                    v =
+                        vec2 (toFloat model.layout.layout.viewBox.w) (toFloat model.layout.layout.viewBox.h)
 
-                -- pagePos counts down from the top, whereas our other coordinate systems count up from the bottom
-                invertPagePos =
-                    mapY negate >> Vec2.add (vec2 0 <| Vec2.getY w)
+                    -- how far we need to scale v down to fit within w
+                    sf =
+                        min (Vec2.getX w / Vec2.getX v) (Vec2.getY w / Vec2.getY v)
 
-                pageToSvg =
-                    invertPagePos
-                        >> Vec2.scale (1 / sf)
-                        >> Vec2.add (Vec2.scale (1 / 2) <| Vec2.sub v (Vec2.scale (1 / sf) w))
-                        >> Vec2.add (vec2FromIntRecord model.layout.layout.viewBox)
-            in
-            flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
-    in
-    (case element.element of
-        Element.Button x ->
-            viewButton element.name x <| Set.member element.name model.layout.pressed
+                    -- pagePos counts down from the top, whereas our other coordinate systems count up from the bottom
+                    invertPagePos =
+                        mapY negate >> Vec2.add (vec2 0 <| Vec2.getY w)
 
-        Element.Stick x ->
-            viewStick element.name x toOffset <|
-                withDefault zeroVec2 <|
-                    Dict.get element.name model.layout.stickPos
+                    pageToSvg =
+                        invertPagePos
+                            >> Vec2.scale (1 / sf)
+                            >> Vec2.add (Vec2.scale (1 / 2) <| Vec2.sub v (Vec2.scale (1 / sf) w))
+                            >> Vec2.add (vec2FromIntRecord model.layout.layout.viewBox)
+                in
+                flip Vec2.sub (vec2FromIntRecord element.location) << pageToSvg
+        in
+        (case element.element of
+            Element.Button x ->
+                viewButton element.name x <| Set.member element.name model.layout.pressed
 
-        Element.Slider x ->
-            viewSlider element.name x toOffset <|
-                withDefault x.initialPosition <|
-                    Dict.get element.name model.layout.sliderPos
+            Element.Stick x ->
+                viewStick element.name x toOffset <|
+                    withDefault zeroVec2 <|
+                        Dict.get element.name model.layout.stickPos
 
-        Element.Indicator x ->
-            viewIndicator element.name x
+            Element.Slider x ->
+                viewSlider element.name x toOffset <|
+                    withDefault x.initialPosition <|
+                        Dict.get element.name model.layout.sliderPos
 
-        Element.Empty ->
-            stack []
-    )
-        |> maybe identity (impose << viewImage) element.image
-        |> maybe identity (impose << viewText model.layout.layout.viewBox) element.text
-        |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
+            Element.Indicator x ->
+                viewIndicator element.name x
+
+            Element.Empty ->
+                stack []
+        )
+            |> maybe identity (impose << viewImage) element.image
+            |> maybe identity (impose << viewText model.layout.layout.viewBox) element.text
+            |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 
 
 viewButton : String -> Button -> Bool -> Collage Msgs

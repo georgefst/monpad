@@ -28,6 +28,7 @@ let tile =
         , name
         , text = Some { text = name, style = monpad.defaultTextStyle }
         , image = None monpad.Image
+        , hidden = False
         }
 
 let colour =

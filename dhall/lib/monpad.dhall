@@ -75,6 +75,7 @@ let FullElement =
         , name : Text
         , text : Optional TextBox
         , image : Optional Image
+        , hidden : Bool
         }
 
 let Layout =
@@ -204,6 +205,7 @@ let Elem =
           { element = (Element a b).Empty
           , text = None TextBox
           , image = None Image
+          , hidden = False
           }
         }
 

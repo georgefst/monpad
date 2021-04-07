@@ -57,6 +57,7 @@ data FullElement a b = FullElement
     , name :: ElementID
     , text :: Maybe TextBox
     , image :: Maybe Image
+    , hidden :: Bool
     }
     deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement Unit Unit

@@ -48,6 +48,7 @@ switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
                         , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
                         }
                     , image = Nothing
+                    , hidden = False
                     }
      in ServerConfig
             { onNewConnection

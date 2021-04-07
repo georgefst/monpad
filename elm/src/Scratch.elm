@@ -104,6 +104,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "indicator"
+                  , hidden = False
                   , element =
                         Indicator
                             { hollowness = 0.5
@@ -118,6 +119,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "powerbar"
+                  , hidden = False
                   , element =
                         Indicator
                             { hollowness = 0
@@ -132,6 +134,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "stick"
+                  , hidden = False
                   , element =
                         Stick
                             { radius = 80
@@ -146,6 +149,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "slider"
+                  , hidden = False
                   , element =
                         Slider
                             { radius = 40
@@ -161,6 +165,7 @@ flags =
                 , { location = { x = 0, y = 350 }
                   , image = Nothing
                   , name = "button"
+                  , hidden = False
                   , text =
                         Just
                             { style =
@@ -188,6 +193,7 @@ flags =
                   }
                 , { location = { x = -500, y = 0 }
                   , name = "image"
+                  , hidden = False
                   , element = Empty
                   , image =
                         Just
@@ -207,6 +213,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "0"
+                  , hidden = False
                   , element =
                         Slider
                             { radius = 200

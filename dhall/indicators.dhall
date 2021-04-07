@@ -19,6 +19,7 @@ in    { elements =
                 ∧ { image = None monpad.Image
                   , text = Some
                     { text = e.name, style = monpad.defaultTextStyle }
+                  , hidden = False
                   }
             )
             [ { element =

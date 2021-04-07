@@ -54,6 +54,7 @@ showPing (NE.head -> Layout{..}) =
                 , colour = Colour 1 1 1 1 -- white
                 , shape = square
                 }
+            , hidden = False
             }
      in ServerConfig
             { onNewConnection

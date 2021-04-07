@@ -652,47 +652,8 @@ serverUpdate u model =
         layout =
             layoutState.layout
 
-        updateIndicator name f =
-            { layout
-                | elements =
-                    layout.elements
-                        |> List.map
-                            (\fe ->
-                                if fe.name == name then
-                                    case fe.element of
-                                        Element.Indicator ind ->
-                                            { fe | element = Element.Indicator <| f ind }
-
-                                        _ ->
-                                            fe
-
-                                else
-                                    fe
-                            )
-            }
-
-        updateButton name f =
-            { layout
-                | elements =
-                    layout.elements
-                        |> List.map
-                            (\fe ->
-                                if fe.name == name then
-                                    case fe.element of
-                                        Element.Button x ->
-                                            { fe | element = Element.Button <| f x }
-
-                                        _ ->
-                                            fe
-
-                                else
-                                    fe
-                            )
-            }
-    in
-    case u of
-        SetImageURL id url ->
-            ( { model
+        updateElementFull name f =
+            { model
                 | layout =
                     { layoutState
                         | layout =
@@ -701,37 +662,51 @@ serverUpdate u model =
                                     layout.elements
                                         |> List.map
                                             (\e ->
-                                                if e.name == id then
-                                                    { e | image = e.image |> Maybe.map (\x -> { x | url = url }) }
+                                                if e.name == name then
+                                                    f e
 
                                                 else
                                                     e
                                             )
                             }
                     }
-              }
+            }
+
+        updateElement name f =
+            updateElementFull name <| \fe -> { fe | element = f fe.element }
+
+        updateIndicator name f =
+            updateElement name <|
+                \e ->
+                    case e of
+                        Element.Indicator ind ->
+                            Element.Indicator <| f ind
+
+                        _ ->
+                            e
+
+        updateButton name f =
+            updateElement name <|
+                \e ->
+                    case e of
+                        Element.Button x ->
+                            Element.Button <| f x
+
+                        _ ->
+                            e
+    in
+    case u of
+        SetImageURL name url ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | image = e.image |> Maybe.map (\x -> { x | url = url }) }
             , Cmd.none
             )
 
-        SetText id text ->
-            ( { model
-                | layout =
-                    { layoutState
-                        | layout =
-                            { layout
-                                | elements =
-                                    layout.elements
-                                        |> List.map
-                                            (\e ->
-                                                if e.name == id then
-                                                    { e | text = e.text |> Maybe.map (\x -> { x | text = text }) }
-
-                                                else
-                                                    e
-                                            )
-                            }
-                    }
-              }
+        SetText name text ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | text = e.text |> Maybe.map (\x -> { x | text = text }) }
             , Cmd.none
             )
 
@@ -790,32 +765,32 @@ serverUpdate u model =
             )
 
         SetIndicatorHollowness name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | hollowness = x }) } }
+            ( updateIndicator name <| \e -> { e | hollowness = x }
             , Cmd.none
             )
 
         SetIndicatorArcStart name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | arcStart = x }) } }
+            ( updateIndicator name <| \e -> { e | arcStart = x }
             , Cmd.none
             )
 
         SetIndicatorArcEnd name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | arcEnd = x }) } }
+            ( updateIndicator name <| \e -> { e | arcEnd = x }
             , Cmd.none
             )
 
         SetIndicatorShape name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | shape = x }) } }
+            ( updateIndicator name <| \e -> { e | shape = x }
             , Cmd.none
             )
 
         SetIndicatorCentre name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | centre = x }) } }
+            ( updateIndicator name <| \e -> { e | centre = x }
             , Cmd.none
             )
 
         SetIndicatorColour name x ->
-            ( { model | layout = { layoutState | layout = updateIndicator name (\e -> { e | colour = x }) } }
+            ( updateIndicator name <| \e -> { e | colour = x }
             , Cmd.none
             )
 
@@ -825,7 +800,7 @@ serverUpdate u model =
             )
 
         SetButtonColour name x ->
-            ( { model | layout = { layoutState | layout = updateButton name (\e -> { e | colour = x }) } }
+            ( updateButton name <| \e -> { e | colour = x }
             , Cmd.none
             )
 

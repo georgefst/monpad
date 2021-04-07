@@ -18,6 +18,8 @@ type ServerUpdate
     | SetText String String
     | SetLayout Auto.Layout.Layout
     | SwitchLayout String
+    | HideElement String
+    | ShowElement String
     | AddElement Auto.FullElement.FullElement
     | RemoveElement String
     | SetBackgroundColour Auto.Colour.Colour
@@ -48,6 +50,10 @@ decode =
     Json.Decode.Pipeline.required "setLayout" Auto.Layout.decode
     , Json.Decode.succeed SwitchLayout |>
     Json.Decode.Pipeline.required "switchLayout" Json.Decode.string
+    , Json.Decode.succeed HideElement |>
+    Json.Decode.Pipeline.required "hideElement" Json.Decode.string
+    , Json.Decode.succeed ShowElement |>
+    Json.Decode.Pipeline.required "showElement" Json.Decode.string
     , Json.Decode.succeed AddElement |>
     Json.Decode.Pipeline.required "addElement" Auto.FullElement.decode
     , Json.Decode.succeed RemoveElement |>

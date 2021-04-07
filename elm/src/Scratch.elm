@@ -78,6 +78,13 @@ main =
 
                                 else
                                     []
+                        , sub 1000 500 model <|
+                            \x ->
+                                if x < 0.5 then
+                                    [ Main.ServerUpdate <| ShowElement "slider" ]
+
+                                else
+                                    [ Main.ServerUpdate <| HideElement "slider" ]
                         ]
         }
 
@@ -149,7 +156,7 @@ flags =
                   , image = Nothing
                   , text = Nothing
                   , name = "slider"
-                  , hidden = False
+                  , hidden = True
                   , element =
                         Slider
                             { radius = 40

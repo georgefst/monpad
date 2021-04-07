@@ -95,6 +95,9 @@ data ServerUpdate a b
     | SetText ElementID Text
     | SetLayout (Layout a b)
     | SwitchLayout LayoutID
+    | HideElement ElementID
+    | ShowElement ElementID
+    -- ^ i.e. 'unhide'
     | AddElement (FullElement a b)
     | RemoveElement ElementID
     | SetBackgroundColour Colour
@@ -364,6 +367,8 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     SetSliderPosition{} -> mempty
                     SetButtonColour{} -> mempty
                     ResetLayout{} -> mempty
+                    HideElement{} -> mempty
+                    ShowElement{} -> mempty
                 pure update
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case

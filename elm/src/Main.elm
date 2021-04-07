@@ -735,6 +735,16 @@ serverUpdate u model =
                 Nothing ->
                     ( model, performCmd [ ConsoleLog <| "Unknown layout: " ++ id ] )
 
+        HideElement name ->
+            ( updateElementFull name <| \e -> { e | hidden = True }
+            , Cmd.none
+            )
+
+        ShowElement name ->
+            ( updateElementFull name <| \e -> { e | hidden = False }
+            , Cmd.none
+            )
+
         AddElement e ->
             ( { model | layout = { layoutState | layout = { layout | elements = e :: layout.elements } } }
             , Cmd.none

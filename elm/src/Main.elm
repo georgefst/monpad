@@ -814,6 +814,21 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        SetButtonPressed name x ->
+            ( { model
+                | layout =
+                    { layoutState
+                        | pressed =
+                            if x then
+                                Set.insert name layoutState.pressed
+
+                            else
+                                Set.remove name layoutState.pressed
+                    }
+              }
+            , Cmd.none
+            )
+
         ResetLayout x ->
             case x of
                 StateReset ->

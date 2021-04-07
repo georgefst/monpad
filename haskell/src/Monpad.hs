@@ -109,6 +109,7 @@ data ServerUpdate a b
     | SetIndicatorColour ElementID Colour
     | SetSliderPosition ElementID Double
     | SetButtonColour ElementID Colour
+    | SetButtonPressed ElementID Bool
     | ResetLayout ResetLayout
     deriving (Show, Generic, SOP.Generic, SOP.HasDatatypeInfo, Functor)
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via2 ServerUpdate Unit Unit
@@ -366,6 +367,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     SetIndicatorColour{} -> mempty
                     SetSliderPosition{} -> mempty
                     SetButtonColour{} -> mempty
+                    SetButtonPressed{} -> mempty
                     ResetLayout{} -> mempty
                     HideElement{} -> mempty
                     ShowElement{} -> mempty

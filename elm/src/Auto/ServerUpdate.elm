@@ -31,6 +31,7 @@ type ServerUpdate
     | SetIndicatorColour String Auto.Colour.Colour
     | SetSliderPosition String Float
     | SetButtonColour String Auto.Colour.Colour
+    | SetButtonPressed String Bool
     | ResetLayout Auto.ResetLayout.ResetLayout
 
 
@@ -84,5 +85,8 @@ decode =
     , Json.Decode.field "setButtonColour" (Json.Decode.succeed SetButtonColour |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
+    , Json.Decode.field "setButtonPressed" (Json.Decode.succeed SetButtonPressed |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
     , Json.Decode.succeed ResetLayout |>
     Json.Decode.Pipeline.required "resetLayout" Auto.ResetLayout.decode ]

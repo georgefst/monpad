@@ -170,11 +170,11 @@ flags =
                                 , colour = toRgba darkGray
                                 , size = 60
                                 , shadow =
-                                    Just
-                                        { offset = { x = 2, y = -1 }
-                                        , blur = 2
-                                        , colour = toRgba black
-                                        }
+                                    [ { offset = { x = 2, y = -1 }
+                                      , blur = 2
+                                      , colour = toRgba black
+                                      }
+                                    ]
                                 , font = "sans-serif"
                                 }
                             , text = "c'est un button"

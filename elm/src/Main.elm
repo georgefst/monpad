@@ -703,10 +703,38 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        AddImage name x ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | image = Just x }
+            , Cmd.none
+            )
+
+        DeleteImage name ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | image = Nothing }
+            , Cmd.none
+            )
+
         SetText name text ->
             ( updateElementFull name <|
                 \e ->
                     { e | text = e.text |> Maybe.map (\x -> { x | text = text }) }
+            , Cmd.none
+            )
+
+        AddText name x ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | text = Just x }
+            , Cmd.none
+            )
+
+        DeleteText name ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | text = Nothing }
             , Cmd.none
             )
 

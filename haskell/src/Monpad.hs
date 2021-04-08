@@ -88,11 +88,15 @@ data Update
     deriving (FromJSON, HasElmType, HasElmEncoder J.Value) via Elm.Via Update
 
 data ServerUpdate a b
-    = SetImageURL ElementID Text
-    | PlayAudioURL Text
+    = PlayAudioURL Text
     | Vibrate [Int]
     -- ^ millisecond intervals: https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API#vibration_patterns
+    | SetImageURL ElementID Text
+    | AddImage ElementID Image
+    | DeleteImage ElementID
     | SetText ElementID Text
+    | AddText ElementID TextBox
+    | DeleteText ElementID
     | SetLayout (Layout a b)
     | SwitchLayout LayoutID
     | HideElement ElementID
@@ -356,9 +360,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             . over #buttonMap (Map.delete el)
                     SetBackgroundColour{} -> mempty
                     SetImageURL{} -> mempty
+                    AddImage{} -> mempty
+                    DeleteImage{} -> mempty
+                    SetText{} -> mempty
+                    AddText{} -> mempty
+                    DeleteText{} -> mempty
                     PlayAudioURL{} -> mempty
                     Vibrate{} -> mempty
-                    SetText{} -> mempty
                     SetIndicatorHollowness{} -> mempty
                     SetIndicatorArcStart{} -> mempty
                     SetIndicatorArcEnd{} -> mempty

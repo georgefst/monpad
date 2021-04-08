@@ -131,10 +131,11 @@ view model =
                 ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
         [ div
-            [ style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour ]
+            [ style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour
+            , style "touch-action" "none"
+            ]
             [ svgExplicit
                 [ viewBox x -(h + y) w h
-                , style "touch-action" "none"
                 , Pointer.onMove <|
                     \event ->
                         Dict.get event.pointerId model.layout.pointerCallbacks

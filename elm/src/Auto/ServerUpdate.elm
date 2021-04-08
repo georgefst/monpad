@@ -2,9 +2,11 @@ module Auto.ServerUpdate exposing (..)
 
 import Auto.Colour
 import Auto.FullElement
+import Auto.Image
 import Auto.Layout
 import Auto.ResetLayout
 import Auto.Shape
+import Auto.TextBox
 import Json.Decode
 import Json.Decode.Pipeline
 import Math.Vector2
@@ -12,10 +14,14 @@ import Util
 
 
 type ServerUpdate 
-    = SetImageURL String String
-    | PlayAudioURL String
+    = PlayAudioURL String
     | Vibrate (List Int)
+    | SetImageURL String String
+    | AddImage String Auto.Image.Image
+    | DeleteImage String
     | SetText String String
+    | AddText String Auto.TextBox.TextBox
+    | DeleteText String
     | SetLayout Auto.Layout.Layout
     | SwitchLayout String
     | HideElement String
@@ -37,16 +43,26 @@ type ServerUpdate
 
 decode : Json.Decode.Decoder ServerUpdate
 decode =
-    Json.Decode.oneOf [ Json.Decode.field "setImageURL" (Json.Decode.succeed SetImageURL |>
-    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
-    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
-    , Json.Decode.succeed PlayAudioURL |>
+    Json.Decode.oneOf [ Json.Decode.succeed PlayAudioURL |>
     Json.Decode.Pipeline.required "playAudioURL" Json.Decode.string
     , Json.Decode.succeed Vibrate |>
     Json.Decode.Pipeline.required "vibrate" (Json.Decode.list Json.Decode.int)
+    , Json.Decode.field "setImageURL" (Json.Decode.succeed SetImageURL |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
+    , Json.Decode.field "addImage" (Json.Decode.succeed AddImage |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Image.decode))
+    , Json.Decode.succeed DeleteImage |>
+    Json.Decode.Pipeline.required "deleteImage" Json.Decode.string
     , Json.Decode.field "setText" (Json.Decode.succeed SetText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
+    , Json.Decode.field "addText" (Json.Decode.succeed AddText |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextBox.decode))
+    , Json.Decode.succeed DeleteText |>
+    Json.Decode.Pipeline.required "deleteText" Json.Decode.string
     , Json.Decode.succeed SetLayout |>
     Json.Decode.Pipeline.required "setLayout" Auto.Layout.decode
     , Json.Decode.succeed SwitchLayout |>

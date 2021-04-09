@@ -34,7 +34,7 @@ showPing (NE.head -> Layout{..}) =
         (location, size) =
             let ViewBox{..} = viewBox
                 s = min w h `div` 4
-             in ( V2 (x + w - s `div` 2) (y + h - s `div` 2)
+             in ( V2 (x + fromIntegral (w - s) `div` 2) (y + fromIntegral (h - s) `div` 2)
                 , fromIntegral s
                 )
         square = Rectangle $ V2 size size

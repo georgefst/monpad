@@ -66,7 +66,7 @@ let layoutAll =
             , name = "Stick"
             }
           ]
-        , viewBox = { x = -500, y = +0, w = +1000, h = +2000 }
+        , viewBox = { x = -500, y = +0, w = 1000, h = 2000 }
         , backgroundColour = monpad.cols.pastelBlue
         , name = "mouse"
         }

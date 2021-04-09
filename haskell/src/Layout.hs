@@ -166,8 +166,8 @@ data Colour = Colour
 data ViewBox = ViewBox
     { x :: Int
     , y :: Int
-    , w :: Int
-    , h :: Int
+    , w :: Word
+    , h :: Word
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via ViewBox

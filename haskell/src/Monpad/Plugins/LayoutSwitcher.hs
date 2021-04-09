@@ -31,7 +31,7 @@ switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
             let ViewBox{..} = vb
                 s = min w h `div` 4
                 (location, size) =
-                    ( V2 (x + s `div` 2) (y + s `div` 2)
+                    ( V2 (x + fromIntegral s `div` 2) (y + fromIntegral s `div` 2)
                     , fromIntegral s
                     )
                 square = Rectangle $ V2 size size

@@ -54,12 +54,7 @@ in    { elements =
           Prelude.List.concat
             monpad.FullElement
             (Prelude.List.generate grid.y (List monpad.FullElement) row)
-      , viewBox =
-        { x = +0
-        , y = +0
-        , w = Natural/toInteger (grid.x * rect.x)
-        , h = Natural/toInteger (grid.y * rect.y)
-        }
+      , viewBox = { x = +0, y = +0, w = grid.x * rect.x, h = grid.y * rect.y }
       , backgroundColour = monpad.cols.pastelBlue
       , name = "grid"
       }

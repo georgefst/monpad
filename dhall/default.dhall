@@ -65,7 +65,7 @@ in    { elements =
           , name = "Stick"
           }
         ]
-      , viewBox = { x = -1000, y = -500, w = +2000, h = +1000 }
+      , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
       , backgroundColour = monpad.cols.pastelBlue
       , name = "gamepad"
       }

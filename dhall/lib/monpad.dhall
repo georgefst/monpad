@@ -16,7 +16,7 @@ let TextStyle =
       , font : Text
       }
 
-let ViewBox = { x : Integer, y : Integer, w : Integer, h : Integer }
+let ViewBox = { x : Integer, y : Integer, w : Natural, h : Natural }
 
 let Shape = < Circle : Natural | Rectangle : V2 Natural >
 

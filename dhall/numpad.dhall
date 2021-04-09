@@ -34,7 +34,7 @@ in    { elements =
         , button +300 +700 ButtonL.Key8 "8"
         , button +500 +700 ButtonL.Key9 "9"
         ]
-      , viewBox = { x = +0, y = +0, w = +600, h = +800 }
+      , viewBox = { x = +0, y = +0, w = 600, h = 800 }
       , backgroundColour = monpad.cols.pastelBlue
       , name = "numpad"
       }

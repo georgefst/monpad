@@ -136,11 +136,7 @@ view model =
                     \event ->
                         Dict.get event.pointerId model.layout.pointerCallbacks
                             |> maybe [ unknownIdMsg event ] (\c -> c.onMove event)
-                , Pointer.onLeave <|
-                    \event ->
-                        Dict.get event.pointerId model.layout.pointerCallbacks
-                            |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
-                            |> (\msgs -> PointerUp event.pointerId :: msgs)
+                , Pointer.onLeave (singleton << PointerUp)
                 , style "width" (String.fromInt model.windowSize.x ++ "px")
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]
@@ -524,7 +520,7 @@ type Msg
     = Update Update
     | ServerUpdate ServerUpdate
     | PointerDown Int PointerCallbacks
-    | PointerUp Int
+    | PointerUp Pointer.Event
     | Resized IntVec2
     | GoFullscreen
     | FullscreenChange Bool
@@ -622,9 +618,11 @@ update msg model =
             , Cmd.none
             )
 
-        PointerUp pid ->
-            ( { model | layout = { layoutState | pointerCallbacks = Dict.remove pid layoutState.pointerCallbacks } }
-            , Cmd.none
+        PointerUp event ->
+            ( { model | layout = { layoutState | pointerCallbacks = Dict.remove event.pointerId layoutState.pointerCallbacks } }
+            , Dict.get event.pointerId model.layout.pointerCallbacks
+                |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
+                |> performCmd
             )
 
         Resized v ->

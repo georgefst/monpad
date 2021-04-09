@@ -126,9 +126,6 @@ view model =
         let
             { x, y, w, h } =
                 model.layout.layout.viewBox
-
-            unknownIdMsg event =
-                ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId
         in
         [ div
             [ style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour
@@ -909,3 +906,8 @@ onPointerDown f y =
                     ]
                 )
         )
+
+
+unknownIdMsg : Pointer.Event -> Msg
+unknownIdMsg event =
+    ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId

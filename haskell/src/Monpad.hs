@@ -15,7 +15,6 @@ module Monpad (
     Unit (..),
     elm,
     defaultDhall,
-    defaultSimple,
     module Layout
 ) where
 
@@ -64,7 +63,6 @@ import Streamly.Internal.Prelude qualified as SP
 import System.IO
 import Util.Util
 
-import DhallHack
 import Embed
 import Layout
 import Orphans.Elm ()

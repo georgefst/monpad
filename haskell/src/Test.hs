@@ -9,17 +9,19 @@ import GHC.IO.Encoding (setLocaleEncoding)
 import System.IO
 import Text.Pretty.Simple
 
-import DhallHack
 import Monpad
 import Monpad.Plugins
 import Orphans.Elm ()
 import Orphans.Generic ()
 import Orphans.V2 ()
 
+getLayouts :: IO (NonEmpty (Layout () ()))
+getLayouts = layoutsFromDhall $ "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall" :| []
+
 test :: [Plugin () ()] -> IO ()
 test ps = do
     setLocaleEncoding utf8
-    layouts <- sequence $ defaultSimple :| []
+    layouts <- getLayouts
     withPlugin
         (plugins $ Plugin (const config) :| ps)
         $ server
@@ -44,4 +46,4 @@ test ps = do
             }
 
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< sequence (defaultSimple :| [])
+testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< getLayouts

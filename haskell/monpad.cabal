@@ -103,7 +103,6 @@ library
     other-modules:
         Test
         Embed
-        DhallHack
         Layout
         Orphans.Elm
         Orphans.Generic

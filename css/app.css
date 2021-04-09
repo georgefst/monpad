@@ -14,3 +14,7 @@ correct behaviour.
 foreignObject {
     pointer-events: none;
 }
+
+body {
+    touch-action: none
+}

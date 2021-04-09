@@ -15,8 +15,11 @@ import Orphans.Elm ()
 import Orphans.Generic ()
 import Orphans.V2 ()
 
+defaultSimple :: Text
+defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"
+
 getLayouts :: IO (NonEmpty (Layout () ()))
-getLayouts = layoutsFromDhall $ "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall" :| []
+getLayouts = layoutsFromDhall $ defaultSimple :| []
 
 test :: [Plugin () ()] -> IO ()
 test ps = do

@@ -65,6 +65,7 @@ showPing (NE.head -> Layout{..}) =
             , onAxis = mempty
             , onButton = mempty
             , onDroppedConnection = mempty
+            , onUpdate = mempty
             }
 
 {- Util -}

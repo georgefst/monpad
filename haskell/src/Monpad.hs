@@ -218,6 +218,8 @@ data ServerConfig' e s a b = ServerConfig
     , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: e -> Async (s -> [ServerUpdate a b])
+    , onUpdate :: ServerUpdate a b -> Monpad e s a b [ServerUpdate a b]
+    -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
     deriving Generic
     deriving (Semigroup, Monoid) via Generically (ServerConfig' e s a b)
@@ -250,6 +252,9 @@ combineConfs sc1' sc2' ls = ServerConfig
         ((. fst) <$> sc1.updates e1)
             <>
         ((. snd) <$> sc2.updates e2)
+    , onUpdate = pure f
+        <*> sc1.onUpdate
+        <*> sc2.onUpdate
     }
   where
     sc1 = sc1' ls
@@ -377,6 +382,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     ResetLayout{} -> mempty
                     HideElement{} -> mempty
                     ShowElement{} -> mempty
+                handleUpdates =<< onUpdate update
                 pure update
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case

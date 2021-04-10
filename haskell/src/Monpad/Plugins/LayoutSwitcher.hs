@@ -66,4 +66,5 @@ switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
             , onButton = mempty
             , onDroppedConnection = mempty
             , onPong = mempty
+            , onUpdate = mempty
             }

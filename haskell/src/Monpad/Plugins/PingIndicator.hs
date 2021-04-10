@@ -17,8 +17,8 @@ plugin :: Plugin a b
 plugin = Plugin $ showPing @() @()
 
 showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
-showPing (NE.head -> Layout{..}) =
-    let onNewConnection = const $ pure (mempty, mempty, [initialUpdate])
+showPing layouts =
+    let onNewConnection = const $ pure (mempty, mempty, [initialUpdate $ NE.head layouts])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
@@ -31,41 +31,43 @@ showPing (NE.head -> Layout{..}) =
                     else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
                 ]
         elementId = ElementID "_internal_ping_indicator"
-        (location, size) =
-            let ViewBox{..} = viewBox
-                s = min w h `div` 4
-             in ( V2 (x + fromIntegral (w - s `div` 2)) (y + fromIntegral (h - s `div` 2))
-                , fromIntegral s
-                )
-        square = Rectangle $ V2 size size
-        initialUpdate = AddElement $ FullElement
-            { location
-            , name = elementId
-            , text = Just TextBox
-                { text = "Ping"
-                , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
-                }
-            , image = Nothing
-            , element = Indicator Indicator'
-                { hollowness = 0
-                , arcStart = 0
-                , arcEnd = 1
-                , centre = 0
-                , colour = Colour 1 1 1 1 -- white
-                , shape = square
-                }
-            , hidden = False
-            }
+        initialUpdate Layout{..} =
+            let (location, size) =
+                    let ViewBox{..} = viewBox
+                        s = min w h `div` 4
+                     in ( V2 (x + fromIntegral (w - s `div` 2)) (y + fromIntegral (h - s `div` 2))
+                        , fromIntegral s
+                        )
+                square = Rectangle $ V2 size size
+             in AddElement $ FullElement
+                    { location
+                    , name = elementId
+                    , text = Just TextBox
+                        { text = "Ping"
+                        , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
+                        }
+                    , image = Nothing
+                    , element = Indicator Indicator'
+                        { hollowness = 0
+                        , arcStart = 0
+                        , arcEnd = 1
+                        , centre = 0
+                        , colour = Colour 1 1 1 1 -- white
+                        , shape = square
+                        }
+                    , hidden = False
+                    }
+        onUpdate = onLayoutChange $ pure . initialUpdate
      in ServerConfig
             { onNewConnection
             , onPong
+            , onUpdate
             , updates = mempty
             , onStart = mempty
             , onMessage = mempty
             , onAxis = mempty
             , onButton = mempty
             , onDroppedConnection = mempty
-            , onUpdate = mempty
             }
 
 {- Util -}

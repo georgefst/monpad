@@ -349,41 +349,44 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         let stream = asyncly $
                 (Left <$> SP.cons (const u0) (updates e) <> SP.repeatM (const <$> takeMVar extraUpdates))
                     <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) <=< traverse \update -> do
+            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse \update -> do
                 s <- gets thd3
-                case update of
-                    SetLayout l -> put (l, mkElementMaps l.elements, s)
-                    SwitchLayout i -> asks ((!? i) . fst3) >>= \case
-                        Just l -> put (l, mkElementMaps l.elements, s)
-                        Nothing -> warn $ "layout id not found: " <> i.unwrap
-                    AddElement el -> modify . first $ addToElementMaps el
-                    RemoveElement el -> modify . first $
-                        over #stickMap (Map.delete el)
-                            . over #sliderMap (Map.delete el)
-                            . over #buttonMap (Map.delete el)
-                    SetBackgroundColour{} -> mempty
-                    SetImageURL{} -> mempty
-                    AddImage{} -> mempty
-                    DeleteImage{} -> mempty
-                    SetText{} -> mempty
-                    AddText{} -> mempty
-                    DeleteText{} -> mempty
-                    PlayAudioURL{} -> mempty
-                    Vibrate{} -> mempty
-                    SetIndicatorHollowness{} -> mempty
-                    SetIndicatorArcStart{} -> mempty
-                    SetIndicatorArcEnd{} -> mempty
-                    SetIndicatorShape{} -> mempty
-                    SetIndicatorCentre{} -> mempty
-                    SetIndicatorColour{} -> mempty
-                    SetSliderPosition{} -> mempty
-                    SetButtonColour{} -> mempty
-                    SetButtonPressed{} -> mempty
-                    ResetLayout{} -> mempty
-                    HideElement{} -> mempty
-                    ShowElement{} -> mempty
-                handleUpdates =<< onUpdate update
-                pure update
+                let updateState = \case -- any necessary server-side handling
+                        SetLayout l -> put (l, mkElementMaps l.elements, s)
+                        SwitchLayout i -> asks ((!? i) . fst3) >>= \case
+                            Just l -> put (l, mkElementMaps l.elements, s)
+                            Nothing -> warn $ "layout id not found: " <> i.unwrap
+                        AddElement el -> modify . first $ addToElementMaps el
+                        RemoveElement el -> modify . first $
+                            over #stickMap (Map.delete el)
+                                . over #sliderMap (Map.delete el)
+                                . over #buttonMap (Map.delete el)
+                        SetBackgroundColour{} -> mempty
+                        SetImageURL{} -> mempty
+                        AddImage{} -> mempty
+                        DeleteImage{} -> mempty
+                        SetText{} -> mempty
+                        AddText{} -> mempty
+                        DeleteText{} -> mempty
+                        PlayAudioURL{} -> mempty
+                        Vibrate{} -> mempty
+                        SetIndicatorHollowness{} -> mempty
+                        SetIndicatorArcStart{} -> mempty
+                        SetIndicatorArcEnd{} -> mempty
+                        SetIndicatorShape{} -> mempty
+                        SetIndicatorCentre{} -> mempty
+                        SetIndicatorColour{} -> mempty
+                        SetSliderPosition{} -> mempty
+                        SetButtonColour{} -> mempty
+                        SetButtonPressed{} -> mempty
+                        ResetLayout{} -> mempty
+                        HideElement{} -> mempty
+                        ShowElement{} -> mempty
+                let updates1 = [update]
+                forM_ updates1 updateState
+                updates2 <- concat <$> traverse onUpdate updates1
+                forM_ updates2 updateState
+                pure $ updates1 ++ updates2
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do

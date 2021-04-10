@@ -26,7 +26,7 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson qualified as J
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.Foldable hiding (for_)
+import Data.Foldable
 import Data.IORef
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
@@ -47,7 +47,8 @@ import Generic.Functor
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear (V2 (..))
-import Lucid
+import Lucid hiding (for_)
+import Lucid qualified as Html
 import Lucid.Base (makeAttribute)
 import Network.HTTP.Types.Status
 import Network.Wai
@@ -151,7 +152,7 @@ loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     [ title_ "monpad: login"
     , style_ (commonCSS ())
     , style_ (loginCSS ())
-    , label_ [for_ nameBoxId] "Username:"
+    , label_ [Html.for_ nameBoxId] "Username:"
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
     , input_ [type_ "submit", value_ "Go!"]
@@ -352,7 +353,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
             handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse \update -> do
                 s <- gets thd3
                 let go us = if null us then mempty else do
-                        forM_ us \case
+                        for_ us \case
                             SetLayout l -> put (l, mkElementMaps l.elements, s)
                             SwitchLayout i -> asks ((!? i) . fst3) >>= \case
                                 Just l -> put (l, mkElementMaps l.elements, s)

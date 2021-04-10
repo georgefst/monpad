@@ -362,27 +362,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                                 over #stickMap (Map.delete el)
                                     . over #sliderMap (Map.delete el)
                                     . over #buttonMap (Map.delete el)
-                            SetBackgroundColour{} -> mempty
-                            SetImageURL{} -> mempty
-                            AddImage{} -> mempty
-                            DeleteImage{} -> mempty
-                            SetText{} -> mempty
-                            AddText{} -> mempty
-                            DeleteText{} -> mempty
-                            PlayAudioURL{} -> mempty
-                            Vibrate{} -> mempty
-                            SetIndicatorHollowness{} -> mempty
-                            SetIndicatorArcStart{} -> mempty
-                            SetIndicatorArcEnd{} -> mempty
-                            SetIndicatorShape{} -> mempty
-                            SetIndicatorCentre{} -> mempty
-                            SetIndicatorColour{} -> mempty
-                            SetSliderPosition{} -> mempty
-                            SetButtonColour{} -> mempty
-                            SetButtonPressed{} -> mempty
-                            ResetLayout{} -> mempty
-                            HideElement{} -> mempty
-                            ShowElement{} -> mempty
+                            _ -> mempty
                         updatesRest <- go . concat =<< traverse onUpdate us
                         pure $ us ++ updatesRest
                 go [update]

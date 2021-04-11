@@ -18,13 +18,10 @@ import Orphans.V2 ()
 defaultSimple :: Text
 defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"
 
-getLayouts :: IO (NonEmpty (Layout () ()))
-getLayouts = layoutsFromDhall $ defaultSimple :| []
-
-test :: [Plugin () ()] -> IO ()
-test ps = do
+test :: [Plugin () ()] -> [Text] -> IO ()
+test ps ls = do
     setLocaleEncoding utf8
-    layouts <- getLayouts
+    layouts <- layoutsFromDhall $ defaultSimple :| ls
     withPlugin
         (plugins $ Plugin config :| ps)
         $ server
@@ -49,4 +46,4 @@ test ps = do
             }
 
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< getLayouts
+testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< layoutsFromDhall @() @() (pure defaultSimple)

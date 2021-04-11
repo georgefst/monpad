@@ -5,6 +5,7 @@ module Monpad (
     serverExtWs,
     Monpad,
     runMonpad,
+    MonpadEnv(..),
     ServerConfig (..),
     combineConfs,
     ClientID (..),
@@ -189,12 +190,12 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
   where
     jsScript = "text/javascript"
 
---TODO use dedicated record types for State and Reader, and expose a cleaner interface
+--TODO use dedicated record type for State, and expose a cleaner interface
 -- | The Monpad monad
 newtype Monpad e s a b x = Monpad
     { unMonpad ::
         ReaderT
-            (Map LayoutID (Layout a b), e, ClientID)
+            (MonpadEnv e a b)
             ( StateT
                 (Layout a b, ElementMaps a b, s)
                 (ExceptT MonpadException IO)
@@ -209,17 +210,23 @@ newtype Monpad e s a b x = Monpad
         , MonadThrow
         , MonadBase IO
         , MonadBaseControl IO
-        , MonadReader (Map LayoutID (Layout a b), e, ClientID)
+        , MonadReader (MonpadEnv e a b)
         , MonadState (Layout a b, ElementMaps a b, s)
         , MonadError MonpadException
         )
 deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e s a b x))
 deriving via Mon (Monpad e s a b) x instance Monoid x => (Monoid (Monpad e s a b x))
+data MonpadEnv e a b = MonpadEnv
+    { client :: ClientID
+    , layouts :: Map LayoutID (Layout a b)
+    , extra :: e
+    }
+    deriving (Show, Generic)
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         (unMonpad mon)
-        (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls, e, c)
+        (MonpadEnv c (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls) e)
     )
     (l, mkElementMaps l.elements, s)
   where l = NE.head ls
@@ -369,7 +376,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                         onUpdate u <> case u of
                             ServerUpdate su -> [] <$ case su of
                                 SetLayout l -> put (l, mkElementMaps l.elements, s)
-                                SwitchLayout i -> asks ((!? i) . fst3) >>= \case
+                                SwitchLayout i -> asks ((!? i) . view #layouts) >>= \case
                                     Just l -> put (l, mkElementMaps l.elements, s)
                                     Nothing -> warn $ "layout id not found: " <> i.unwrap
                                 AddElement el -> modify . first $ addToElementMaps el

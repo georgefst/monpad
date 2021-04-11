@@ -4,8 +4,8 @@ module Test where
 import Control.Monad.Reader
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text (Text)
-import Data.Tuple.Extra hiding (first, second)
 import GHC.IO.Encoding (setLocaleEncoding)
+import Optics
 import System.IO
 import Text.Pretty.Simple
 
@@ -41,7 +41,7 @@ test ps = do
                 pPrint ("connected" :: Text, c)
                 pure ((), (), [])
             , onUpdate = \u -> do
-                c <- asks thd3
+                c <- asks $ view #layouts
                 pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg{outputOptionsCompact = True} (c, u)
                 mempty
             , onDroppedConnection = curry $ const . (>> mempty) . pPrint . ("disconnected" :: Text,)

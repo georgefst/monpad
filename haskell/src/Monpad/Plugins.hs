@@ -1,10 +1,10 @@
 module Monpad.Plugins where
 
 import Control.Monad.Reader
-import Data.Tuple.Extra
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
+import Optics
 
 import Monpad
 
@@ -22,6 +22,6 @@ onLayoutChange ::
     Update a b ->
     Monpad e s a b [ServerUpdate a b]
 onLayoutChange f = \case
-    ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . fst3) >>= maybe mempty f
+    ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . view #layouts) >>= maybe mempty f
     ServerUpdate (SetLayout l) -> f l
     _ -> mempty

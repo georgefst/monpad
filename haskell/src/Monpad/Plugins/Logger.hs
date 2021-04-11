@@ -1,7 +1,7 @@
 module Monpad.Plugins.Logger (plugin) where
 
 import Control.Monad.Reader
-import Data.Tuple.Extra
+import Optics
 import Text.Pretty.Simple
 import Util.Util
 
@@ -26,7 +26,7 @@ logImportantStuff f = mempty
 logUpdates :: (Monoid e, Monoid s, Show a, Show b) => (Text -> IO ()) -> ServerConfig e s a b
 logUpdates f = mempty
     { onUpdate = \m -> do
-        ClientID c <- asks thd3
+        ClientID c <- asks $ view #client
         liftIO $ f $ "Message received from client: " <> c
         pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
         mempty

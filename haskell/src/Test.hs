@@ -41,7 +41,7 @@ test ps = do
                 pPrint ("connected" :: Text, c)
                 pure ((), (), [])
             , onUpdate = \u -> do
-                c <- asks $ view #layouts
+                c <- asks $ view #client
                 pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg{outputOptionsCompact = True} (c, u)
                 mempty
             , onDroppedConnection = curry $ const . (>> mempty) . pPrint . ("disconnected" :: Text,)

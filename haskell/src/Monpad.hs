@@ -407,8 +407,8 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                                     Nothing -> warn ("element id not found: " <> t.unwrap) >> mempty
                   where
                     sus = us & mapMaybe \case
-                            ServerUpdate s -> Just s
-                            ClientUpdate _ -> Nothing
+                        ServerUpdate s -> Just s
+                        ClientUpdate _ -> Nothing
         WS.withPingThread conn pingFrequency onPing
             . (=<<) (either (flip (onDroppedConnection clientId) e) pure)
             . runMonpad layouts clientId e s0

@@ -17,7 +17,7 @@ plugin :: FilePath -> Plugin a b
 plugin path = Plugin $ writeQR @() @() path
 
 writeQR :: (Monoid e, Monoid s) => FilePath -> ServerConfig e s a b
-writeQR path0 = const mempty
+writeQR path0 = mempty
     { onStart = \url -> case encodeText (defaultQRCodeOptions M) Iso8859_1OrUtf8WithoutECI url of
         Nothing -> T.putStrLn "Failed to encode URL as QR code"
         Just qr -> do

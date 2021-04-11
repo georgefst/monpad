@@ -1,18 +1,18 @@
-module Auto.Update exposing (..)
+module Auto.ClientUpdate exposing (..)
 
 import Json.Encode
 import Math.Vector2
 import Util
 
 
-type Update 
+type ClientUpdate 
     = ButtonUp String
     | ButtonDown String
     | StickMove String Math.Vector2.Vec2
     | SliderMove String Float
 
 
-encode : Update -> Json.Encode.Value
+encode : ClientUpdate -> Json.Encode.Value
 encode a =
     case a of
         ButtonUp b ->

@@ -18,8 +18,8 @@ plugin :: b -> Plugin a b
 plugin = Plugin . switcher @()
 
 switcher :: Monoid e => b -> ServerConfig e (Stream ((LayoutID, ViewBox), Bool)) a b
-switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
-    let onNewConnection = const $ pure
+switcher buttonData =
+    let onNewConnection = \(fmap ((.name) &&& (.viewBox)) -> ls) _ -> pure
             ( mempty
             , Stream.prepend
                 (zip (toList ls) (repeat True))
@@ -54,8 +54,8 @@ switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
             { onNewConnection
             , updates = mempty
             , onStart = mempty
-            , onMessage = \case
-                ButtonUp t | t == elementId -> do
+            , onUpdate = \case
+                ClientUpdate (ButtonUp t) | t == elementId -> do
                     modify $ third3 Stream.tail
                     ((l, vb), new) :> _ <- gets thd3
                     pure $
@@ -66,5 +66,4 @@ switcher buttonData (fmap ((.name) &&& (.viewBox)) -> ls) =
             , onButton = mempty
             , onDroppedConnection = mempty
             , onPong = mempty
-            , onUpdate = mempty
             }

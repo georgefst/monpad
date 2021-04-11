@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Auto.Button exposing (..)
+import Auto.ClientUpdate exposing (..)
 import Auto.Colour exposing (..)
 import Auto.Element as Element
 import Auto.ElmFlags exposing (..)
@@ -16,7 +17,6 @@ import Auto.Slider exposing (..)
 import Auto.Stick exposing (..)
 import Auto.TextBox exposing (..)
 import Auto.TextStyle exposing (..)
-import Auto.Update exposing (..)
 import Auto.ViewBox exposing (..)
 import Basics exposing (..)
 import Basics.Extra exposing (..)
@@ -276,7 +276,7 @@ viewButton name button pressed =
             )
         |> onPointerDown (always <| ButtonDown name)
             { onMove = always []
-            , onRelease = [ Update <| ButtonUp name ]
+            , onRelease = [ ClientUpdate <| ButtonUp name ]
             }
 
 
@@ -308,8 +308,8 @@ viewStick name stick toOffset stickPos =
     big
         |> impose (small |> shift (unVec2 <| Vec2.scale range stickPos))
         |> onPointerDown (StickMove name << getOffset)
-            { onMove = \event -> [ Update <| StickMove name <| getOffset event ]
-            , onRelease = [ Update <| StickMove name <| vec2 0 0 ]
+            { onMove = \event -> [ ClientUpdate <| StickMove name <| getOffset event ]
+            , onRelease = [ ClientUpdate <| StickMove name <| vec2 0 0 ]
             }
 
 
@@ -347,10 +347,10 @@ viewSlider name slider toOffset pos =
     background
         |> impose (stick |> shift (unVec2 <| Vec2.scale pos v))
         |> onPointerDown (SliderMove name << getOffset)
-            { onMove = \event -> [ Update <| SliderMove name <| getOffset event ]
+            { onMove = \event -> [ ClientUpdate <| SliderMove name <| getOffset event ]
             , onRelease =
                 if slider.resetOnRelease then
-                    [ Update <| SliderMove name <| slider.initialPosition ]
+                    [ ClientUpdate <| SliderMove name <| slider.initialPosition ]
 
                 else
                     []
@@ -517,7 +517,7 @@ type alias Msgs =
 
 
 type Msg
-    = Update Update
+    = ClientUpdate ClientUpdate
     | ServerUpdate ServerUpdate
     | PointerDown Int PointerCallbacks
     | PointerUp Pointer.Event
@@ -587,7 +587,7 @@ update msg model =
             model.layout
     in
     case msg of
-        Update u ->
+        ClientUpdate u ->
             let
                 model1 =
                     case u of
@@ -890,7 +890,7 @@ subLogErrors s f =
 
 
 onPointerDown :
-    (Pointer.Event -> Update)
+    (Pointer.Event -> ClientUpdate)
     -> PointerCallbacks
     -> Collage Msgs
     -> Collage Msgs
@@ -900,7 +900,7 @@ onPointerDown f y =
             |> JD.map
                 (\x ->
                     [ PointerDown x.pointerId y
-                    , Update <| f x
+                    , ClientUpdate <| f x
                     ]
                 )
         )

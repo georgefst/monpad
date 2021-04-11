@@ -121,12 +121,12 @@ main = do
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< layoutsFromDhall dhallLayouts
           where
-            writeQR path url = withPlugin (QR.plugin path) \sc -> onStart (sc $ error "QR plugin ignores layouts") url
+            writeQR path url = withPlugin (QR.plugin path) $ flip onStart url
         Nothing -> if systemDevice
             then run OS.keyUnknown OS.conf =<< layoutsFromDhall dhallLayouts
             else run @() @() @Unit @Unit mempty mempty =<< layoutsFromDhall dhallLayouts
           where
-            run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b) =>
+            run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b, Show a, Show b) =>
                 b -> ServerConfig e s a b -> Layouts a b -> IO ()
             --TODO with `ImpredicativeTypes`, we can use 'flip withPlugin' (and/or go point-free?)
             run unknown sc ls = withPlugin ps $ server pingFrequency port loginImageUrl assetsDir ls

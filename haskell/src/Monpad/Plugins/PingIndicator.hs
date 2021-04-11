@@ -17,8 +17,8 @@ plugin :: Plugin a b
 plugin = Plugin $ showPing @() @()
 
 showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
-showPing layouts =
-    let onNewConnection = const $ pure (mempty, mempty, [initialUpdate $ NE.head layouts])
+showPing =
+    let onNewConnection = \layouts -> const $ pure (mempty, mempty, [initialUpdate $ NE.head layouts])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
@@ -64,7 +64,6 @@ showPing layouts =
             , onUpdate
             , updates = mempty
             , onStart = mempty
-            , onMessage = mempty
             , onAxis = mempty
             , onButton = mempty
             , onDroppedConnection = mempty

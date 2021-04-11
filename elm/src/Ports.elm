@@ -13,7 +13,7 @@ port module Ports exposing
 -}
 
 import Auto.ServerUpdate exposing (ServerUpdate)
-import Auto.Update exposing (Update)
+import Auto.ClientUpdate exposing (ClientUpdate)
 import Json.Decode as JD
 import Json.Encode as JE
 
@@ -37,9 +37,9 @@ port fullscreenChangePort :
     -> Sub msg
 
 
-sendUpdate : Update -> Cmd msg
+sendUpdate : ClientUpdate -> Cmd msg
 sendUpdate =
-    sendUpdatePort << Auto.Update.encode
+    sendUpdatePort << Auto.ClientUpdate.encode
 
 
 port sendUpdatePort :

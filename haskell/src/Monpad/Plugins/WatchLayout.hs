@@ -33,7 +33,7 @@ the issue (seemingly on all three platforms) is that we get too many events, whe
     but because 'fsnotify' is cross-platform, there may be no good way to filter
 -}
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Text -> ServerConfig e s a b
-sendLayout exprText = const mempty
+sendLayout exprText = mempty
     { updates = const do
         imports <- dhallImports exprText
         evss <- for imports \(dir, toList -> files) -> liftIO do

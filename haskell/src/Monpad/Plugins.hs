@@ -19,9 +19,9 @@ plugins = foldl1 \(Plugin x) (Plugin y) -> Plugin $ combineConfs x y
 
 onLayoutChange ::
     (Layout a b -> Monpad e s a b [ServerUpdate a b]) ->
-    ServerUpdate a b ->
+    Update a b ->
     Monpad e s a b [ServerUpdate a b]
 onLayoutChange f = \case
-    SwitchLayout i -> asks (Map.lookup i . fst3) >>= maybe mempty f
-    SetLayout l -> f l
+    ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . fst3) >>= maybe mempty f
+    ServerUpdate (SetLayout l) -> f l
     _ -> mempty

@@ -26,7 +26,7 @@ test ps = do
     setLocaleEncoding utf8
     layouts <- getLayouts
     withPlugin
-        (plugins $ Plugin (const config) :| ps)
+        (plugins $ Plugin config :| ps)
         $ server
             30
             8000
@@ -37,14 +37,14 @@ test ps = do
     config =
         mempty
             { onStart = pPrint . ("started" :: Text,)
-            , onNewConnection = \c -> do
+            , onNewConnection = \_ c -> do
                 pPrint ("connected" :: Text, c)
                 pure ((), (), [])
-            , onMessage = \u -> do
+            , onUpdate = \u -> do
                 c <- asks thd3
                 pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg{outputOptionsCompact = True} (c, u)
                 mempty
-            , onDroppedConnection = \c -> pPrint ("disconnected" :: Text, c) >> mempty
+            , onDroppedConnection = curry $ const . (>> mempty) . pPrint . ("disconnected" :: Text,)
             , onPong = const $ ([] <$) . pPrint . ("pong" :: Text,)
             }
 

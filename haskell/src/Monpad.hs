@@ -350,10 +350,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         let stream = asyncly $
                 (Left <$> SP.cons (const u0) (updates e) <> SP.repeatM (const <$> takeMVar extraUpdates))
                     <> (Right <$> serially (SP.repeatM $ getUpdate conn))
-            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse \update -> do
-                s <- gets thd3
-                let go us = if null us then mempty else do
-                        for_ us \case
+            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse (go . pure)
+              where
+                go us = if null us
+                    then mempty
+                    else fmap (us ++) $ go . concat =<< for us \u -> do
+                        s <- gets thd3
+                        case u of
                             SetLayout l -> put (l, mkElementMaps l.elements, s)
                             SwitchLayout i -> asks ((!? i) . fst3) >>= \case
                                 Just l -> put (l, mkElementMaps l.elements, s)
@@ -364,9 +367,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                                     . over #sliderMap (Map.delete el)
                                     . over #buttonMap (Map.delete el)
                             _ -> mempty
-                        updatesRest <- go . concat =<< traverse onUpdate us
-                        pure $ us ++ updatesRest
-                go [update]
+                        onUpdate u
         WS.withPingThread conn pingFrequency onPing . runMonpad layouts clientId e s0 . SP.drain $
             flip SP.takeWhileM (SP.hoist liftIO stream) \case
                 Left sus -> do

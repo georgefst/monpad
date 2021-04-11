@@ -17,9 +17,11 @@ withPlugin (Plugin p) f = f p
 plugins :: NonEmpty (Plugin a b) -> Plugin a b
 plugins = foldl1 \(Plugin x) (Plugin y) -> Plugin $ combineConfs x y
 
-onLayoutChange :: (Layout a b -> [ServerUpdate a b]) -> ServerUpdate a b -> Monpad e s a b [ServerUpdate a b]
+onLayoutChange ::
+    (Layout a b -> Monpad e s a b [ServerUpdate a b]) ->
+    ServerUpdate a b ->
+    Monpad e s a b [ServerUpdate a b]
 onLayoutChange f = \case
-    SwitchLayout i -> do
-        asks (Map.lookup i . fst3) >>= maybe mempty (pure . f)
-    SetLayout l -> pure $ f l
+    SwitchLayout i -> asks (Map.lookup i . fst3) >>= maybe mempty f
+    SetLayout l -> f l
     _ -> mempty

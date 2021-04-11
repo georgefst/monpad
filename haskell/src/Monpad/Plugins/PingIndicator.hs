@@ -57,7 +57,7 @@ showPing layouts =
                         }
                     , hidden = False
                     }
-        onUpdate = onLayoutChange $ pure . initialUpdate
+        onUpdate = onLayoutChange $ pure . pure . initialUpdate
      in ServerConfig
             { onNewConnection
             , onPong

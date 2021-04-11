@@ -64,8 +64,6 @@ showPing =
             , onUpdate
             , updates = mempty
             , onStart = mempty
-            , onAxis = mempty
-            , onButton = mempty
             , onDroppedConnection = mempty
             }
 

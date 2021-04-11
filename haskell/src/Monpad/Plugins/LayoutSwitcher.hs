@@ -63,8 +63,6 @@ switcher buttonData =
                         applyWhen new (++ [initialUpdate l vb])
                         [SwitchLayout l]
                 _ -> mempty
-            , onAxis = mempty
-            , onButton = mempty
             , onDroppedConnection = mempty
             , onPong = mempty
             }

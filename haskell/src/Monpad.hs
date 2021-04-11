@@ -35,7 +35,7 @@ import Data.Bifunctor
 import Data.Foldable
 import Data.IORef
 import Data.List.NonEmpty qualified as NE
-import Data.Map (Map, (!?))
+import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe
 import Data.Proxy
@@ -225,7 +225,6 @@ data MonpadEnv e a b = MonpadEnv
     deriving (Show, Generic)
 data MonpadState s a b = MonpadState
     { layout :: Layout a b
-    , elementMaps :: ElementMaps a b
     , extra :: s
     }
     deriving (Show, Generic)
@@ -235,7 +234,7 @@ runMonpad ls c e s mon = runExceptT $ evalStateT
         (unMonpad mon)
         (MonpadEnv c (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls) e)
     )
-    (MonpadState l (mkElementMaps l.elements) s)
+    (MonpadState l s)
   where l = NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
@@ -248,9 +247,6 @@ data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO () -- takes url
     , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
-    , onAxis :: a -> Double -> Monpad e s a b [ServerUpdate a b]
-    -- ^ the argument here always ranges from -1 to 1, even for sliders
-    , onButton :: b -> Bool -> Monpad e s a b [ServerUpdate a b]
     , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: e -> Async (s -> [ServerUpdate a b])
@@ -272,12 +268,6 @@ combineConfs sc1 sc2 = ServerConfig
     , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 >> f2 e2)
         <<*>> sc1.onDroppedConnection
         <<*>> sc2.onDroppedConnection
-    , onAxis = pure (pure f)
-        <<*>> sc1.onAxis
-        <<*>> sc2.onAxis
-    , onButton = pure (pure f)
-        <<*>> sc1.onButton
-        <<*>> sc2.onButton
     , onPong = \(e1, e2) -> pure (<>)
         <*> sc1.onPong e1
         <*> sc2.onPong e2
@@ -296,25 +286,6 @@ combineConfs sc1 sc2 = ServerConfig
         let (sx1, sy0) = view #extra s0
         (ry, s2) <- runStateT (runReaderT y $ over #extra snd e) $ over #extra (const sy0) s1
         pure (rx <> ry, over #extra (sx1,) s2)
-
--- | Maps of element names to axes and buttons.
-data ElementMaps a b = ElementMaps
-    { stickMap :: Map ElementID (a, a)
-    , sliderMap :: Map ElementID a
-    , buttonMap :: Map ElementID b
-    }
-    deriving (Show, Generic)
-
-mkElementMaps :: Foldable t => t (FullElement a b) -> ElementMaps a b
-mkElementMaps = foldl' (flip addToElementMaps) $ ElementMaps mempty mempty mempty
-
-addToElementMaps :: FullElement a b -> ElementMaps a b -> ElementMaps a b
-addToElementMaps e = case e.element of
-    Stick s -> over #stickMap $ Map.insert e.name (s.stickDataX, s.stickDataY)
-    Slider s -> over #sliderMap $ Map.insert e.name s.sliderData
-    Button b -> over #buttonMap $ Map.insert e.name b.buttonData
-    Indicator _ -> id
-    Empty -> id
 
 uniqueNames :: Layouts a b -> Layouts a b
 uniqueNames ls = flip evalState allNames $ for ls \l ->
@@ -382,29 +353,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                 go us = if null us
                     then mempty
                     else fmap (sus ++) $ go . map ServerUpdate . concat =<< for us \u -> do
-                        onUpdate u <> case u of
-                            ServerUpdate su -> [] <$ case su of
-                                SetLayout l -> modify (#layout .~ l) >> modify (#elementMaps .~ mkElementMaps l.elements)
-                                SwitchLayout i -> asks ((!? i) . view #layouts) >>= \case
-                                    Just l -> modify (#layout .~ l) >> modify (#elementMaps .~ mkElementMaps l.elements)
-                                    Nothing -> warn $ "layout id not found: " <> i.unwrap
-                                AddElement el -> modify . over #elementMaps $ addToElementMaps el
-                                RemoveElement el -> modify . over #elementMaps $
-                                    over #stickMap (Map.delete el)
-                                        . over #sliderMap (Map.delete el)
-                                        . over #buttonMap (Map.delete el)
-                                _ -> mempty
-                            ClientUpdate cu -> do
-                                ElementMaps{..} <- gets $ view #elementMaps
-                                case cu of
-                                    ButtonUp t -> lookup' buttonMap t $ flip onButton False
-                                    ButtonDown t -> lookup' buttonMap t $ flip onButton True
-                                    StickMove t (V2 x y) -> lookup' stickMap t \(x', y') -> onAxis x' x >> onAxis y' y
-                                    SliderMove t x -> lookup' sliderMap t $ flip onAxis $ x * 2 - 1
-                              where
-                                lookup' m t f = case m !? t of
-                                    Just b -> f b
-                                    Nothing -> warn ("element id not found: " <> t.unwrap) >> mempty
+                        case u of
+                            ServerUpdate (SetLayout l) -> modify $ #layout .~ l
+                            ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . view #layouts) >>= \case
+                                Just l -> modify $ #layout .~ l
+                                Nothing -> warn $ "layout id not found: " <> i.unwrap
+                            _ -> mempty
+                        onUpdate u
                   where
                     sus = us & mapMaybe \case
                         ServerUpdate s -> Just s

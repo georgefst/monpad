@@ -7,6 +7,6 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/georgefst/georgefst-utils
-  tag: 763a7a53077b099987ee68139aa2951eb6a47e37
+  tag: daaaf7b9aabf530f2fd20114782ca4b94f6b38a8
 
 packages: .

@@ -10,6 +10,7 @@ import Util.Util
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream ((:>)))
 import Data.Stream.Infinite qualified as Stream
+import Optics (over, view)
 
 import Monpad
 import Monpad.Plugins
@@ -56,8 +57,8 @@ switcher buttonData =
             , onStart = mempty
             , onUpdate = \case
                 ClientUpdate (ButtonUp t) | t == elementId -> do
-                    modify $ third3 Stream.tail
-                    ((l, vb), new) :> _ <- gets thd3
+                    modify $ over #extra Stream.tail
+                    ((l, vb), new) :> _ <- gets $ view #extra
                     pure $
                         applyWhen new (++ [initialUpdate l vb])
                         [SwitchLayout l]

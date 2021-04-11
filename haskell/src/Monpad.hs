@@ -6,6 +6,7 @@ module Monpad (
     Monpad,
     runMonpad,
     MonpadEnv(..),
+    MonpadState(..),
     ServerConfig (..),
     combineConfs,
     ClientID (..),
@@ -190,14 +191,14 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
   where
     jsScript = "text/javascript"
 
---TODO use dedicated record type for State, and expose a cleaner interface
+--TODO use expose a cleaner interface, rather than requiring use of overloaded-labels lenses?
 -- | The Monpad monad
 newtype Monpad e s a b x = Monpad
     { unMonpad ::
         ReaderT
             (MonpadEnv e a b)
-            ( StateT
-                (Layout a b, ElementMaps a b, s)
+            (StateT
+                (MonpadState s a b)
                 (ExceptT MonpadException IO)
             )
             x
@@ -211,7 +212,7 @@ newtype Monpad e s a b x = Monpad
         , MonadBase IO
         , MonadBaseControl IO
         , MonadReader (MonpadEnv e a b)
-        , MonadState (Layout a b, ElementMaps a b, s)
+        , MonadState (MonpadState s a b)
         , MonadError MonpadException
         )
 deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e s a b x))
@@ -222,13 +223,19 @@ data MonpadEnv e a b = MonpadEnv
     , extra :: e
     }
     deriving (Show, Generic)
+data MonpadState s a b = MonpadState
+    { layout :: Layout a b
+    , elementMaps :: ElementMaps a b
+    , extra :: s
+    }
+    deriving (Show, Generic)
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         (unMonpad mon)
         (MonpadEnv c (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls) e)
     )
-    (l, mkElementMaps l.elements, s)
+    (MonpadState l (mkElementMaps l.elements) s)
   where l = NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
@@ -365,28 +372,27 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = serially . SP.mapM (gets thd3 <&>) . SP.hoist liftIO $
+            serverUpdates = serially . SP.mapM (gets (view #extra) <&>) . SP.hoist liftIO $
                 SP.cons (const u0) (asyncly $ updates e) <> SP.repeatM (const <$> takeMVar extraUpdates)
             handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse (go . pure)
               where
                 go us = if null us
                     then mempty
                     else fmap (sus ++) $ go . map ServerUpdate . concat =<< for us \u -> do
-                        s <- gets thd3
                         onUpdate u <> case u of
                             ServerUpdate su -> [] <$ case su of
-                                SetLayout l -> put (l, mkElementMaps l.elements, s)
+                                SetLayout l -> modify (#layout .~ l) >> modify (#elementMaps .~ mkElementMaps l.elements)
                                 SwitchLayout i -> asks ((!? i) . view #layouts) >>= \case
-                                    Just l -> put (l, mkElementMaps l.elements, s)
+                                    Just l -> modify (#layout .~ l) >> modify (#elementMaps .~ mkElementMaps l.elements)
                                     Nothing -> warn $ "layout id not found: " <> i.unwrap
-                                AddElement el -> modify . first $ addToElementMaps el
-                                RemoveElement el -> modify . first $
+                                AddElement el -> modify . over #elementMaps $ addToElementMaps el
+                                RemoveElement el -> modify . over #elementMaps $
                                     over #stickMap (Map.delete el)
                                         . over #sliderMap (Map.delete el)
                                         . over #buttonMap (Map.delete el)
                                 _ -> mempty
                             ClientUpdate cu -> do
-                                ElementMaps{..} <- gets snd3
+                                ElementMaps{..} <- gets $ view #elementMaps
                                 case cu of
                                     ButtonUp t -> lookup' buttonMap t $ flip onButton False
                                     ButtonDown t -> lookup' buttonMap t $ flip onButton True

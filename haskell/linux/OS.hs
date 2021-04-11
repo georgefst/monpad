@@ -6,11 +6,11 @@ import Data.Bool (bool)
 import Data.Either (partitionEithers)
 import Data.Foldable (for_)
 import Data.Functor ((<&>))
-import Data.Tuple.Extra (snd3)
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Numeric (readHex)
+import Optics (view)
 
 import Evdev hiding (Device, newDevice)
 import Evdev.Uinput
@@ -20,8 +20,8 @@ import Monpad
 import Orphans.Evdev ()
 
 conf :: ServerConfig [Device] () AxisInfo Key
-conf layouts = mempty
-    { onNewConnection = \(ClientID clientId) -> do
+conf = mempty
+    { onNewConnection = \layouts (ClientID clientId) -> do
         let (as, bs) = foldMap allAxesAndButs layouts
             (aas, ras) = partitionEithers $ as <&> \case
                 AxisInfo{axis = Abs a, ..} -> Left
@@ -46,13 +46,13 @@ conf layouts = mempty
             }
         return (pure dev, (), [])
     , onAxis = \AxisInfo{..} x -> do
-        devs <- asks snd3
+        devs <- asks $ view #extra
         liftIO $ for_ devs $ \d -> writeBatch d $ pure @[] case axis of
             Abs a -> AbsoluteEvent a $ EventValue $ round $ (x + 1) * multiplier / 2
             Rel a -> RelativeEvent a $ EventValue $ round $ x * multiplier
         mempty
     , onButton = \key up -> do
-        devs <- asks snd3
+        devs <- asks $ view #extra
         liftIO $ for_ devs $ \d -> writeBatch d [KeyEvent key $ bool Released Pressed up]
         mempty
     }
@@ -65,12 +65,12 @@ data AxisInfo = AxisInfo
     { axis :: Axis
     , multiplier :: Double
     }
-    deriving (Generic, FromDhall)
+    deriving (Show, Generic, FromDhall)
 
 data Axis
     = Abs AbsoluteAxis
     | Rel RelativeAxis
-    deriving (Generic, FromDhall)
+    deriving (Show, Generic, FromDhall)
 
 keyUnknown :: Key
 keyUnknown = KeyUnknown

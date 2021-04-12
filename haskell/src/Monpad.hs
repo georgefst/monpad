@@ -283,9 +283,8 @@ combineConfs sc1 sc2 = ServerConfig
     f :: Monoid x => Monpad ex sx a b x -> Monpad ey sy a b x -> Monpad (ex, ey) (sx, sy) a b x
     f (Monpad x) (Monpad y) = Monpad $ ReaderT \e -> StateT \s0 -> do
         (rx, s1) <- runStateT (runReaderT x $ over #extra fst e) $ over #extra fst s0
-        let (sx1, sy0) = view #extra s0
-        (ry, s2) <- runStateT (runReaderT y $ over #extra snd e) $ over #extra (const sy0) s1
-        pure (rx <> ry, over #extra (sx1,) s2)
+        (ry, s2) <- runStateT (runReaderT y $ over #extra snd e) $ over #extra (const . snd $ view #extra s0) s1
+        pure (rx <> ry, over #extra (view #extra s1,) s2)
 
 uniqueNames :: Layouts a b -> Layouts a b
 uniqueNames ls = flip evalState allNames $ for ls \l ->

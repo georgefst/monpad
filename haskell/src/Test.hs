@@ -11,9 +11,6 @@ import Text.Pretty.Simple
 
 import Monpad
 import Monpad.Plugins
-import Orphans.Elm ()
-import Orphans.Generic ()
-import Orphans.V2 ()
 
 defaultSimple :: Text
 defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"

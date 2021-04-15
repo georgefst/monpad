@@ -20,7 +20,7 @@ test ps ls = do
     setLocaleEncoding utf8
     layouts <- layoutsFromDhall $ defaultSimple :| ls
     withPlugin
-        (plugins $ Plugin config :| ps)
+        (plugins $ Plugin config : ps)
         $ server
             30
             8000

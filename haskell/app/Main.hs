@@ -12,7 +12,7 @@ import System.FilePath
 import System.Info.Extra
 import Util.Util
 
-import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
+import Data.List.NonEmpty (nonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -123,21 +123,21 @@ main = do
           where
             writeQR path url = withPlugin (QR.plugin path) $ flip onStart url
         Nothing -> if systemDevice
-            then run OS.keyUnknown OS.conf =<< layoutsFromDhall dhallLayouts
-            else run @() @() @Unit @Unit mempty mempty =<< layoutsFromDhall dhallLayouts
+            --TODO with `ImpredicativeTypes`, we can remove the explicit lambdas here and go point-free
+            then layoutsFromDhall dhallLayouts >>= \ls ->
+                withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) $ runPlugin ls
+            else layoutsFromDhall dhallLayouts >>= \ls ->
+                withPlugin (plugin @Unit Unit) $ runPlugin ls
           where
-            run :: forall e s a b. (Monoid e, Monoid s, FromDhall a, FromDhall b, Show a, Show b) =>
-                b -> ServerConfig e s a b -> Layouts a b -> IO ()
-            --TODO with `ImpredicativeTypes`, we can use 'flip withPlugin' (and/or go point-free?)
-            run unknown sc ls = withPlugin ps $ server pingFrequency port loginImageUrl assetsDir ls
-              where
-                ps = plugins
-                    $ (Logger.plugin T.putStrLn quiet :|)
-                    $ applyWhen displayPing (PingIndicator.plugin :)
-                    $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
-                    $ maybe id ((:) . QR.plugin) qrPath
-                    $ applyWhen (length ls > 1) (LayoutSwitcher.plugin unknown :)
-                    [ Plugin sc ]
+            plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
+            plugin unknown = plugins
+                $ applyWhen displayPing (PingIndicator.plugin :)
+                $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
+                $ maybe id ((:) . QR.plugin) qrPath
+                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin unknown :)
+                [Logger.plugin T.putStrLn quiet]
+            runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
+            runPlugin = server pingFrequency port loginImageUrl assetsDir
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 -- | Make an absolute path relative, at all costs.

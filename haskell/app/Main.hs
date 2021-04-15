@@ -3,13 +3,17 @@
 
 module Main (main) where
 
+import Control.Monad
 import Data.Char
+import Data.Either.Extra
 import Data.Functor
 import Data.List
+import Data.List.Extra
 import Options.Applicative
 import System.Directory
 import System.FilePath
 import System.Info.Extra
+import Text.Read
 import Util.Util
 
 import Data.List.NonEmpty (nonEmpty)
@@ -32,7 +36,7 @@ import OS qualified
 type Port = Int
 
 data Args = Args
-    { quiet :: Bool
+    { verbosity :: Maybe Logger.Settings
     , systemDevice :: Bool
     , watchLayout :: Bool
     , port :: Port
@@ -47,11 +51,21 @@ data Args = Args
 
 parser :: Parser Args
 parser = do
-    quiet <- switch $ mconcat
-        [ short 'q'
-        , long "quiet"
-        , help "Don't print all client updates to stdout."
-        ]
+    verbosity <-
+        let reader = eitherReader $ maybeToEither errorString . (invert' allValues verbosityToInt <=< readMaybe)
+            errorString = "value must be an integer between 0 and " <> show (length allValues - 1)
+            allValues = Nothing : map Just enumerate
+            verbosityToInt = \case
+                Nothing -> 0 :: Int
+                Just Logger.Quiet -> 1
+                Just Logger.Normal -> 2
+                Just Logger.Loud -> 3
+         in option reader $ mconcat
+            [ short 'v'
+            , help "Verbosity - how much info to log to stdout about messages from clients etc."
+            , value $ Just Logger.Normal
+            , showDefaultWith $ show . verbosityToInt
+            ]
     port <- option auto $ mconcat
         [ long "port"
         , short 'p'
@@ -133,9 +147,10 @@ main = do
             plugin unknown = plugins
                 $ applyWhen displayPing (PingIndicator.plugin :)
                 $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
-                $ maybe id ((:) . QR.plugin) qrPath
                 $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin unknown :)
-                [Logger.plugin T.putStrLn quiet]
+                $ maybe id ((:) . QR.plugin) qrPath
+                $ maybe id ((:) . Logger.plugin T.putStrLn) verbosity
+                []
             runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
             runPlugin = server pingFrequency port loginImageUrl assetsDir
 

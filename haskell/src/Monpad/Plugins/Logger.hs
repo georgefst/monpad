@@ -1,17 +1,22 @@
-module Monpad.Plugins.Logger (plugin) where
+module Monpad.Plugins.Logger (plugin, Settings (..)) where
 
 import Control.Monad.Reader
 import Optics
 import Text.Pretty.Simple
-import Util.Util
 
 import Data.Text (Text)
 
 import Monpad
 import Monpad.Plugins
 
-plugin :: (Show a, Show b) => (Text -> IO ()) -> Bool -> Plugin a b
-plugin f quiet = Plugin @() @() . applyWhen (not quiet) (logUpdates f <>) $ logImportantStuff f
+data Settings
+    = Normal
+    | Quiet
+    | Loud
+    deriving (Show, Enum, Bounded)
+
+plugin :: (Show a, Show b) => (Text -> IO ()) -> Settings -> Plugin a b
+plugin f settings = Plugin @() @() $ logUpdates settings f <> logImportantStuff f
 
 logImportantStuff :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
 logImportantStuff f = mempty
@@ -23,11 +28,25 @@ logImportantStuff f = mempty
         f $ "Client disconnected: " <> i
     }
 
-logUpdates :: (Monoid e, Monoid s, Show a, Show b) => (Text -> IO ()) -> ServerConfig e s a b
-logUpdates f = mempty
-    { onUpdate = \m -> do
+logUpdates :: (Monoid e, Monoid s, Show a, Show b) => Settings -> (Text -> IO ()) -> ServerConfig e s a b
+logUpdates settings f = mempty
+    { onUpdate = \u -> do
         ClientID c <- asks $ view #client
-        liftIO $ f $ "Message received from client: " <> c
-        pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4} m
+        let (pc, ps) = case settings of
+                Normal -> (printClientUpdate c, mempty)
+                Quiet -> (mempty, mempty)
+                Loud -> (printClientUpdate c, printServerUpdate c)
+        case u of
+            ClientUpdate cu -> pc cu
+            ServerUpdate su -> ps su
         mempty
     }
+  where
+    printClientUpdate c u = do
+        liftIO $ f $ "Message received from client: " <> c
+        pPrint' u
+    printServerUpdate c u = do
+        liftIO $ f $ "Message sent to client: " <> c
+        pPrint' u
+    pPrint' :: Show x => x -> Monpad e s a b ()
+    pPrint' = pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}

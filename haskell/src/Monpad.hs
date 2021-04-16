@@ -243,7 +243,8 @@ getting rid of some 'asyncly', 'serially' boilerplate
 -}
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
-    { onStart :: Text -> IO () -- takes url
+    { onStart :: Text -> IO ()
+    -- ^ do something with the URL, when the server starts
     , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
     , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]

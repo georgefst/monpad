@@ -46,7 +46,6 @@ elm pathToElm = Elm.writeDefs pathToElm $ mconcat
     , Elm.encodedTypes @Indicator
     , Elm.encodedTypes @Shape
     , Elm.encodedTypes @(V2 Int)
-    , Elm.encodedTypes @Unit
     ]
 
 deriving instance SOP.Generic ClientUpdate
@@ -56,38 +55,38 @@ deriving via Elm.Via ClientUpdate instance HasElmEncoder J.Value ClientUpdate
 
 deriving instance SOP.Generic (ServerUpdate a b)
 deriving instance SOP.HasDatatypeInfo (ServerUpdate a b)
-deriving via Elm.Via2 ServerUpdate Unit Unit instance HasElmType (ServerUpdate a b)
-deriving via Elm.Via2 ServerUpdate Unit Unit instance HasElmDecoder J.Value (ServerUpdate a b)
+deriving via Elm.Via2 ServerUpdate () () instance HasElmType (ServerUpdate a b)
+deriving via Elm.Via2 ServerUpdate () () instance HasElmDecoder J.Value (ServerUpdate a b)
 
 deriving instance SOP.Generic (Layout a b)
 deriving instance SOP.HasDatatypeInfo (Layout a b)
-deriving via Elm.Via2 Layout Unit Unit instance HasElmType (Layout a b)
-deriving via Elm.Via2 Layout Unit Unit instance HasElmDecoder J.Value (Layout a b)
+deriving via Elm.Via2 Layout () () instance HasElmType (Layout a b)
+deriving via Elm.Via2 Layout () () instance HasElmDecoder J.Value (Layout a b)
 
 deriving instance SOP.Generic (FullElement a b)
 deriving instance SOP.HasDatatypeInfo (FullElement a b)
-deriving via Elm.Via2 FullElement Unit Unit instance HasElmType (FullElement a b)
-deriving via Elm.Via2 FullElement Unit Unit instance HasElmDecoder J.Value (FullElement a b)
+deriving via Elm.Via2 FullElement () () instance HasElmType (FullElement a b)
+deriving via Elm.Via2 FullElement () () instance HasElmDecoder J.Value (FullElement a b)
 
 deriving instance SOP.Generic (Element a b)
 deriving instance SOP.HasDatatypeInfo (Element a b)
-deriving via Elm.Via2 Element Unit Unit instance HasElmType (Element a b)
-deriving via Elm.Via2 Element Unit Unit instance HasElmDecoder J.Value (Element a b)
+deriving via Elm.Via2 Element () () instance HasElmType (Element a b)
+deriving via Elm.Via2 Element () () instance HasElmDecoder J.Value (Element a b)
 
 deriving instance SOP.Generic (Stick a)
 deriving instance SOP.HasDatatypeInfo (Stick a)
-deriving via Elm.Via1 Stick Unit instance HasElmType (Stick a)
-deriving via Elm.Via1 Stick Unit instance HasElmDecoder J.Value (Stick a)
+deriving via Elm.Via1 Stick () instance HasElmType (Stick a)
+deriving via Elm.Via1 Stick () instance HasElmDecoder J.Value (Stick a)
 
 deriving instance SOP.Generic (Slider a)
 deriving instance SOP.HasDatatypeInfo (Slider a)
-deriving via Elm.Via1 Slider Unit instance HasElmType (Slider a)
-deriving via Elm.Via1 Slider Unit instance HasElmDecoder J.Value (Slider a)
+deriving via Elm.Via1 Slider () instance HasElmType (Slider a)
+deriving via Elm.Via1 Slider () instance HasElmDecoder J.Value (Slider a)
 
 deriving instance SOP.Generic (Button a)
 deriving instance SOP.HasDatatypeInfo (Button a)
-deriving via Elm.Via1 Button Unit instance HasElmType (Button a)
-deriving via Elm.Via1 Button Unit instance HasElmDecoder J.Value (Button a)
+deriving via Elm.Via1 Button () instance HasElmType (Button a)
+deriving via Elm.Via1 Button () instance HasElmDecoder J.Value (Button a)
 
 deriving instance SOP.Generic Image
 deriving instance SOP.HasDatatypeInfo Image

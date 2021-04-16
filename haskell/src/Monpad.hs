@@ -15,7 +15,6 @@ module Monpad (
     ServerUpdate (..),
     ResetLayout(..),
     V2 (..),
-    Unit (..),
     ElmFlags(..),
     defaultDhall,
     module Layout
@@ -72,7 +71,6 @@ import Embed
 import Layout
 import Orphans.Generic ()
 import Util
-import Util.Elm (Unit (Unit))
 import Util.Elm qualified as Elm
 
 newtype ClientID = ClientID Text
@@ -136,7 +134,7 @@ data ResetLayout
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
-    { layouts :: Layouts Unit Unit
+    { layouts :: Layouts () ()
     , username :: Text
     }
     deriving (Show, Generic)
@@ -175,8 +173,7 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
-        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $
-            bimap (const Unit) (const Unit) <$> layouts
+        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ biVoid <$> layouts
         , makeAttribute "wsPort" $ showT wsPort
         , makeAttribute "username" username
         ]
@@ -331,7 +328,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
             clientUpdates = serially . SP.repeatM $ getUpdate conn
             serverUpdates = serially . SP.mapM (gets (view #extra) <&>) . SP.hoist liftIO . asyncly $
                 SP.cons (const u0) (updates e) <> SP.repeatM (const <$> takeMVar extraUpdates)
-            handleUpdates = sendUpdates conn . map (bimap (const Unit) (const Unit)) . concat <=< traverse (go . pure)
+            handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where
                 go us = if null us
                     then mempty

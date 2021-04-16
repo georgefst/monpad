@@ -141,7 +141,7 @@ main = do
             then layoutsFromDhall dhallLayouts >>= \ls ->
                 withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) $ runPlugin ls
             else layoutsFromDhall dhallLayouts >>= \ls ->
-                withPlugin (plugin @Unit Unit) $ runPlugin ls
+                withPlugin (plugin @() ()) $ runPlugin ls
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins

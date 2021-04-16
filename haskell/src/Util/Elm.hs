@@ -1,19 +1,19 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Util.Elm (
     Via (..),
     Via1 (..),
     Via2 (..),
-    Unit (..),
     writeDefs,
     encodedTypes,
     decodedTypes,
 ) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, void)
 import Data.Aeson as JSON
 import Data.Aeson.Types (Parser)
-import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bifunctor (Bifunctor)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -21,7 +21,6 @@ import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
-import Dhall (FromDhall)
 import GHC.Generics (Generic, Rep)
 import Generics.SOP qualified as SOP
 import Language.Elm.Definition (Definition)
@@ -35,22 +34,13 @@ import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
 import Type.Reflection (Typeable)
-import Util.Util (listDirectory', typeRepT)
+import Util.Util (biVoid, listDirectory', typeRepT)
 
-{- | Isomorphic to '()', but we want to decode to empty record, rather than list, in order to match 'dhall-to-json'.
-Also avoids orphans for 'HasElmType' etc.
--}
-data Unit = Unit
-    deriving (Show, Generic, FromDhall)
-
-instance Semigroup Unit where Unit <> Unit = Unit
-instance Monoid Unit where mempty = Unit
 elmUnit :: Name.Qualified
 elmUnit = Name.Qualified ["Basics"] "()"
-instance HasElmDecoder JSON.Value Unit where
+instance HasElmDecoder JSON.Value () where
     elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
-instance HasElmType Unit where elmType = Type.Global elmUnit
-instance ToJSON Unit where toJSON Unit = Object HashMap.empty
+instance HasElmType () where elmType = Type.Global elmUnit
 
 writeDefs :: FilePath -> [Definition] -> IO ()
 writeDefs elm defs = do
@@ -84,28 +74,28 @@ instance EDD a a => HasElmDecoder Value (Via a) where
     elmDecoderDefinition = edd @a @a
 
 newtype Via1 t a = Via1 (t a)
-instance (Functor t, TJ (t Unit)) => ToJSON (Via1 t a) where
-    toJSON (Via1 t) = tj (fmap (const Unit)) t
-instance FJ (t Unit) => FromJSON (Via1 t Unit) where
+instance (Functor t, TJ (t ())) => ToJSON (Via1 t a) where
+    toJSON (Via1 t) = tj void t
+instance FJ (t ()) => FromJSON (Via1 t ()) where
     parseJSON = pj Via1
-instance ED t (t Unit) => HasElmType (Via1 t a) where
-    elmDefinition = ed @t @(t Unit)
-instance EED t (t Unit) => HasElmEncoder Value (Via1 t Unit) where
-    elmEncoderDefinition = eed @t @(t Unit)
-instance EDD t (t Unit) => HasElmDecoder Value (Via1 t Unit) where
-    elmDecoderDefinition = edd @t @(t Unit)
+instance ED t (t ()) => HasElmType (Via1 t a) where
+    elmDefinition = ed @t @(t ())
+instance EED t (t ()) => HasElmEncoder Value (Via1 t ()) where
+    elmEncoderDefinition = eed @t @(t ())
+instance EDD t (t ()) => HasElmDecoder Value (Via1 t ()) where
+    elmDecoderDefinition = edd @t @(t ())
 
 newtype Via2 t a b = Via2 (t a b)
-instance (Bifunctor t, TJ (t Unit Unit)) => ToJSON (Via2 t a b) where
-    toJSON (Via2 t) = tj (bimap (const Unit) (const Unit)) t
-instance FJ (t Unit Unit) => FromJSON (Via2 t Unit Unit) where
+instance (Bifunctor t, TJ (t () ())) => ToJSON (Via2 t a b) where
+    toJSON (Via2 t) = tj biVoid t
+instance FJ (t () ()) => FromJSON (Via2 t () ()) where
     parseJSON = pj Via2
-instance ED t (t Unit Unit) => HasElmType (Via2 t a b) where
-    elmDefinition = ed @t @(t Unit Unit)
-instance EED t (t Unit Unit) => HasElmEncoder Value (Via2 t Unit Unit) where
-    elmEncoderDefinition = eed @t @(t Unit Unit)
-instance EDD t (t Unit Unit) => HasElmDecoder Value (Via2 t Unit Unit) where
-    elmDecoderDefinition = edd @t @(t Unit Unit)
+instance ED t (t () ()) => HasElmType (Via2 t a b) where
+    elmDefinition = ed @t @(t () ())
+instance EED t (t () ()) => HasElmEncoder Value (Via2 t () ()) where
+    elmEncoderDefinition = eed @t @(t () ())
+instance EDD t (t () ()) => HasElmDecoder Value (Via2 t () ()) where
+    elmDecoderDefinition = edd @t @(t () ())
 
 autoDir :: Text
 autoDir = "Auto"

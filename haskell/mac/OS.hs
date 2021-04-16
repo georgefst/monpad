@@ -5,11 +5,11 @@ import Monpad
 
 type E = ()
 type S = ()
-type A = Unit
-type B = Unit
+type A = ()
+type B = ()
 
 conf :: ServerConfig E S A B
 conf = Debug.trace "no device created - OS not yet supported" mempty
 
 keyUnknown :: B
-keyUnknown = Unit
+keyUnknown = ()

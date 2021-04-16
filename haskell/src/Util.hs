@@ -9,11 +9,14 @@ import Data.Functor
 import Data.List.Extra
 import Data.Maybe
 import Data.Time
+import Data.Traversable
+import Optics
 import Streamly
 import System.FilePath
 import Util.Util
 
 import Data.List.NonEmpty (NonEmpty)
+import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Dhall.Core qualified as D
@@ -85,3 +88,15 @@ dhallImports t = do
     importFile x = case D.importType $ D.importHashed x of
         D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
         _ -> Nothing
+
+-- | Ensure no two members have the same value for the provided 'Text' field, by appending numbers when necessary.
+uniqueNames :: Traversable t => Lens' a Text -> t a -> t a
+uniqueNames l xs = flip evalState allNames $ for xs \x ->
+    state (Map.insertLookupWithKey (\_ _ old -> old + 1) (view l x) err) >>= \case
+        Nothing -> err
+        Just 0 -> pure x
+        Just n -> pure $ over l (<> " [" <> showT n <> "]") x
+  where
+    -- the state map stores the number of occurrences of each name seen so far
+    allNames = Map.fromList $ zip (view l <$> toList xs) (repeat (0 :: Int))
+    err = error "broken invariant in `uniqueNames` - all names should be in map by construction"

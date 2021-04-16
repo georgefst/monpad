@@ -9,13 +9,13 @@ import Data.Bifunctor (Bifunctor)
 import Data.Either (partitionEithers)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
+import Deriving.Aeson (CustomJSON (CustomJSON), SumObjectWithSingleField)
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear.V2 (V2)
 import Orphans.V2 ()
-import Util.Elm qualified as Elm
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 
 allAxesAndButs :: Layout a b -> ([a], [b])
@@ -45,7 +45,7 @@ data Layout a b = Layout
     , name :: LayoutID
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via2 Layout a b
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Layout a b)
     deriving (Bifunctor) via GenericBifunctor Layout
 
 data FullElement a b = FullElement
@@ -57,7 +57,7 @@ data FullElement a b = FullElement
     , hidden :: Bool
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via2 FullElement a b
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (FullElement a b)
     deriving (Bifunctor) via GenericBifunctor FullElement
 
 newtype ElementID = ElementID {unwrap :: Text}
@@ -72,7 +72,7 @@ data Element a b
     | Indicator Indicator
     | Empty
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via2 Element a b
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Element a b)
     deriving (Bifunctor) via GenericBifunctor Element
 
 data Stick a = Stick'
@@ -84,7 +84,7 @@ data Stick a = Stick'
     , stickDataY :: a
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via1 Stick a
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Stick a)
 
 data Button b = Button'
     { shape :: Shape
@@ -92,7 +92,7 @@ data Button b = Button'
     , buttonData :: b
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via1 Button b
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Button b)
 
 data Slider a = Slider'
     { radius :: Word
@@ -107,7 +107,7 @@ data Slider a = Slider'
     , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via1 Slider a
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Slider a)
 
 data Image = Image
     { width :: Word
@@ -115,14 +115,14 @@ data Image = Image
     , url :: Text
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via Image
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Image
 
 data TextBox = TextBox
     { text :: Text
     , style :: TextStyle
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via TextBox
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextBox
 
 data Indicator = Indicator'
     { hollowness :: Double
@@ -137,13 +137,13 @@ data Indicator = Indicator'
     , shape :: Shape
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via Indicator
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Indicator
 
 data Shape
     = Circle Word
     | Rectangle (V2 Word)
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via Shape
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Shape
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
@@ -153,7 +153,7 @@ data Colour = Colour
     , alpha :: Double
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via Colour
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Colour
 
 data ViewBox = ViewBox
     { x :: Int
@@ -162,7 +162,7 @@ data ViewBox = ViewBox
     , h :: Word
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via ViewBox
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] ViewBox
 
 data TextStyle = TextStyle
     { size :: Word
@@ -175,7 +175,7 @@ data TextStyle = TextStyle
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via TextStyle
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextStyle
 
 data TextShadow = TextShadow
     { offset :: V2 Int
@@ -183,4 +183,4 @@ data TextShadow = TextShadow
     , colour :: Colour
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via Elm.Via TextShadow
+    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextShadow

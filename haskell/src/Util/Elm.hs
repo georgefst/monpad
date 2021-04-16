@@ -10,10 +10,9 @@ module Util.Elm (
     decodedTypes,
 ) where
 
-import Control.Monad (forM_, void)
+import Control.Monad (forM_)
 import Data.Aeson as JSON
 import Data.Aeson.Types (Parser)
-import Data.Bifunctor (Bifunctor)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -34,7 +33,7 @@ import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
 import Type.Reflection (Typeable)
-import Util.Util (biVoid, listDirectory', typeRepT)
+import Util.Util (listDirectory', typeRepT)
 
 elmUnit :: Name.Qualified
 elmUnit = Name.Qualified ["Basics"] "()"
@@ -62,10 +61,6 @@ elmOpts = Elm.defaultOptions
 
 -- | A type to derive via.
 newtype Via a = Via a
-instance (TJ a) => ToJSON (Via a) where
-    toJSON (Via a) = tj id a
-instance FJ a => FromJSON (Via a) where
-    parseJSON = pj Via
 instance ED a a => HasElmType (Via a) where
     elmDefinition = ed @a @a
 instance EED a a => HasElmEncoder Value (Via a) where
@@ -74,10 +69,6 @@ instance EDD a a => HasElmDecoder Value (Via a) where
     elmDecoderDefinition = edd @a @a
 
 newtype Via1 t a = Via1 (t a)
-instance (Functor t, TJ (t ())) => ToJSON (Via1 t a) where
-    toJSON (Via1 t) = tj void t
-instance FJ (t ()) => FromJSON (Via1 t ()) where
-    parseJSON = pj Via1
 instance ED t (t ()) => HasElmType (Via1 t a) where
     elmDefinition = ed @t @(t ())
 instance EED t (t ()) => HasElmEncoder Value (Via1 t ()) where
@@ -86,10 +77,6 @@ instance EDD t (t ()) => HasElmDecoder Value (Via1 t ()) where
     elmDecoderDefinition = edd @t @(t ())
 
 newtype Via2 t a b = Via2 (t a b)
-instance (Bifunctor t, TJ (t () ())) => ToJSON (Via2 t a b) where
-    toJSON (Via2 t) = tj biVoid t
-instance FJ (t () ()) => FromJSON (Via2 t () ()) where
-    parseJSON = pj Via2
 instance ED t (t () ()) => HasElmType (Via2 t a b) where
     elmDefinition = ed @t @(t () ())
 instance EED t (t () ()) => HasElmEncoder Value (Via2 t () ()) where
@@ -128,8 +115,6 @@ edd :: forall t a. (DeriveParameterisedElmDecoderDefinition 0 Value a, Typeable 
 edd = Just $ Elm.deriveElmJSONDecoder @a elmOpts jsonOpts $ qual @t "decode"
 
 type A f a = SOP.All2 f (SOP.Code a)
-type TJ a = (Generic a, GToJSON Zero (Rep a))
-type FJ a = (Generic a, GFromJSON Zero (Rep a))
 type ED t a = (SOP.HasDatatypeInfo a, A HasElmType a, Typeable t)
 type EED t a = (ED t a, HasElmType a, A (HasElmEncoder Value) a)
 type EDD t a = (ED t a, HasElmType a, A (HasElmDecoder Value) a)

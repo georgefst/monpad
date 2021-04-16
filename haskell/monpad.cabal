@@ -105,11 +105,9 @@ library
         Embed
         GenerateElm
         Layout
-        Orphans.Elm
         Orphans.Generic
         Orphans.V2
         Util
-        Util.Elm
         Util.ShowNewtype
     hs-source-dirs:
         src

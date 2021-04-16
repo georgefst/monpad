@@ -1,13 +1,13 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module GenerateElm where
+-- | Auto-generate all required Elm code - types plus JSON encoders and decoders.
+module GenerateElm (elm) where
 
-import Control.Monad (forM_)
-import Data.Aeson as JSON
 import Data.Aeson qualified as J
-import Data.Aeson.Types (Parser)
+import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as HashMap
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (catMaybes)
@@ -16,20 +16,20 @@ import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
-import GHC.Generics (Generic, Rep)
+import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
-import Language.Elm.Definition (Definition)
+import Language.Elm.Definition qualified as Def
 import Language.Elm.Expression qualified as Expr
-import Language.Elm.Name (Qualified (Qualified))
 import Language.Elm.Name qualified as Name
 import Language.Elm.Pretty qualified as Pretty
-import Language.Elm.Simplification (simplifyDefinition)
+import Language.Elm.Simplification qualified as Simplify
 import Language.Elm.Type qualified as Type
-import Language.Haskell.To.Elm as Elm
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
 import Type.Reflection (Typeable)
 import Util.Util (listDirectory', typeRepT)
+
+import Language.Haskell.To.Elm
 
 import Monpad
 
@@ -44,27 +44,61 @@ e.g. if we added an extra case to 'Update', it would need to be handled in vario
 -- >>> elm "elm"
 elm :: FilePath -> IO ()
 elm pathToElm = writeDefs pathToElm $ mconcat
-    [ decodedTypes @ClientUpdate
-    , decodedTypes @(V2 Double)
-    , encodedTypes @(ServerUpdate () ())
-    , encodedTypes @(Layout () ())
-    , encodedTypes @(FullElement () ())
-    , encodedTypes @(Element () ())
-    , encodedTypes @(Stick ())
-    , encodedTypes @(Slider ())
-    , encodedTypes @(Button ())
-    , encodedTypes @Image
-    , encodedTypes @TextBox
-    , encodedTypes @TextStyle
-    , encodedTypes @TextShadow
-    , encodedTypes @ResetLayout
-    , encodedTypes @ElmFlags
-    , encodedTypes @ViewBox
-    , encodedTypes @Colour
-    , encodedTypes @Indicator
-    , encodedTypes @Shape
-    , encodedTypes @(V2 Int)
+    [ defAndEncoder @ClientUpdate
+    , defAndEncoder @(V2 Double)
+    , defAndDecoder @(ServerUpdate () ())
+    , defAndDecoder @(Layout () ())
+    , defAndDecoder @(FullElement () ())
+    , defAndDecoder @(Element () ())
+    , defAndDecoder @(Stick ())
+    , defAndDecoder @(Slider ())
+    , defAndDecoder @(Button ())
+    , defAndDecoder @Image
+    , defAndDecoder @TextBox
+    , defAndDecoder @TextStyle
+    , defAndDecoder @TextShadow
+    , defAndDecoder @ResetLayout
+    , defAndDecoder @ElmFlags
+    , defAndDecoder @ViewBox
+    , defAndDecoder @Colour
+    , defAndDecoder @Indicator
+    , defAndDecoder @Shape
+    , defAndDecoder @(V2 Int)
     ]
+
+writeDefs :: FilePath -> [Def.Definition] -> IO ()
+writeDefs elmPath defs = do
+    createDirectoryIfMissing False autoFull
+    mapM_ removeFile =<< listDirectory' autoFull
+    for_ (HashMap.toList modules) \(moduleName, contents) ->
+        T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
+            renderStrict $ layoutPretty defaultLayoutOptions contents
+  where
+    src = elmPath </> "src"
+    modules = Pretty.modules $ map Simplify.simplifyDefinition defs
+    autoFull = src </> T.unpack autoDir
+
+autoDir :: Text
+autoDir = "Auto"
+
+jsonOpts :: J.Options
+jsonOpts = J.defaultOptions{J.sumEncoding = J.ObjectWithSingleField}
+
+-- | Like 'jsonDefinitions', but for types without decoders.
+defAndEncoder :: forall t. HasElmEncoder J.Value t => [Def.Definition]
+defAndEncoder = catMaybes
+    [ elmDefinition @t
+    , elmEncoderDefinition @J.Value @t
+    ]
+
+-- | Like 'jsonDefinitions', but for types without encoders.
+defAndDecoder :: forall t. HasElmDecoder J.Value t => [Def.Definition]
+defAndDecoder = catMaybes
+    [ elmDefinition @t
+    , elmDecoderDefinition @J.Value @t
+    ]
+
+{- Instances for Monpad types -}
 
 deriving instance SOP.Generic ClientUpdate
 deriving instance SOP.HasDatatypeInfo ClientUpdate
@@ -156,7 +190,19 @@ deriving instance SOP.HasDatatypeInfo Shape
 deriving via Via Shape instance HasElmType Shape
 deriving via Via Shape instance HasElmDecoder J.Value Shape
 
-{- Vectors -}
+{- Instances for third-party types -}
+
+elmUnit :: Name.Qualified
+elmUnit = Name.Qualified ["Basics"] "()"
+instance HasElmDecoder J.Value () where
+    elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
+instance HasElmType () where elmType = Type.Global elmUnit
+
+-- NB we can decode but encoding would be unsafe
+instance HasElmType Word where
+    elmType = "Basics.Int"
+instance HasElmDecoder J.Value Word where
+    elmDecoder = "Json.Decode.int"
 
 data IntVec2 = IntVec2
     { x :: Int
@@ -175,12 +221,6 @@ data DoubleVec2 = DoubleVec2
     , y :: Double
     }
     deriving (Generic, SOP.Generic, SOP.HasDatatypeInfo)
-
--- NB we can decode but encoding would be unsafe
-instance HasElmType Word where
-    elmType = "Basics.Int"
-instance HasElmDecoder J.Value Word where
-    elmDecoder = "Json.Decode.int"
 
 deriving instance SOP.Generic (V2 Int)
 deriving instance SOP.HasDatatypeInfo (V2 Int)
@@ -205,89 +245,46 @@ instance HasElmEncoder J.Value (V2 Double) where
 instance HasElmType (V2 Double) where
     elmType = Type.Global $ Name.Qualified ["Math", "Vector2"] "Vec2"
 
-elmUnit :: Name.Qualified
-elmUnit = Name.Qualified ["Basics"] "()"
-instance HasElmDecoder JSON.Value () where
-    elmDecoder = Expr.App (Expr.Global $ Name.Qualified ["Json", "Decode"] "succeed") (Expr.Global elmUnit)
-instance HasElmType () where elmType = Type.Global elmUnit
-
-writeDefs :: FilePath -> [Definition] -> IO ()
-writeDefs elmPath defs = do
-    createDirectoryIfMissing False autoFull
-    mapM_ removeFile =<< listDirectory' autoFull
-    forM_ (HashMap.toList modules) \(moduleName, contents) ->
-        T.writeFile (src </> joinPath (map T.unpack moduleName) <.> "elm") $
-            renderStrict $ layoutPretty defaultLayoutOptions contents
-  where
-    src = elmPath </> "src"
-    modules = Pretty.modules $ map simplifyDefinition defs
-    autoFull = src </> T.unpack autoDir
-
-jsonOpts :: JSON.Options
-jsonOpts = JSON.defaultOptions{sumEncoding = ObjectWithSingleField}
-
-elmOpts :: Elm.Options
-elmOpts = Elm.defaultOptions
+{- All the ugly details -}
 
 -- | A type to derive via.
 newtype Via a = Via a
 instance ED a a => HasElmType (Via a) where
     elmDefinition = ed @a @a
-instance EED a a => HasElmEncoder Value (Via a) where
+instance EED a a => HasElmEncoder J.Value (Via a) where
     elmEncoderDefinition = eed @a @a
-instance EDD a a => HasElmDecoder Value (Via a) where
+instance EDD a a => HasElmDecoder J.Value (Via a) where
     elmDecoderDefinition = edd @a @a
 
 newtype Via1 t a = Via1 (t a)
 instance ED t (t ()) => HasElmType (Via1 t a) where
     elmDefinition = ed @t @(t ())
-instance EED t (t ()) => HasElmEncoder Value (Via1 t ()) where
+instance EED t (t ()) => HasElmEncoder J.Value (Via1 t ()) where
     elmEncoderDefinition = eed @t @(t ())
-instance EDD t (t ()) => HasElmDecoder Value (Via1 t ()) where
+instance EDD t (t ()) => HasElmDecoder J.Value (Via1 t ()) where
     elmDecoderDefinition = edd @t @(t ())
 
 newtype Via2 t a b = Via2 (t a b)
 instance ED t (t () ()) => HasElmType (Via2 t a b) where
     elmDefinition = ed @t @(t () ())
-instance EED t (t () ()) => HasElmEncoder Value (Via2 t () ()) where
+instance EED t (t () ()) => HasElmEncoder J.Value (Via2 t () ()) where
     elmEncoderDefinition = eed @t @(t () ())
-instance EDD t (t () ()) => HasElmDecoder Value (Via2 t () ()) where
+instance EDD t (t () ()) => HasElmDecoder J.Value (Via2 t () ()) where
     elmDecoderDefinition = edd @t @(t () ())
 
-autoDir :: Text
-autoDir = "Auto"
-
--- | Like 'jsonDefinitions', but for types without decoders.
-decodedTypes :: forall t. HasElmEncoder Value t => [Definition]
-decodedTypes = catMaybes
-    [ elmDefinition @t
-    , elmEncoderDefinition @Value @t
-    ]
-
--- | Like 'jsonDefinitions', but for types without encoders.
-encodedTypes :: forall t. HasElmDecoder Value t => [Definition]
-encodedTypes = catMaybes
-    [ elmDefinition @t
-    , elmDecoderDefinition @Value @t
-    ]
-
-qual :: forall t. Typeable t => Text -> Qualified
-qual = Qualified [autoDir, typeRepT @t]
-tj :: (Generic a, GToJSON' Value Zero (Rep a)) => (b -> a) -> b -> Value
-tj f = genericToJSON jsonOpts . f
-pj :: (Generic a, GFromJSON Zero (Rep a)) => (a -> b) -> Value -> Parser b
-pj v = fmap v . genericParseJSON jsonOpts
-ed :: forall t a. (DeriveParameterisedElmTypeDefinition 0 a, Typeable t) => Maybe Definition
-ed = Just $ deriveElmTypeDefinition @a elmOpts $ qual @t (typeRepT @t)
-eed :: forall t a. (DeriveParameterisedElmEncoderDefinition 0 Value a, Typeable t) => Maybe Definition
-eed = Just $ deriveElmJSONEncoder @a elmOpts jsonOpts $ qual @t "encode"
-edd :: forall t a. (DeriveParameterisedElmDecoderDefinition 0 Value a, Typeable t) => Maybe Definition
-edd = Just $ Elm.deriveElmJSONDecoder @a elmOpts jsonOpts $ qual @t "decode"
+qual :: forall t. Typeable t => Text -> Name.Qualified
+qual = Name.Qualified [autoDir, typeRepT @t]
+ed :: forall t a. (DeriveParameterisedElmTypeDefinition 0 a, Typeable t) => Maybe Def.Definition
+ed = Just $ deriveElmTypeDefinition @a defaultOptions $ qual @t (typeRepT @t)
+eed :: forall t a. (DeriveParameterisedElmEncoderDefinition 0 J.Value a, Typeable t) => Maybe Def.Definition
+eed = Just $ deriveElmJSONEncoder @a defaultOptions jsonOpts $ qual @t "encode"
+edd :: forall t a. (DeriveParameterisedElmDecoderDefinition 0 J.Value a, Typeable t) => Maybe Def.Definition
+edd = Just $ deriveElmJSONDecoder @a defaultOptions jsonOpts $ qual @t "decode"
 
 type A f a = SOP.All2 f (SOP.Code a)
 type ED t a = (SOP.HasDatatypeInfo a, A HasElmType a, Typeable t)
-type EED t a = (ED t a, HasElmType a, A (HasElmEncoder Value) a)
-type EDD t a = (ED t a, HasElmType a, A (HasElmDecoder Value) a)
+type EED t a = (ED t a, HasElmType a, A (HasElmEncoder J.Value) a)
+type EDD t a = (ED t a, HasElmType a, A (HasElmDecoder J.Value) a)
 
 instance HasElmType a => HasElmType (NonEmpty a) where
     elmType = elmType @[a]

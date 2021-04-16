@@ -12,10 +12,10 @@ decode : Json.Decode.Decoder ResetLayout
 decode =
     Json.Decode.string |>
     Json.Decode.andThen (\a -> case a of
-        "stateReset" ->
+        "StateReset" ->
             Json.Decode.succeed StateReset
 
-        "fullReset" ->
+        "FullReset" ->
             Json.Decode.succeed FullReset
 
         _ ->

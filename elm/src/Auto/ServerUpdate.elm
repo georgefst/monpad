@@ -44,65 +44,65 @@ type ServerUpdate
 decode : Json.Decode.Decoder ServerUpdate
 decode =
     Json.Decode.oneOf [ Json.Decode.succeed PlayAudioURL |>
-    Json.Decode.Pipeline.required "playAudioURL" Json.Decode.string
+    Json.Decode.Pipeline.required "PlayAudioURL" Json.Decode.string
     , Json.Decode.succeed Vibrate |>
-    Json.Decode.Pipeline.required "vibrate" (Json.Decode.list Json.Decode.int)
-    , Json.Decode.field "setImageURL" (Json.Decode.succeed SetImageURL |>
+    Json.Decode.Pipeline.required "Vibrate" (Json.Decode.list Json.Decode.int)
+    , Json.Decode.field "SetImageURL" (Json.Decode.succeed SetImageURL |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
-    , Json.Decode.field "addImage" (Json.Decode.succeed AddImage |>
+    , Json.Decode.field "AddImage" (Json.Decode.succeed AddImage |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Image.decode))
     , Json.Decode.succeed DeleteImage |>
-    Json.Decode.Pipeline.required "deleteImage" Json.Decode.string
-    , Json.Decode.field "setText" (Json.Decode.succeed SetText |>
+    Json.Decode.Pipeline.required "DeleteImage" Json.Decode.string
+    , Json.Decode.field "SetText" (Json.Decode.succeed SetText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
-    , Json.Decode.field "addText" (Json.Decode.succeed AddText |>
+    , Json.Decode.field "AddText" (Json.Decode.succeed AddText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextBox.decode))
     , Json.Decode.succeed DeleteText |>
-    Json.Decode.Pipeline.required "deleteText" Json.Decode.string
+    Json.Decode.Pipeline.required "DeleteText" Json.Decode.string
     , Json.Decode.succeed SetLayout |>
-    Json.Decode.Pipeline.required "setLayout" Auto.Layout.decode
+    Json.Decode.Pipeline.required "SetLayout" Auto.Layout.decode
     , Json.Decode.succeed SwitchLayout |>
-    Json.Decode.Pipeline.required "switchLayout" Json.Decode.string
+    Json.Decode.Pipeline.required "SwitchLayout" Json.Decode.string
     , Json.Decode.succeed HideElement |>
-    Json.Decode.Pipeline.required "hideElement" Json.Decode.string
+    Json.Decode.Pipeline.required "HideElement" Json.Decode.string
     , Json.Decode.succeed ShowElement |>
-    Json.Decode.Pipeline.required "showElement" Json.Decode.string
+    Json.Decode.Pipeline.required "ShowElement" Json.Decode.string
     , Json.Decode.succeed AddElement |>
-    Json.Decode.Pipeline.required "addElement" Auto.FullElement.decode
+    Json.Decode.Pipeline.required "AddElement" Auto.FullElement.decode
     , Json.Decode.succeed RemoveElement |>
-    Json.Decode.Pipeline.required "removeElement" Json.Decode.string
+    Json.Decode.Pipeline.required "RemoveElement" Json.Decode.string
     , Json.Decode.succeed SetBackgroundColour |>
-    Json.Decode.Pipeline.required "setBackgroundColour" Auto.Colour.decode
-    , Json.Decode.field "setIndicatorHollowness" (Json.Decode.succeed SetIndicatorHollowness |>
+    Json.Decode.Pipeline.required "SetBackgroundColour" Auto.Colour.decode
+    , Json.Decode.field "SetIndicatorHollowness" (Json.Decode.succeed SetIndicatorHollowness |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
-    , Json.Decode.field "setIndicatorArcStart" (Json.Decode.succeed SetIndicatorArcStart |>
+    , Json.Decode.field "SetIndicatorArcStart" (Json.Decode.succeed SetIndicatorArcStart |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
-    , Json.Decode.field "setIndicatorArcEnd" (Json.Decode.succeed SetIndicatorArcEnd |>
+    , Json.Decode.field "SetIndicatorArcEnd" (Json.Decode.succeed SetIndicatorArcEnd |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
-    , Json.Decode.field "setIndicatorShape" (Json.Decode.succeed SetIndicatorShape |>
+    , Json.Decode.field "SetIndicatorShape" (Json.Decode.succeed SetIndicatorShape |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Shape.decode))
-    , Json.Decode.field "setIndicatorCentre" (Json.Decode.succeed SetIndicatorCentre |>
+    , Json.Decode.field "SetIndicatorCentre" (Json.Decode.succeed SetIndicatorCentre |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Util.decodeVec2))
-    , Json.Decode.field "setIndicatorColour" (Json.Decode.succeed SetIndicatorColour |>
+    , Json.Decode.field "SetIndicatorColour" (Json.Decode.succeed SetIndicatorColour |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
-    , Json.Decode.field "setSliderPosition" (Json.Decode.succeed SetSliderPosition |>
+    , Json.Decode.field "SetSliderPosition" (Json.Decode.succeed SetSliderPosition |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.float))
-    , Json.Decode.field "setButtonColour" (Json.Decode.succeed SetButtonColour |>
+    , Json.Decode.field "SetButtonColour" (Json.Decode.succeed SetButtonColour |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
-    , Json.Decode.field "setButtonPressed" (Json.Decode.succeed SetButtonPressed |>
+    , Json.Decode.field "SetButtonPressed" (Json.Decode.succeed SetButtonPressed |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
     , Json.Decode.succeed ResetLayout |>
-    Json.Decode.Pipeline.required "resetLayout" Auto.ResetLayout.decode ]
+    Json.Decode.Pipeline.required "ResetLayout" Auto.ResetLayout.decode ]

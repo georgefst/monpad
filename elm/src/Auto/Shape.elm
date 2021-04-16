@@ -13,6 +13,6 @@ type Shape
 decode : Json.Decode.Decoder Shape
 decode =
     Json.Decode.oneOf [ Json.Decode.succeed Circle |>
-    Json.Decode.Pipeline.required "circle" Json.Decode.int
+    Json.Decode.Pipeline.required "Circle" Json.Decode.int
     , Json.Decode.succeed Rectangle |>
-    Json.Decode.Pipeline.required "rectangle" Auto.IntVec2.decode ]
+    Json.Decode.Pipeline.required "Rectangle" Auto.IntVec2.decode ]

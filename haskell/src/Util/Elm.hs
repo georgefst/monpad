@@ -14,7 +14,6 @@ import Control.Monad (forM_)
 import Data.Aeson as JSON
 import Data.Aeson.Types (Parser)
 import Data.Bifunctor (Bifunctor (bimap))
-import Data.Char (toLower)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -66,13 +65,7 @@ writeDefs elm defs = do
     autoFull = src </> T.unpack autoDir
 
 jsonOpts :: JSON.Options
-jsonOpts =
-    JSON.defaultOptions
-        { sumEncoding = ObjectWithSingleField
-        , JSON.constructorTagModifier = \case
-            c : cs -> toLower c : cs
-            "" -> ""
-        }
+jsonOpts = JSON.defaultOptions{sumEncoding = ObjectWithSingleField}
 
 elmOpts :: Elm.Options
 elmOpts = Elm.defaultOptions

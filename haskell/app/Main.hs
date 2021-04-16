@@ -155,6 +155,7 @@ main = do
             runPlugin = server pingFrequency port loginImageUrl assetsDir
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
+-- see: https://github.com/dhall-lang/dhall-lang/issues/1153
 -- | Make an absolute path relative, at all costs.
 windowsHack :: Text -> IO Text
 windowsHack e = if isWindows

@@ -1,10 +1,15 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module GenerateElm where
 
 import Data.Aeson qualified as J
+import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
-import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
+import Language.Elm.Expression qualified as Expr
+import Language.Elm.Name qualified as Name
+import Language.Elm.Type qualified as Type
+import Language.Haskell.To.Elm (HasElmDecoder (..), HasElmEncoder (..), HasElmType (..),)
 
 import Monpad
 import Orphans.Elm ()
@@ -133,3 +138,52 @@ deriving instance SOP.Generic Shape
 deriving instance SOP.HasDatatypeInfo Shape
 deriving via Elm.Via Shape instance HasElmType Shape
 deriving via Elm.Via Shape instance HasElmDecoder J.Value Shape
+
+{- Vectors -}
+
+data IntVec2 = IntVec2
+    { x :: Int
+    , y :: Int
+    }
+    deriving (Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via IntVec2
+data WordVec2 = WordVec2
+    { x :: Word
+    , y :: Word
+    }
+    deriving (Generic, SOP.Generic, SOP.HasDatatypeInfo)
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via IntVec2
+data DoubleVec2 = DoubleVec2
+    { x :: Double
+    , y :: Double
+    }
+    deriving (Generic, SOP.Generic, SOP.HasDatatypeInfo)
+
+-- NB we can decode but encoding would be unsafe
+instance HasElmType Word where
+    elmType = "Basics.Int"
+instance HasElmDecoder J.Value Word where
+    elmDecoder = "Json.Decode.int"
+
+deriving instance SOP.Generic (V2 Int)
+deriving instance SOP.HasDatatypeInfo (V2 Int)
+instance HasElmDecoder J.Value (V2 Int) where
+    elmDecoderDefinition = elmDecoderDefinition @J.Value @IntVec2
+instance HasElmType (V2 Int) where
+    elmDefinition = elmDefinition @IntVec2
+
+deriving instance SOP.Generic (V2 Word)
+deriving instance SOP.HasDatatypeInfo (V2 Word)
+instance HasElmDecoder J.Value (V2 Word) where
+    elmDecoderDefinition = elmDecoderDefinition @J.Value @WordVec2
+instance HasElmType (V2 Word) where
+    elmDefinition = elmDefinition @WordVec2
+
+deriving instance SOP.Generic (V2 Double)
+deriving instance SOP.HasDatatypeInfo (V2 Double)
+instance HasElmDecoder J.Value (V2 Double) where
+    elmDecoder = Expr.Global $ Name.Qualified ["Util"] "decodeVec2"
+instance HasElmEncoder J.Value (V2 Double) where
+    elmEncoder = Expr.Global $ Name.Qualified ["Util"] "encodeVec2"
+instance HasElmType (V2 Double) where
+    elmType = Type.Global $ Name.Qualified ["Math", "Vector2"] "Vec2"

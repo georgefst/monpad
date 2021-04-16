@@ -103,6 +103,7 @@ library
     other-modules:
         Test
         Embed
+        GenerateElm
         Layout
         Orphans.Elm
         Orphans.Generic

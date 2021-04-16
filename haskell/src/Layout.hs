@@ -12,11 +12,9 @@ import Data.Text (Text)
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
-import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear.V2 (V2)
 import Orphans.V2 ()
-import Util.Elm (Unit, Via (..))
 import Util.Elm qualified as Elm
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 
@@ -46,8 +44,7 @@ data Layout a b = Layout
     , backgroundColour :: Colour
     , name :: LayoutID
     }
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Layout Unit Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via2 Layout a b
     deriving (Bifunctor) via GenericBifunctor Layout
 
@@ -59,8 +56,7 @@ data FullElement a b = FullElement
     , image :: Maybe Image
     , hidden :: Bool
     }
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 FullElement Unit Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via2 FullElement a b
     deriving (Bifunctor) via GenericBifunctor FullElement
 
@@ -75,8 +71,7 @@ data Element a b
     | Slider (Slider a)
     | Indicator Indicator
     | Empty
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via2 Element Unit Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via2 Element a b
     deriving (Bifunctor) via GenericBifunctor Element
 
@@ -88,8 +83,7 @@ data Stick a = Stick'
     , stickDataX :: a
     , stickDataY :: a
     }
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Stick Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via1 Stick a
 
 data Button b = Button'
@@ -97,8 +91,7 @@ data Button b = Button'
     , colour :: Colour
     , buttonData :: b
     }
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Button Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via1 Button b
 
 data Slider a = Slider'
@@ -113,8 +106,7 @@ data Slider a = Slider'
     , backgroundColour :: Colour
     , sliderData :: a
     }
-    deriving (Show, Functor, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (HasElmType, HasElmDecoder JSON.Value) via Elm.Via1 Slider Unit
+    deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via Elm.Via1 Slider a
 
 data Image = Image
@@ -122,15 +114,15 @@ data Image = Image
     , height :: Word
     , url :: Text
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Image
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via Image
 
 data TextBox = TextBox
     { text :: Text
     , style :: TextStyle
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextBox
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via TextBox
 
 data Indicator = Indicator'
     { hollowness :: Double
@@ -144,14 +136,14 @@ data Indicator = Indicator'
     , colour :: Colour
     , shape :: Shape
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Indicator
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via Indicator
 
 data Shape
     = Circle Word
     | Rectangle (V2 Word)
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Shape
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via Shape
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
@@ -160,8 +152,8 @@ data Colour = Colour
     , blue :: Double
     , alpha :: Double
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via Colour
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via Colour
 
 data ViewBox = ViewBox
     { x :: Int
@@ -169,8 +161,8 @@ data ViewBox = ViewBox
     , w :: Word
     , h :: Word
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via ViewBox
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via ViewBox
 
 data TextStyle = TextStyle
     { size :: Word
@@ -182,13 +174,13 @@ data TextStyle = TextStyle
     , font :: Text
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextStyle
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via TextStyle
 
 data TextShadow = TextShadow
     { offset :: V2 Int
     , blur :: Word
     , colour :: Colour
     }
-    deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
-    deriving (ToJSON, HasElmType, HasElmDecoder JSON.Value) via Elm.Via TextShadow
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via Elm.Via TextShadow

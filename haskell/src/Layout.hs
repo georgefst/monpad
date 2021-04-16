@@ -9,7 +9,7 @@ import Data.Bifunctor (Bifunctor)
 import Data.Either (partitionEithers)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
-import Deriving.Aeson (CustomJSON (CustomJSON), SumObjectWithSingleField)
+import Deriving.Aeson (CustomJSON (CustomJSON))
 import Dhall (FromDhall, auto, input)
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
@@ -17,6 +17,8 @@ import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear.V2 (V2)
 import Orphans.V2 ()
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
+
+import Opts qualified
 
 allAxesAndButs :: Layout a b -> ([a], [b])
 allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
@@ -45,7 +47,7 @@ data Layout a b = Layout
     , name :: LayoutID
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Layout a b)
+    deriving (ToJSON) via CustomJSON Opts.JSON (Layout a b)
     deriving (Bifunctor) via GenericBifunctor Layout
 
 data FullElement a b = FullElement
@@ -57,7 +59,7 @@ data FullElement a b = FullElement
     , hidden :: Bool
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (FullElement a b)
+    deriving (ToJSON) via CustomJSON Opts.JSON (FullElement a b)
     deriving (Bifunctor) via GenericBifunctor FullElement
 
 newtype ElementID = ElementID {unwrap :: Text}
@@ -72,7 +74,7 @@ data Element a b
     | Indicator Indicator
     | Empty
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Element a b)
+    deriving (ToJSON) via CustomJSON Opts.JSON (Element a b)
     deriving (Bifunctor) via GenericBifunctor Element
 
 data Stick a = Stick'
@@ -84,7 +86,7 @@ data Stick a = Stick'
     , stickDataY :: a
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Stick a)
+    deriving (ToJSON) via CustomJSON Opts.JSON (Stick a)
 
 data Button b = Button'
     { shape :: Shape
@@ -92,7 +94,7 @@ data Button b = Button'
     , buttonData :: b
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Button b)
+    deriving (ToJSON) via CustomJSON Opts.JSON (Button b)
 
 data Slider a = Slider'
     { radius :: Word
@@ -107,7 +109,7 @@ data Slider a = Slider'
     , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] (Slider a)
+    deriving (ToJSON) via CustomJSON Opts.JSON (Slider a)
 
 data Image = Image
     { width :: Word
@@ -115,14 +117,14 @@ data Image = Image
     , url :: Text
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Image
+    deriving (ToJSON) via CustomJSON Opts.JSON Image
 
 data TextBox = TextBox
     { text :: Text
     , style :: TextStyle
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextBox
+    deriving (ToJSON) via CustomJSON Opts.JSON TextBox
 
 data Indicator = Indicator'
     { hollowness :: Double
@@ -137,13 +139,13 @@ data Indicator = Indicator'
     , shape :: Shape
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Indicator
+    deriving (ToJSON) via CustomJSON Opts.JSON Indicator
 
 data Shape
     = Circle Word
     | Rectangle (V2 Word)
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Shape
+    deriving (ToJSON) via CustomJSON Opts.JSON Shape
 
 -- field names chosen to match 'elm-color's 'fromRgba'
 data Colour = Colour
@@ -153,7 +155,7 @@ data Colour = Colour
     , alpha :: Double
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] Colour
+    deriving (ToJSON) via CustomJSON Opts.JSON Colour
 
 data ViewBox = ViewBox
     { x :: Int
@@ -162,7 +164,7 @@ data ViewBox = ViewBox
     , h :: Word
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] ViewBox
+    deriving (ToJSON) via CustomJSON Opts.JSON ViewBox
 
 data TextStyle = TextStyle
     { size :: Word
@@ -175,7 +177,7 @@ data TextStyle = TextStyle
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextStyle
+    deriving (ToJSON) via CustomJSON Opts.JSON TextStyle
 
 data TextShadow = TextShadow
     { offset :: V2 Int
@@ -183,4 +185,4 @@ data TextShadow = TextShadow
     , colour :: Colour
     }
     deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON '[SumObjectWithSingleField] TextShadow
+    deriving (ToJSON) via CustomJSON Opts.JSON TextShadow

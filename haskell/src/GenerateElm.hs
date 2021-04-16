@@ -16,6 +16,7 @@ import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
+import Deriving.Aeson (aesonOptions)
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
 import Language.Elm.Definition qualified as Def
@@ -32,6 +33,7 @@ import Util.Util (listDirectory', typeRepT)
 import Language.Haskell.To.Elm
 
 import Monpad
+import Opts qualified
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to run this via GHCI or HLS.
@@ -80,9 +82,6 @@ writeDefs elmPath defs = do
 
 autoDir :: Text
 autoDir = "Auto"
-
-jsonOpts :: J.Options
-jsonOpts = J.defaultOptions{J.sumEncoding = J.ObjectWithSingleField}
 
 -- | Like 'jsonDefinitions', but for types without decoders.
 defAndEncoder :: forall t. HasElmEncoder J.Value t => [Def.Definition]
@@ -277,9 +276,9 @@ qual = Name.Qualified [autoDir, typeRepT @t]
 ed :: forall t a. (DeriveParameterisedElmTypeDefinition 0 a, Typeable t) => Maybe Def.Definition
 ed = Just $ deriveElmTypeDefinition @a defaultOptions $ qual @t (typeRepT @t)
 eed :: forall t a. (DeriveParameterisedElmEncoderDefinition 0 J.Value a, Typeable t) => Maybe Def.Definition
-eed = Just $ deriveElmJSONEncoder @a defaultOptions jsonOpts $ qual @t "encode"
+eed = Just $ deriveElmJSONEncoder @a defaultOptions (aesonOptions @Opts.JSON) $ qual @t "encode"
 edd :: forall t a. (DeriveParameterisedElmDecoderDefinition 0 J.Value a, Typeable t) => Maybe Def.Definition
-edd = Just $ deriveElmJSONDecoder @a defaultOptions jsonOpts $ qual @t "decode"
+edd = Just $ deriveElmJSONDecoder @a defaultOptions (aesonOptions @Opts.JSON) $ qual @t "decode"
 
 type A f a = SOP.All2 f (SOP.Code a)
 type ED t a = (SOP.HasDatatypeInfo a, A HasElmType a, Typeable t)

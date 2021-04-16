@@ -105,6 +105,7 @@ library
         Embed
         GenerateElm
         Layout
+        Opts
         Orphans.Generic
         Orphans.V2
         Util

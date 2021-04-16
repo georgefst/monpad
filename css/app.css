@@ -1,20 +1,3 @@
-/*
-TODO This may be our worst hack yet...
-
-The issue is that `elm-collage` doesn't let us add styles to an SVG `foreignObject` directly.
-It would presumably be a straightforward thing to add, but that library is currently unmaintained.
-
-This works for now because the only `foreignObject`s we have are for images and text, which are precisely where we do
-want pointer events disabled.
-
-Another reason this is horrible is that `elm reactor` becomes basically unusable, since we need this CSS file for
-correct behaviour.
-*/
-
-foreignObject {
-    pointer-events: none;
-}
-
 body {
     touch-action: none
 }

@@ -15,13 +15,16 @@ import Streamly
 import System.FilePath
 import Util.Util
 
+import Control.Exception (try)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Void (Void)
 import Dhall.Core qualified as D
 import Dhall.Core qualified as Dhall
 import Dhall.Import qualified as D
+import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
 import Network.HostName (getHostName)
 import Network.Socket (
@@ -100,3 +103,10 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
     -- the state map stores the number of occurrences of each name seen so far
     allNames = Map.fromList $ zip (view l <$> toList xs) (repeat (0 :: Int))
     err = error "broken invariant in `uniqueNames` - all names should be in map by construction"
+
+--TODO can we guarantee this is totally safe? and why doesn't the library provide it?
+-- | Resolve imports. A version of 'Dhall.load' which doesn't throw exceptions.
+dhallLoadSafe ::
+    Dhall.Expr Dhall.Src Dhall.Import ->
+    IO (Either (Dhall.SourcedException Dhall.MissingImports) (Dhall.Expr Dhall.Src Void))
+dhallLoadSafe = try @(Dhall.SourcedException Dhall.MissingImports) . Dhall.load

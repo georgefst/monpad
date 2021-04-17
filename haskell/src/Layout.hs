@@ -31,10 +31,7 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
 -- | A (non-empty) list of 'Layout's.
 type Layouts a b = NonEmpty (Layout a b)
 layoutsFromDhall :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Layouts a b)
-layoutsFromDhall = traverse layoutFromDhall
-
-layoutFromDhall :: (FromDhall a, FromDhall b) => Text -> IO (Layout a b)
-layoutFromDhall = input auto
+layoutsFromDhall = traverse $ input auto
 
 newtype LayoutID = LayoutID {unwrap :: Text}
     deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)

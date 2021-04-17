@@ -1,6 +1,5 @@
 module Monpad.Plugins.WatchLayout (plugin) where
 
-import Control.Exception
 import Control.Monad.Extra
 import Data.Foldable
 import Data.Traversable
@@ -8,15 +7,14 @@ import Streamly.FSNotify
 import System.FilePath
 
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
-import Data.Void (Void)
-import Dhall (FromDhall)
+import Dhall (FromDhall, auto, extract, toMonadic)
 import Dhall.Core qualified as Dhall
 import Dhall.Import qualified as Dhall
 import Dhall.Parser qualified as Dhall
-import Dhall.TypeCheck qualified as Dhall
 import Streamly (serially)
 import Streamly.Prelude qualified as SP
 
@@ -48,25 +46,10 @@ sendLayout exprText = mempty
     }
 
 parseLayout :: (FromDhall a, FromDhall b) => Text -> IO (Maybe (Layout a b))
-parseLayout expr = printDhallErrors $ layoutFromDhall =<< dhallResolve expr
+parseLayout t = runMaybeT do
+    x <- Dhall.normalize <$> (printError =<< liftIO . dhallLoadSafe =<< printError (Dhall.exprFromText "" t))
+    liftIO $ T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
+    printError . toMonadic $ extract auto x
   where
-    {-TODO this may well be incomplete
-        anyway, if there isn't a better way of doing this, report to 'dhall-haskell'
-    -}
-    printDhallErrors = fmap (join . join)
-        . h @Dhall.ParseError
-        . h @(Dhall.SourcedException Dhall.MissingImports)
-        . h @(Dhall.TypeError Dhall.Src Void)
-      where
-        h :: forall e a. Exception e => IO a -> IO (Maybe a)
-        h = handle @e (\x -> print x >> pure Nothing) . fmap Just
-    {-TODO using 'pretty' means we're repeating work
-        perhaps 'layoutFromDhall' should take an 'Expr Src/Void Void'
-        (and be total, while we're at it?)
-        also 'normalize' and 'typeOf'
-    -}
-    dhallResolve e = do
-        x <- Dhall.load =<< Dhall.throws (Dhall.exprFromText "" e)
-        _ <- Dhall.throws $ Dhall.typeOf x
-        T.putStrLn $ "Parsed Dhall expression: " <> Dhall.hashExpressionToCode (Dhall.normalize x)
-        pure $ Dhall.pretty x
+    printError :: Show e => Either e a -> MaybeT IO a
+    printError = either (\e -> liftIO (print e) >> mzero) pure

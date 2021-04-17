@@ -2,12 +2,13 @@
 module Test where
 
 import Control.Monad.Reader
-import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Text (Text)
-import GHC.IO.Encoding (setLocaleEncoding)
 import Optics
 import System.IO
 import Text.Pretty.Simple
+
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text (Text)
+import GHC.IO.Encoding (setLocaleEncoding)
 
 import Monpad
 import Monpad.Plugins

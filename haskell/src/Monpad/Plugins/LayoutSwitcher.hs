@@ -3,9 +3,7 @@
 module Monpad.Plugins.LayoutSwitcher (plugin) where
 
 import Control.Monad.State
-import Data.Foldable
 import Data.Tuple.Extra
-import Util.Util
 
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream ((:>)))
@@ -18,17 +16,15 @@ import Monpad.Plugins
 plugin :: b -> Plugin a b
 plugin = Plugin . switcher @()
 
-switcher :: Monoid e => b -> ServerConfig e (Stream ((LayoutID, ViewBox), Bool)) a b
+switcher :: Monoid e => b -> ServerConfig e (Stream (LayoutID, ViewBox)) a b
 switcher buttonData =
     let onNewConnection = \(fmap (((.name) &&& (.viewBox)) . fst) -> ls) _ -> pure
             ( mempty
-            , Stream.prepend
-                (zip (toList ls) (repeat True))
-                (Stream.cycle $ NE.zip ls (NE.repeat False))
-            , pure . uncurry initialUpdate $ NE.head ls
+            , Stream.cycle ls
+            , pure . uncurry addButton $ NE.head ls
             )
         elementId = ElementID "_internal_switcher_button"
-        initialUpdate l vb =
+        addButton l vb =
             let ViewBox{..} = vb
                 s = min w h `div` 4
                 (location, size) =
@@ -51,18 +47,21 @@ switcher buttonData =
                     , image = Nothing
                     , hidden = False
                     }
+        onUpdateLayoutChange = onLayoutChange \l -> do
+            modify . over #extra . Stream.dropWhile $ (/= l.name) . fst
+            pure [addButton l.name l.viewBox]
+        onUpdateButtonUp = \case
+            ClientUpdate (ButtonUp t) | t == elementId -> do
+                modify $ over #extra Stream.tail
+                (l, vb) :> _ <- gets $ view #extra
+                pure [SwitchLayout l, addButton l vb]
+            _ -> mempty
+        onUpdate = onUpdateLayoutChange <> onUpdateButtonUp
      in ServerConfig
             { onNewConnection
+            , onUpdate
             , updates = mempty
             , onStart = mempty
-            , onUpdate = \case
-                ClientUpdate (ButtonUp t) | t == elementId -> do
-                    modify $ over #extra Stream.tail
-                    ((l, vb), new) :> _ <- gets $ view #extra
-                    pure $
-                        applyWhen new (++ [initialUpdate l vb])
-                        [SwitchLayout l]
-                _ -> mempty
             , onDroppedConnection = mempty
             , onPong = mempty
             }

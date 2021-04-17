@@ -11,13 +11,13 @@ import Data.List
 import Data.List.Extra
 import Options.Applicative
 import System.Directory
+import System.Exit
 import System.FilePath
 import System.Info.Extra
 import Text.Read
 import Util.Util
 
-import Data.List.NonEmpty (nonEmpty)
-import Data.List.NonEmpty qualified as NE
+import Data.List.NonEmpty (nonEmpty, NonEmpty)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
@@ -133,26 +133,30 @@ main = do
             Nothing -> pure $ defaultDhall ()
     case externalWS of
         Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
-            =<< layoutsFromDhall dhallLayouts
+            =<< mkLayouts dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin path) $ flip onStart url
         Nothing -> if systemDevice
             --TODO with `ImpredicativeTypes`, we can remove the explicit lambdas here and go point-free
-            then layoutsFromDhall dhallLayouts >>= \ls ->
+            then mkLayouts dhallLayouts >>= \ls ->
                 withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) $ runPlugin ls
-            else layoutsFromDhall dhallLayouts >>= \ls ->
+            else mkLayouts dhallLayouts >>= \ls ->
                 withPlugin (plugin @() ()) $ runPlugin ls
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
                 $ applyWhen displayPing (PingIndicator.plugin :)
-                $ applyWhen watchLayout ((WatchLayout.plugin $ NE.head dhallLayouts) :)
+                $ applyWhen watchLayout (WatchLayout.plugin :)
                 $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin unknown :)
                 $ maybe id ((:) . QR.plugin) qrPath
                 $ maybe id ((:) . Logger.plugin T.putStrLn) verbosity
                 []
             runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
             runPlugin = server pingFrequency port loginImageUrl assetsDir
+
+-- | Run 'layoutsFromDhall' and exit if it fails.
+mkLayouts :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Layouts a b)
+mkLayouts = maybe exitFailure pure <=< layoutsFromDhall
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 -- see: https://github.com/dhall-lang/dhall-lang/issues/1153

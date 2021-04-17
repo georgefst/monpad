@@ -2,6 +2,7 @@
 
 module Layout where
 
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Aeson qualified as J
 import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Aeson.Types qualified as JSON
@@ -10,7 +11,7 @@ import Data.Either (partitionEithers)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Deriving.Aeson (CustomJSON (CustomJSON))
-import Dhall (FromDhall, auto, input)
+import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
@@ -19,6 +20,7 @@ import Orphans.V2 ()
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 
 import Opts qualified
+import Util
 
 allAxesAndButs :: Layout a b -> ([a], [b])
 allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
@@ -29,9 +31,12 @@ allAxesAndButs layout = partitionEithers $ map element layout.elements >>= \case
     Empty -> []
 
 -- | A (non-empty) list of 'Layout's.
-type Layouts a b = NonEmpty (Layout a b)
-layoutsFromDhall :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Layouts a b)
-layoutsFromDhall = traverse $ input auto
+type Layouts a b = NonEmpty (Layout a b, Maybe DhallExpr)
+layoutsFromDhall :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Maybe (Layouts a b))
+layoutsFromDhall = runMaybeT . traverse \t -> do
+    e <- dhallExprFromText t
+    (l, _) <- dhallToHs e
+    pure (l, Just e)
 
 newtype LayoutID = LayoutID {unwrap :: Text}
     deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)

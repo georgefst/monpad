@@ -16,11 +16,13 @@ import System.FilePath
 import Util.Util
 
 import Control.Exception (try)
+import Control.Monad.Trans.Maybe (MaybeT)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Void (Void)
+import Dhall (FromDhall, auto, extract, toMonadic)
 import Dhall.Core qualified as D
 import Dhall.Import qualified as D
 import Dhall.Parser qualified as D
@@ -78,17 +80,35 @@ lastOfGroup interval = f2 . asyncly . f1
             t <- getCurrentTime
             pure (\t' -> diffUTCTime t' t < (realToFrac interval / 1_000_000), Nothing)
 
+type DhallExpr = D.Expr D.Src D.Import
+
 -- | Returns list of files (transitively) imported by the expression, grouped by directory.
-dhallImports :: MonadIO io => Text -> io [(FilePath, NonEmpty Text)]
-dhallImports t = do
-    e <- D.throws $ D.exprFromText "" t
-    --TODO we could return and reuse the ignored expression, rather than re-running the previous step in the outer scope
-    (_e', s) <- liftIO $ flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
+dhallImports :: MonadIO io => DhallExpr -> io [(FilePath, NonEmpty Text)]
+dhallImports e = do
+    (_e', s) <- liftIO $ runStateT (D.loadWith e) $ D.emptyStatus ""
     pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
   where
     importFile x = case D.importType $ D.importHashed x of
         D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
         _ -> Nothing
+
+--TODO can we guarantee this is totally safe? and why doesn't the library provide it?
+-- | Resolve imports. A version of 'Dhall.load' which doesn't throw exceptions.
+dhallLoadSafe :: DhallExpr -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
+dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load
+
+dhallExprFromText :: Text -> MaybeT IO DhallExpr
+dhallExprFromText = printError . D.exprFromText ""
+
+-- | Get a Haskell value from a Dhall expression, and return the hash.
+dhallToHs :: FromDhall a => DhallExpr -> MaybeT IO (a, Text)
+dhallToHs e = do
+    e' <- D.normalize <$> (printError =<< liftIO (dhallLoadSafe e))
+    x <- printError . toMonadic . extract auto $ D.renote e'
+    pure (x, D.hashExpressionToCode e')
+
+printError :: Show e => Either e a -> MaybeT IO a
+printError = either (\e -> liftIO (print e) >> mzero) pure
 
 -- | Ensure no two members have the same value for the provided 'Text' field, by appending numbers when necessary.
 uniqueNames :: Traversable t => Lens' a Text -> t a -> t a
@@ -101,8 +121,3 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
     -- the state map stores the number of occurrences of each name seen so far
     allNames = Map.fromList $ zip (view l <$> toList xs) (repeat (0 :: Int))
     err = error "broken invariant in `uniqueNames` - all names should be in map by construction"
-
---TODO can we guarantee this is totally safe? and why doesn't the library provide it?
--- | Resolve imports. A version of 'Dhall.load' which doesn't throw exceptions.
-dhallLoadSafe :: D.Expr D.Src D.Import -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
-dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load

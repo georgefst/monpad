@@ -20,7 +20,7 @@ plugin = Plugin . switcher @()
 
 switcher :: Monoid e => b -> ServerConfig e (Stream ((LayoutID, ViewBox), Bool)) a b
 switcher buttonData =
-    let onNewConnection = \(fmap ((.name) &&& (.viewBox)) -> ls) _ -> pure
+    let onNewConnection = \(fmap (((.name) &&& (.viewBox)) . fst) -> ls) _ -> pure
             ( mempty
             , Stream.prepend
                 (zip (toList ls) (repeat True))

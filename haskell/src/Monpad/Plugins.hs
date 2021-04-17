@@ -21,6 +21,6 @@ onLayoutChange ::
     Update a b ->
     Monpad e s a b [ServerUpdate a b]
 onLayoutChange f = \case
-    ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . view #layouts) >>= maybe mempty f
+    ServerUpdate (SwitchLayout i) -> asks (fmap fst . Map.lookup i . view #layouts) >>= maybe mempty f
     ServerUpdate (SetLayout l) -> f l
     _ -> mempty

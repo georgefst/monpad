@@ -18,7 +18,7 @@ defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"
 test :: [Plugin () ()] -> [Text] -> IO ()
 test ps ls = do
     setLocaleEncoding utf8
-    layouts <- layoutsFromDhall $ defaultSimple :| ls
+    Just layouts <- layoutsFromDhall $ defaultSimple :| ls
     withPlugin
         (plugins $ Plugin config : ps)
         $ server
@@ -43,4 +43,6 @@ test ps ls = do
             }
 
 testExt :: IO ()
-testExt = serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") =<< layoutsFromDhall @() @() (pure defaultSimple)
+testExt = do
+    Just layouts <- layoutsFromDhall @() @() (pure defaultSimple)
+    serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") layouts

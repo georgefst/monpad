@@ -32,6 +32,7 @@ import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.IORef
+import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -94,7 +95,7 @@ data ClientUpdate
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
-    { layouts :: Layouts () ()
+    { layouts :: NonEmpty (Layout () ())
     , username :: Text
     }
     deriving (Show, Generic)
@@ -133,7 +134,7 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
-        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ biVoid <$> layouts
+        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ biVoid . fst <$> layouts
         , makeAttribute "wsPort" $ showT wsPort
         , makeAttribute "username" username
         ]
@@ -170,7 +171,7 @@ deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e
 deriving via Mon (Monpad e s a b) x instance Monoid x => (Monoid (Monpad e s a b x))
 data MonpadEnv e a b = MonpadEnv
     { client :: ClientID
-    , layouts :: Map LayoutID (Layout a b)
+    , layouts :: Map LayoutID (Layout a b, Maybe DhallExpr)
     , extra :: e
     }
     deriving (Show, Generic)
@@ -183,10 +184,10 @@ runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         (unMonpad mon)
-        (MonpadEnv c (Map.fromList . NE.toList $ ((.name) &&& id) <$> ls) e)
+        (MonpadEnv c (Map.fromList . NE.toList $ (((.name) . fst) &&& id) <$> ls) e)
     )
     (MonpadState l s)
-  where l = NE.head ls
+  where l = fst $ NE.head ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
@@ -201,7 +202,7 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
     , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: e -> Async (s -> [ServerUpdate a b])
+    , updates :: MonpadEnv e a b -> Async (s -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
@@ -223,10 +224,10 @@ combineConfs sc1 sc2 = ServerConfig
     , onPong = \(e1, e2) -> pure (<>)
         <*> sc1.onPong e1
         <*> sc2.onPong e2
-    , updates = \(e1, e2) ->
-        ((. fst) <$> sc1.updates e1)
+    , updates = \e ->
+        ((. fst) <$> sc1.updates (over #extra fst e))
             <>
-        ((. snd) <$> sc2.updates e2)
+        ((. snd) <$> sc2.updates (over #extra snd e))
     , onUpdate = pure f
         <*> sc1.onUpdate
         <*> sc2.onUpdate
@@ -239,7 +240,7 @@ combineConfs sc1 sc2 = ServerConfig
         pure (rx <> ry, over #extra (view #extra s1,) s2)
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server pingFrequency port loginImage assetsDir (uniqueNames (#name % coerced) -> layouts) conf = do
+server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf
@@ -286,8 +287,8 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = serially . SP.mapM (gets (view #extra) <&>) . SP.hoist liftIO . asyncly $
-                SP.cons (const u0) (updates e) <> SP.repeatM (const <$> takeMVar extraUpdates)
+            serverUpdates = ask >>= \env -> serially . SP.mapM (gets (view #extra) <&>) . SP.hoist liftIO . asyncly $
+                SP.cons (const u0) (updates env) <> SP.repeatM (const <$> takeMVar extraUpdates)
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where
                 go us = if null us
@@ -296,7 +297,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                         case u of
                             ServerUpdate (SetLayout l) -> modify $ #layout .~ l
                             ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . view #layouts) >>= \case
-                                Just l -> modify $ #layout .~ l
+                                Just (l, _) -> modify $ #layout .~ l
                                 Nothing -> warn $ "layout id not found: " <> i.unwrap
                             _ -> mempty
                         onUpdate u

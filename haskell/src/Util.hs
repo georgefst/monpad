@@ -72,7 +72,7 @@ lastOfGroup interval = f2 . asyncly . f1
     f1 = SP.concatMapWith (<>) \x ->
         SP.cons Nothing $ SP.yieldM (threadDelay interval >> pure (Just x))
     -- ignore any event which appears within `interval` of a 'Nothing'
-    f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, undefined) \(tooSoon, _) -> \case
+    f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (const False, error "lastOfGroup") \(tooSoon, _) -> \case
         Just x -> do
             t <- getCurrentTime
             pure (tooSoon, guard (not $ tooSoon t) $> x)

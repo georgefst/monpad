@@ -22,10 +22,8 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Void (Void)
 import Dhall.Core qualified as D
-import Dhall.Core qualified as Dhall
 import Dhall.Import qualified as D
-import Dhall.Import qualified as Dhall
-import Dhall.Parser qualified as Dhall
+import Dhall.Parser qualified as D
 import Network.HostName (getHostName)
 import Network.Socket (
     AddrInfo (addrAddress),
@@ -83,7 +81,7 @@ lastOfGroup interval = f2 . asyncly . f1
 -- | Returns list of files (transitively) imported by the expression, grouped by directory.
 dhallImports :: MonadIO io => Text -> io [(FilePath, NonEmpty Text)]
 dhallImports t = do
-    e <- Dhall.throws $ Dhall.exprFromText "" t
+    e <- D.throws $ D.exprFromText "" t
     --TODO we could return and reuse the ignored expression, rather than re-running the previous step in the outer scope
     (_e', s) <- liftIO $ flip runStateT (D.emptyStatus $ dropFileName "") $ D.loadWith e
     pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
@@ -106,7 +104,5 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
 
 --TODO can we guarantee this is totally safe? and why doesn't the library provide it?
 -- | Resolve imports. A version of 'Dhall.load' which doesn't throw exceptions.
-dhallLoadSafe ::
-    Dhall.Expr Dhall.Src Dhall.Import ->
-    IO (Either (Dhall.SourcedException Dhall.MissingImports) (Dhall.Expr Dhall.Src Void))
-dhallLoadSafe = try @(Dhall.SourcedException Dhall.MissingImports) . Dhall.load
+dhallLoadSafe :: D.Expr D.Src D.Import -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
+dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load

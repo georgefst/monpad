@@ -135,7 +135,7 @@ view model =
                 , Pointer.onMove <|
                     \event ->
                         Dict.get event.pointerId model.layout.pointerCallbacks
-                            |> maybe [ unknownIdMsg event ] (\c -> c.onMove event)
+                            |> maybe [] (\c -> c.onMove event)
                 , Pointer.onLeave (singleton << PointerUp)
                 , style "width" (String.fromInt model.windowSize.x ++ "px")
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
@@ -621,7 +621,7 @@ update msg model =
         PointerUp event ->
             ( { model | layout = { layoutState | pointerCallbacks = Dict.remove event.pointerId layoutState.pointerCallbacks } }
             , Dict.get event.pointerId model.layout.pointerCallbacks
-                |> maybe [ unknownIdMsg event ] (\c -> c.onRelease)
+                |> maybe [] (\c -> c.onRelease)
                 |> performCmd
             )
 
@@ -904,8 +904,3 @@ onPointerDown f y =
                     ]
                 )
         )
-
-
-unknownIdMsg : Pointer.Event -> Msg
-unknownIdMsg event =
-    ConsoleLog <| "Unknown pointer id: " ++ String.fromInt event.pointerId

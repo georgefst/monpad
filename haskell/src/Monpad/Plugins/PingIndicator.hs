@@ -32,19 +32,21 @@ showPing =
                 ]
         elementId = ElementID "_internal_ping_indicator"
         initialUpdate Layout{..} =
-            let (location, size) =
+            let (location, width, height) =
                     let ViewBox{..} = viewBox
                         s = min w h `div` 4
-                     in ( V2 (x + fromIntegral (w - s `div` 2)) (y + fromIntegral (h - s `div` 2))
+                        h' = s `div` 4
+                     in ( V2 (x + fromIntegral (w - s `div` 2)) (y + fromIntegral (h - h' `div` 2))
                         , fromIntegral s
+                        , fromIntegral h'
                         )
-                square = Rectangle $ V2 size size
+                square = Rectangle $ V2 width height
              in AddElement $ FullElement
                     { location
                     , name = elementId
                     , text = Just TextBox
                         { text = "Ping"
-                        , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
+                        , style = TextStyle (width `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
                         }
                     , image = Nothing
                     , element = Indicator Indicator'

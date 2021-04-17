@@ -40,6 +40,7 @@ import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
 import Data.Proxy
+import Data.Monoid
 import Data.Semigroup.Monad
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
@@ -208,7 +209,7 @@ data ServerConfig e s a b = ServerConfig
     -- ^ do something with the URL, when the server starts
     , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
-    , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
+    , onPong :: e -> NominalDiffTime -> IO (Endo s, [ServerUpdate a b])
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: MonpadEnv e a b -> Async (MonpadState s a b -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
@@ -229,9 +230,10 @@ combineConfs sc1 sc2 = ServerConfig
     , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 >> f2 e2)
         <<*>> sc1.onDroppedConnection
         <<*>> sc2.onDroppedConnection
-    , onPong = \(e1, e2) -> pure (<>)
-        <*> sc1.onPong e1
-        <*> sc2.onPong e2
+    , onPong = \(e1, e2) t -> do
+        (Endo sf1, u1) <- sc1.onPong e1 t
+        (Endo sf2, u2) <- sc2.onPong e2 t
+        pure (Endo $ sf1 *** sf2, u1 <> u2)
     , updates = \e ->
         ((. over #extra fst) <$> sc1.updates (over #extra fst e))
             <>
@@ -285,12 +287,15 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         lastPing <- newIORef Nothing
         (e, s0, u0) <- onNewConnection layouts clientId
         extraUpdates <- newEmptyMVar
+        extraModifys <- newEmptyMVar
         let onPing = writeIORef lastPing . Just =<< getPOSIXTime
             onPong' = readIORef lastPing >>= \case
                 Nothing -> warn "pong before ping"
                 Just t0 -> do
                     t1 <- getPOSIXTime
-                    putMVar extraUpdates =<< onPong e (t1 - t0)
+                    (Endo f, us) <- onPong e (t1 - t0)
+                    putMVar extraUpdates us
+                    putMVar extraModifys f
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
@@ -298,6 +303,9 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
             serverUpdates = ask >>= \env -> SP.mapM (get <&>) . asyncly $ mconcat
                 [ serially . SP.hoist liftIO $ SP.cons (const u0) (asyncly $ updates env)
                 , serially . SP.hoist liftIO $ SP.repeatM (const <$> takeMVar extraUpdates)
+                , SP.repeatM do
+                    modify . over #extra =<< liftIO (takeMVar extraModifys)
+                    mempty
                 ]
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where

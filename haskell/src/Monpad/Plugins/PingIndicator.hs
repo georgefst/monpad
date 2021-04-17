@@ -25,11 +25,14 @@ showPing =
                 r = sRGB 0.85 0.28 0.28
                 y = sRGB 0.94 0.95 0.33
                 g = sRGB 0.2 0.72 0.2
-            in  [ SetText elementId $ showT time
-                , SetIndicatorColour elementId $ fromPrizm 1 if goodness < 0.5
-                    then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
-                    else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
-                ]
+            in  ( mempty
+                ,
+                    [ SetText elementId $ showT time
+                    , SetIndicatorColour elementId $ fromPrizm 1 if goodness < 0.5
+                        then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
+                        else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
+                    ]
+                )
         elementId = ElementID "_internal_ping_indicator"
         addIndicator Layout{..} =
             let (location, width, height) =

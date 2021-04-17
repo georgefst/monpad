@@ -18,7 +18,7 @@ plugin = Plugin $ showPing @() @()
 
 showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
 showPing =
-    let onNewConnection = \layouts -> const $ pure (mempty, mempty, [initialUpdate . fst $ NE.head layouts])
+    let onNewConnection = \layouts -> const $ pure (mempty, mempty, [addIndicator . fst $ NE.head layouts])
         onPong = const \time -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
@@ -31,7 +31,7 @@ showPing =
                     else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
                 ]
         elementId = ElementID "_internal_ping_indicator"
-        initialUpdate Layout{..} =
+        addIndicator Layout{..} =
             let (location, width, height) =
                     let ViewBox{..} = viewBox
                         s = min w h `div` 4
@@ -59,7 +59,7 @@ showPing =
                         }
                     , hidden = False
                     }
-        onUpdate = onLayoutChange $ pure . pure . initialUpdate
+        onUpdate = onLayoutChange $ pure . pure . addIndicator
      in ServerConfig
             { onNewConnection
             , onPong

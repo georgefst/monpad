@@ -108,6 +108,7 @@ library
         Opts
         Orphans.Generic
         Orphans.V2
+        ServerUpdate
         Util
         Util.ShowNewtype
     hs-source-dirs:

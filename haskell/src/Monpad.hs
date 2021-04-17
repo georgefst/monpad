@@ -295,8 +295,10 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = ask >>= \env -> serially . SP.mapM (get <&>) . SP.hoist liftIO . asyncly $
-                SP.cons (const u0) (updates env) <> SP.repeatM (const <$> takeMVar extraUpdates)
+            serverUpdates = ask >>= \env -> SP.mapM (get <&>) . asyncly $ mconcat
+                [ serially . SP.hoist liftIO $ SP.cons (const u0) (asyncly $ updates env)
+                , serially . SP.hoist liftIO $ SP.repeatM (const <$> takeMVar extraUpdates)
+                ]
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where
                 go us = if null us

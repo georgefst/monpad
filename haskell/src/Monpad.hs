@@ -202,7 +202,7 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
     , onPong :: e -> NominalDiffTime -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: MonpadEnv e a b -> Async (s -> [ServerUpdate a b])
+    , updates :: MonpadEnv e a b -> Async (MonpadState s a b -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
@@ -225,9 +225,9 @@ combineConfs sc1 sc2 = ServerConfig
         <*> sc1.onPong e1
         <*> sc2.onPong e2
     , updates = \e ->
-        ((. fst) <$> sc1.updates (over #extra fst e))
+        ((. over #extra fst) <$> sc1.updates (over #extra fst e))
             <>
-        ((. snd) <$> sc2.updates (over #extra snd e))
+        ((. over #extra snd) <$> sc2.updates (over #extra snd e))
     , onUpdate = pure f
         <*> sc1.onUpdate
         <*> sc2.onUpdate
@@ -287,7 +287,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = ask >>= \env -> serially . SP.mapM (gets (view #extra) <&>) . SP.hoist liftIO . asyncly $
+            serverUpdates = ask >>= \env -> serially . SP.mapM (get <&>) . SP.hoist liftIO . asyncly $
                 SP.cons (const u0) (updates env) <> SP.repeatM (const <$> takeMVar extraUpdates)
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where

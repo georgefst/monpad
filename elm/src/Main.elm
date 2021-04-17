@@ -640,6 +640,7 @@ update msg model =
 
 serverUpdate : ServerUpdate -> Model -> ( Model, Cmd Msgs )
 serverUpdate u model =
+    -- this needs to be equivalent to the same handling in the Haskell code
     let
         layoutState =
             model.layout
@@ -691,6 +692,16 @@ serverUpdate u model =
                             e
     in
     case u of
+        PlayAudioURL url ->
+            ( model
+            , playAudio url
+            )
+
+        Vibrate intervals ->
+            ( model
+            , vibrate intervals
+            )
+
         SetImageURL name url ->
             ( updateElementFull name <|
                 \e ->
@@ -731,16 +742,6 @@ serverUpdate u model =
                 \e ->
                     { e | text = Nothing }
             , Cmd.none
-            )
-
-        PlayAudioURL url ->
-            ( model
-            , playAudio url
-            )
-
-        Vibrate intervals ->
-            ( model
-            , vibrate intervals
             )
 
         SetLayout l ->

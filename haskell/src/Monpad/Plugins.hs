@@ -1,10 +1,5 @@
 module Monpad.Plugins where
 
-import Control.Monad.Reader
-
-import Data.Map qualified as Map
-import Optics
-
 import Monpad
 
 data Plugin a b where
@@ -16,11 +11,13 @@ withPlugin (Plugin p) f = f p
 plugins :: [Plugin a b] -> Plugin a b
 plugins = foldl (\(Plugin x) (Plugin y) -> Plugin $ combineConfs x y) (Plugin @() @() mempty)
 
+-- | This should only be used as part of an 'onUpdate' field.
 onLayoutChange ::
     (Layout a b -> Monpad e s a b [ServerUpdate a b]) ->
     Update a b ->
     Monpad e s a b [ServerUpdate a b]
 onLayoutChange f = \case
-    ServerUpdate (SwitchLayout i) -> asks (fmap fst . Map.lookup i . view #layouts) >>= maybe mempty f
-    ServerUpdate (SetLayout l) -> f l
+    -- since 'onLayout' is called after the server updates its state, we don't actually need any info from the message
+    ServerUpdate (SwitchLayout _) -> f =<< getCurrentLayout
+    ServerUpdate (SetLayout _) -> f =<< getCurrentLayout
     _ -> mempty

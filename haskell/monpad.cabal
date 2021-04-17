@@ -45,6 +45,7 @@ common common
         monad-loops ^>= 0.4.3,
         mtl ^>= 2.2.2,
         optics ^>= 0.4,
+        optics-extra ^>= 0.4,
         pretty-simple ^>= 4.0,
         random ^>= 1.2.0,
         record-hasfield ^>= 1.0,

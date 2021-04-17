@@ -9,7 +9,6 @@ import System.FilePath
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (runMaybeT)
-import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Dhall (FromDhall)
@@ -34,7 +33,7 @@ the issue (seemingly on all three platforms) is that we get too many events, whe
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => ServerConfig e s a b
 sendLayout = mempty
     { updates = \env -> do
-        let exprs = mapMaybe (sequence . second snd) . Map.toList $ view #layouts env
+        let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
         flip foldMap exprs \(name, expr) -> do
             imports <- dhallImports expr
             evss <- for imports \(dir, toList -> files) -> liftIO do

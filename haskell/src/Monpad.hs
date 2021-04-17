@@ -7,6 +7,7 @@ module Monpad (
     runMonpad,
     MonpadEnv(..),
     MonpadState(..),
+    getCurrentLayout,
     ServerConfig (..),
     combineConfs,
     ClientID (..),
@@ -31,10 +32,11 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Foldable
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
-import Data.Map (Map)
+import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
 import Data.Proxy
@@ -60,6 +62,7 @@ import Network.Wai.Handler.Warp
 import Network.WebSockets qualified as WS
 import Network.WebSockets.Connection qualified as WS
 import Optics hiding (Empty)
+import Optics.State.Operators
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
@@ -171,23 +174,28 @@ deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e
 deriving via Mon (Monpad e s a b) x instance Monoid x => (Monoid (Monpad e s a b x))
 data MonpadEnv e a b = MonpadEnv
     { client :: ClientID
-    , layouts :: Map LayoutID (Layout a b, Maybe DhallExpr)
+    , initialLayouts :: Map LayoutID (Layout a b, Maybe DhallExpr)
     , extra :: e
     }
     deriving (Show, Generic)
 data MonpadState s a b = MonpadState
-    { layout :: Layout a b
+    { layouts :: Map LayoutID (Layout a b)
+    , layout :: LayoutID
+    -- ^ this is always a key in 'layouts'
     , extra :: s
     }
     deriving (Show, Generic)
+getCurrentLayout :: Monpad e s a b (Layout a b)
+getCurrentLayout = gets $ fromMaybe currentLayoutError . view currentLayoutMaybe
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         (unMonpad mon)
-        (MonpadEnv c (Map.fromList . NE.toList $ (((.name) . fst) &&& id) <$> ls) e)
+        (MonpadEnv c layoutMap e)
     )
-    (MonpadState l s)
-  where l = fst $ NE.head ls
+    (MonpadState (fst <$> layoutMap) (fst $ NE.head ls).name s)
+  where
+    layoutMap = Map.fromList . NE.toList $ (((.name) . fst) &&& id) <$> ls
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
@@ -295,13 +303,69 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     then mempty
                     else fmap (sus ++) $ go . map ServerUpdate . concat =<< for us \u -> do
                         case u of
-                            ServerUpdate (SetLayout l) -> modify $ #layout .~ l
-                            ServerUpdate (SwitchLayout i) -> asks (Map.lookup i . view #layouts) >>= \case
-                                Just (l, _) -> modify $ #layout .~ l
-                                Nothing -> warn $ "layout id not found: " <> i.unwrap
-                            _ -> mempty
+                            -- this needs to be equivalent to the same handling in the Elm code
+                            ServerUpdate su -> case su of
+                                PlayAudioURL{} -> mempty
+                                Vibrate{} -> mempty
+                                SetImageURL i x ->
+                                    (currentLayout % el i % #image % _Just % #url) .= x
+                                AddImage i x ->
+                                    (currentLayout % el i % #image) .= Just x
+                                DeleteImage i ->
+                                    (currentLayout % el i % #image) .= Nothing
+                                SetText i x ->
+                                    (currentLayout % el i % #text % _Just % #text) .= x
+                                AddText i x ->
+                                    (currentLayout % el i % #text) .= Just x
+                                DeleteText i ->
+                                    (currentLayout % el i % #text) .= Nothing
+                                SetLayout l ->
+                                    currentLayout .= l
+                                SwitchLayout i ->
+                                    #layout .= i
+                                HideElement i ->
+                                    (currentLayout % el i % #hidden) .= True
+                                ShowElement i ->
+                                    (currentLayout % el i % #hidden) .= False
+                                AddElement x ->
+                                    (currentLayout % #elements) %= (x :)
+                                RemoveElement i ->
+                                    (currentLayout % #elements) %= filter ((/= i) . view #name)
+                                SetBackgroundColour x ->
+                                    (currentLayout % #backgroundColour) .= x
+                                SetIndicatorHollowness i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #hollowness) .= x
+                                SetIndicatorArcStart i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #arcStart) .= x
+                                SetIndicatorArcEnd i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #arcEnd) .= x
+                                SetIndicatorShape i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #shape) .= x
+                                SetIndicatorCentre i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #centre) .= x
+                                SetIndicatorColour i x ->
+                                    (currentLayout % el i % #element % #_Indicator % #colour) .= x
+                                SetSliderPosition{} -> mempty
+                                SetButtonColour i x ->
+                                    (currentLayout % el i % #element % #_Button % #colour) .= x
+                                SetButtonPressed{} -> mempty
+                                ResetLayout x -> case x of
+                                    StateReset -> mempty -- this only affects the frontend
+                                    FullReset -> do
+                                        i <- gets $ view #layout
+                                        l <- asks $ maybe currentLayoutError fst . Map.lookup i . view #initialLayouts
+                                        currentLayout .= l
+                            ClientUpdate _ -> mempty
                         onUpdate u
                   where
+                    el i = elMaybe i % _Just
+                    elMaybe i = lens
+                        (find ((== i) . view #name) . view #elements)
+                        --TODO this is horribly inefficient, we should just use maps for this stuff the whole way
+                        (flip $ over #elements . maybe id
+                            (\x xs -> toList $ Map.insert (view #name x) x $ Map.fromList $ map (view #name &&& id) xs
+                            )
+                        )
                     sus = us & mapMaybe \case
                         ServerUpdate s -> Just s
                         ClientUpdate _ -> Nothing
@@ -323,3 +387,14 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
 --TODO colours
 warn :: MonadIO m => Text -> m ()
 warn s = liftIO $ T.hPutStrLn stderr $ "Warning: " <> s
+
+currentLayout :: AffineTraversal' (MonpadState s a b) (Layout a b)
+currentLayout = currentLayoutMaybe % _Just
+
+currentLayoutMaybe :: Lens' (MonpadState s a b) (Maybe (Layout a b))
+currentLayoutMaybe = lens
+    (\s -> view #layouts s !? view #layout s)
+    (\s l -> s & over #layouts (maybe id (Map.insert $ view #layout s) l))
+
+currentLayoutError :: Layout a b
+currentLayoutError = error "current layout is not in map!"

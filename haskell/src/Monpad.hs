@@ -32,7 +32,6 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
-import Data.Foldable
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
@@ -375,7 +374,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     el :: ElementID -> AffineTraversal' (Layout a b) (FullElement a b)
                     el i = elMaybe i % _Just
                     elMaybe i = lens
-                        (find ((== i) . view #name) . view elementMap)
+                        (Map.lookup i . view elementMap)
                         (flip $ over elementMap . maybe id
                             (\x -> Map.insert (view #name x) x)
                         )

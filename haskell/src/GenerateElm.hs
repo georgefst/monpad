@@ -10,6 +10,7 @@ import Data.Aeson qualified as J
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as HashMap
 import Data.List.NonEmpty (NonEmpty)
+import Data.Map (Map)
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -98,6 +99,25 @@ defAndDecoder = catMaybes
     ]
 
 {- Instances for Monpad types -}
+
+--TODO upstream (and for Int keys?)
+instance HasElmType a => HasElmType (Map Text a) where
+    elmType =
+        Type.App
+            ( Type.App
+                (Type.Global $ Name.Qualified ["Dict"] "Dict")
+                (Type.Global $ Name.Qualified ["String"] "String")
+            )
+            (elmType @a)
+instance HasElmDecoder J.Value a => HasElmDecoder J.Value (Map Text a) where
+    elmDecoder =
+        Expr.App
+            (Expr.Global $ Name.Qualified ["Json", "Decode"] "dict")
+            (elmDecoder @J.Value @a)
+instance HasElmType (ElementMap () ()) where
+    elmType = elmType @(Map Text (FullElement () ()))
+instance HasElmDecoder J.Value (ElementMap () ()) where
+    elmDecoder = elmDecoder @J.Value @(Map Text (FullElement () ()))
 
 deriving instance SOP.Generic ClientUpdate
 deriving instance SOP.HasDatatypeInfo ClientUpdate

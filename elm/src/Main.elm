@@ -141,7 +141,7 @@ view model =
                 , style "height" (String.fromInt model.windowSize.y ++ "px")
                 ]
               <|
-                (List.map (viewElement model) model.layout.layout.elements
+                (List.map (viewElement model) (Dict.values model.layout.layout.elements)
                     |> applyWhen (not model.fullscreen) (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
                     |> stack
                 )
@@ -652,19 +652,7 @@ serverUpdate u model =
             { model
                 | layout =
                     { layoutState
-                        | layout =
-                            { layout
-                                | elements =
-                                    layout.elements
-                                        |> List.map
-                                            (\e ->
-                                                if e.name == name then
-                                                    f e
-
-                                                else
-                                                    e
-                                            )
-                            }
+                        | layout = { layout | elements = layout.elements |> Dict.update name (Maybe.map f) }
                     }
             }
 
@@ -770,7 +758,7 @@ serverUpdate u model =
             )
 
         AddElement e ->
-            ( { model | layout = { layoutState | layout = { layout | elements = e :: layout.elements } } }
+            ( { model | layout = { layoutState | layout = { layout | elements = Dict.insert e.name e layout.elements } } }
             , Cmd.none
             )
 
@@ -781,13 +769,7 @@ serverUpdate u model =
                         | pressed = Set.remove e layoutState.pressed
                         , sliderPos = Dict.remove e layoutState.sliderPos
                         , stickPos = Dict.remove e layoutState.stickPos
-                        , layout =
-                            { layout
-                                | elements =
-                                    layout.elements
-                                        |> List.filter
-                                            (\x -> x.name /= e)
-                            }
+                        , layout = { layout | elements = layout.elements |> Dict.remove e }
                     }
               }
             , Cmd.none

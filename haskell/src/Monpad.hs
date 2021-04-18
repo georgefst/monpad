@@ -342,9 +342,9 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                                 ShowElement i ->
                                     (currentLayout % el i % #hidden) .= False
                                 AddElement x ->
-                                    (currentLayout % #elements) %= (x :)
+                                    (currentLayout % elementMap) %= Map.insert x.name x
                                 RemoveElement i ->
-                                    (currentLayout % #elements) %= filter ((/= i) . view #name)
+                                    (currentLayout % elementMap) %= Map.delete i
                                 SetBackgroundColour x ->
                                     (currentLayout % #backgroundColour) .= x
                                 SetIndicatorHollowness i x ->
@@ -372,13 +372,12 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             ClientUpdate _ -> mempty
                         onUpdate u
                   where
+                    el :: ElementID -> AffineTraversal' (Layout a b) (FullElement a b)
                     el i = elMaybe i % _Just
                     elMaybe i = lens
-                        (find ((== i) . view #name) . view #elements)
-                        --TODO this is horribly inefficient, we should just use maps for this stuff the whole way
-                        (flip $ over #elements . maybe id
-                            (\x xs -> toList $ Map.insert (view #name x) x $ Map.fromList $ map (view #name &&& id) xs
-                            )
+                        (find ((== i) . view #name) . view elementMap)
+                        (flip $ over elementMap . maybe id
+                            (\x -> Map.insert (view #name x) x)
                         )
                     sus = us & mapMaybe \case
                         ServerUpdate s -> Just s
@@ -412,3 +411,6 @@ currentLayoutMaybe = lens
 
 currentLayoutError :: Layout a b
 currentLayoutError = error "current layout is not in map!"
+
+elementMap :: Lens' (Layout a b) (Map ElementID (FullElement a b))
+elementMap = #elements % coerced

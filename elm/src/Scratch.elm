@@ -33,8 +33,8 @@ main =
             | load = \_ _ _ -> Main.load flags
             , subscriptions =
                 \model ->
-                    -- Sub.batch
-                    withDefault Sub.none <| getAt 0
+                    Sub.batch
+                        -- withDefault Sub.none <| getAt 0
                         [ app.subscriptions model
                         , sub 3000 30 model <|
                             \x ->

@@ -300,9 +300,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
         conn <- WS.acceptRequest pending
         let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = ask >>= \env -> SP.mapM (get <&>) . asyncly $ mconcat
-                [ serially . SP.hoist liftIO $ SP.cons (const u0) (asyncly $ updates env)
-                , serially . SP.hoist liftIO $ SP.repeatM (const <$> takeMVar extraUpdates)
+            serverUpdates = ask >>= \env -> foldMap serially
+                [ SP.cons u0 do
+                    s <- get
+                    f <- SP.hoist liftIO $ asyncly $ updates env
+                    pure $ f s
+                , SP.repeatM do
+                    liftIO $ takeMVar extraUpdates
                 , SP.repeatM do
                     modify . over #extra =<< liftIO (takeMVar extraModifys)
                     mempty

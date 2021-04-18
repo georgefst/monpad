@@ -100,7 +100,7 @@ defAndDecoder = catMaybes
 
 {- Instances for Monpad types -}
 
---TODO upstream (and for Int keys?)
+--TODO upstream (and for Int keys?): https://github.com/folq/haskell-to-elm/issues/17
 instance HasElmType a => HasElmType (Map Text a) where
     elmType =
         Type.App

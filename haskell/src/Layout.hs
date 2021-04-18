@@ -60,7 +60,7 @@ newtype ElementMap a b = ElementMap {unwrap :: Map ElementID (FullElement a b)}
     deriving stock (Generic, Functor)
     deriving newtype (ToJSON)
     deriving (Bifunctor) via GenericBifunctor ElementMap
-    deriving (Show) via ShowNewtypeWithoutRecord "ElementMap" (ElementMap a b)
+    deriving (Show) via ShowNewtypeWithoutRecord "ElementMap" (Map ElementID (FullElement a b))
 instance (FromDhall a, FromDhall b) => FromDhall (ElementMap a b) where
     autoWith = fmap (ElementMap . Map.fromList . map ((.name) &&& id)) . autoWith
 

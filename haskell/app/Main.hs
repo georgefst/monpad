@@ -63,7 +63,7 @@ parser = do
          in option reader $ mconcat
             [ short 'v'
             , help "Verbosity - how much info to log to stdout about messages from clients etc."
-            , value $ Just Logger.Normal
+            , value $ Just Logger.Quiet
             , showDefaultWith $ show . verbosityToInt
             ]
     port <- option auto $ mconcat

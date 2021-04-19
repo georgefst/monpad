@@ -12,7 +12,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
-import Data.Tuple.Extra
+import Data.Tuple.Extra ((&&&))
 import Deriving.Aeson (CustomJSON (CustomJSON))
 import Dhall (FromDhall (autoWith))
 import GHC.Generics (Generic)

@@ -26,8 +26,8 @@ import Evdev.Codes
 import Monpad
 import Orphans.Evdev ()
 
-type E = Map LayoutID LayoutMeta
-type S = LayoutMeta
+type E = Map LayoutID (Device, LayoutMeta)
+type S = (Device, LayoutMeta)
 type A = AxisInfo
 type B = Key
 
@@ -35,7 +35,8 @@ conf :: ServerConfig E S A B
 conf = ServerConfig
     { onNewConnection = \(fmap fst -> layouts) (ClientID clientId) -> do
         layoutInfos <- for layouts \layout -> do
-            let (axes, keys) = allAxesAndButs layout
+            let meta = mkLayoutMeta . Map.elems $ layout ^. #elements % coerced
+                (axes, keys) = allAxesAndButs meta
                 (absAxes, relAxes) = partitionEithers $ axes <&> \case
                     AxisInfo{axis = Abs a, ..} -> Left
                         ( a
@@ -64,7 +65,7 @@ conf = ServerConfig
                 }
             pure
                 ( layout ^. #name
-                , mkLayoutMeta device . Map.elems $ layout ^. #elements % coerced
+                , (device, meta)
                 )
         pure
             ( Map.fromList $ toList layoutInfos
@@ -100,9 +101,9 @@ conf = ServerConfig
         (a -> Device -> Monpad E S A B ()) ->
         Monpad E S A B m
     lookup' l i f = do
-        info <- gets (^. #extra)
+        (device, info) <- gets (^. #extra)
         case (info ^. l) !? i of
-            Just a -> f a $ info ^. #device
+            Just a -> f a device
             Nothing -> warn $ "element id not found: " <> coerce i
         mempty
 
@@ -118,15 +119,14 @@ onButton :: MonadIO m => KeyEvent -> Key -> Device -> m ()
 onButton ev key dev = liftIO $ writeBatch dev [KeyEvent key ev]
 
 data LayoutMeta = LayoutMeta
-    { device :: Device
-    , stickMap :: Map ElementID (A, A)
+    { stickMap :: Map ElementID (A, A)
     , sliderMap :: Map ElementID A
     , buttonMap :: Map ElementID B
     }
     deriving (Generic)
 
-mkLayoutMeta :: Device -> [FullElement A B] -> LayoutMeta
-mkLayoutMeta dev = foldl' (flip insert) $ LayoutMeta dev mempty mempty mempty
+mkLayoutMeta :: [FullElement A B] -> LayoutMeta
+mkLayoutMeta = foldl' (flip insert) $ LayoutMeta mempty mempty mempty
   where
     insert e = case e ^. #element of
         Stick x -> over #stickMap $ Map.insert (e ^. #name) (x ^. #stickDataX, x ^. #stickDataY)
@@ -134,6 +134,12 @@ mkLayoutMeta dev = foldl' (flip insert) $ LayoutMeta dev mempty mempty mempty
         Button x -> over #buttonMap $ Map.insert (e ^. #name) (x ^. #buttonData)
         Indicator _ -> id
         Empty -> id
+
+allAxesAndButs :: LayoutMeta -> ([A], [B])
+allAxesAndButs LayoutMeta{..} =
+    ( concatMap (\(x, y) -> [x, y]) (Map.elems stickMap) <> Map.elems sliderMap
+    , Map.elems buttonMap
+    )
 
 -- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")
 monpadId :: Int

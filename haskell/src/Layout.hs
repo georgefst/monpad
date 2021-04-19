@@ -7,7 +7,6 @@ import Data.Aeson qualified as J
 import Data.Aeson.Types (FromJSON, ToJSON, ToJSONKey)
 import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor (Bifunctor)
-import Data.Either (partitionEithers)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -24,14 +23,6 @@ import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 
 import Opts qualified
 import Util
-
-allAxesAndButs :: Layout a b -> ([a], [b])
-allAxesAndButs layout = partitionEithers $ map element (Map.elems layout.elements.unwrap) >>= \case
-    Stick s -> map Left [s.stickDataX, s.stickDataY]
-    Button b -> [Right b.buttonData]
-    Slider s -> [Left s.sliderData]
-    Indicator _ -> []
-    Empty -> []
 
 -- | A (non-empty) list of 'Layout's.
 type Layouts a b = NonEmpty (Layout a b, Maybe DhallExpr)

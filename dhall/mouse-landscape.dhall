@@ -10,7 +10,7 @@ let ButtonW = {}
 
 let axis =
       λ(a : Evdev.RelAxis) →
-      λ(m : Double) →
+      λ(m : Integer) →
         { linux = { axis = Evdev.Axis.Rel a, multiplier = m }
         , windows = {=}
         , mac = {=}
@@ -36,8 +36,8 @@ let button =
 
 let layoutAll =
         { elements =
-          [ button +1650 -300 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
-          , button +1650 +300 ButtonL.BtnRight {=} "Red" monpad.cols.red
+          [ button +1650 +300 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
+          , button +1650 -300 ButtonL.BtnRight {=} "Red" monpad.cols.red
           , monpad.Elem::{
             , element =
                 monpad.simpleSlider
@@ -47,7 +47,7 @@ let layoutAll =
                   , sliderColour = monpad.cols.yellow
                   , backgroundColour = monpad.cols.white
                   , vertical = False
-                  , sliderData = axis Evdev.RelAxis.RelWheel 5.0
+                  , sliderData = axis Evdev.RelAxis.RelWheel +5
                   }
             , location = { x = +1300, y = +0 }
             , name = "Slider"
@@ -59,8 +59,8 @@ let layoutAll =
                   , range = 420
                   , stickColour = monpad.cols.white
                   , backgroundColour = monpad.cols.grey
-                  , stickDataX = axis Evdev.RelAxis.RelX 15.0
-                  , stickDataY = axis Evdev.RelAxis.RelY -15.0
+                  , stickDataX = axis Evdev.RelAxis.RelX +15
+                  , stickDataY = axis Evdev.RelAxis.RelY -15
                   }
             , location = { x = +650, y = +0 }
             , name = "Stick"

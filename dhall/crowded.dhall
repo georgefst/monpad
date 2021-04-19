@@ -13,7 +13,7 @@ let AxisL = AllOS.AxisLinux
 
 let axis =
       λ(a : Evdev.AbsAxis) →
-      λ(multiplier : Double) →
+      λ(multiplier : Integer) →
         { axis = Evdev.Axis.Abs a, multiplier }
 
 let button =
@@ -103,10 +103,10 @@ in    { elements =
         , button -360 -20 ButtonL.BtnDpadDown "Down" monpad.cols.grey
         , button -160 +180 ButtonL.BtnDpadRight "Right" monpad.cols.grey
         , button -360 +380 ButtonL.BtnDpadUp "Up" monpad.cols.grey
-        , stick -700 -200 "Left" (axis Abs.AbsX 255.0) (axis Abs.AbsY -255.0)
-        , stick +700 -200 "Right" (axis Abs.AbsRx 255.0) (axis Abs.AbsRy -255.0)
-        , slider -850 +50 "LT" (axis Abs.AbsZ 255.0)
-        , slider +850 +50 "RT" (axis Abs.AbsRz 255.0)
+        , stick -700 -200 "Left" (axis Abs.AbsX +255) (axis Abs.AbsY -255)
+        , stick +700 -200 "Right" (axis Abs.AbsRx +255) (axis Abs.AbsRy -255)
+        , slider -850 +50 "LT" (axis Abs.AbsZ +255)
+        , slider +850 +50 "RT" (axis Abs.AbsRz +255)
         , button2 +0 -100 ButtonL.BtnMode "Mode" True
         , button2 -200 -300 ButtonL.BtnSelect "Select" True
         , button2 +200 -300 ButtonL.BtnStart "Start" True

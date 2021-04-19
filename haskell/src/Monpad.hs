@@ -18,6 +18,7 @@ module Monpad (
     V2 (..),
     ElmFlags(..),
     defaultDhall,
+    warn,
     module Layout,
     module ServerUpdate,
 ) where
@@ -394,11 +395,11 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                 Left err -> throwError $ UpdateDecodeException err
                 Right x -> pure x
 
-{- Util -}
-
 --TODO colours
 warn :: MonadIO m => Text -> m ()
 warn s = liftIO $ T.hPutStrLn stderr $ "Warning: " <> s
+
+{- Util -}
 
 currentLayout :: AffineTraversal' (MonpadState s a b) (Layout a b)
 currentLayout = currentLayoutMaybe % _Just

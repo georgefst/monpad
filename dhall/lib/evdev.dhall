@@ -58,7 +58,7 @@ let RelAxis =
 
 let Axis = < Abs : AbsAxis | Rel : RelAxis >
 
-let AxisInfo = { axis : Axis, multiplier : Double }
+let AxisInfo = { axis : Axis, multiplier : Integer }
 
 let Key =
       < KeyReserved

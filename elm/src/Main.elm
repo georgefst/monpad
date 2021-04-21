@@ -127,25 +127,22 @@ view model =
             { x, y, w, h } =
                 model.layout.layout.viewBox
         in
-        [ div
-            [ style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour
+        [ svgExplicit
+            [ viewBox x -(h + y) w h
+            , Pointer.onMove <|
+                \event ->
+                    Dict.get event.pointerId model.layout.pointerCallbacks
+                        |> maybe [] (\c -> c.onMove event)
+            , Pointer.onLeave (singleton << PointerUp)
+            , style "width" (String.fromInt model.windowSize.x ++ "px")
+            , style "height" (String.fromInt model.windowSize.y ++ "px")
+            , style "background-color" <| toCssString <| fromRgba model.layout.layout.backgroundColour
             ]
-            [ svgExplicit
-                [ viewBox x -(h + y) w h
-                , Pointer.onMove <|
-                    \event ->
-                        Dict.get event.pointerId model.layout.pointerCallbacks
-                            |> maybe [] (\c -> c.onMove event)
-                , Pointer.onLeave (singleton << PointerUp)
-                , style "width" (String.fromInt model.windowSize.x ++ "px")
-                , style "height" (String.fromInt model.windowSize.y ++ "px")
-                ]
-              <|
-                (List.map (viewElement model) (Dict.values model.layout.layout.elements)
-                    |> applyWhen (not model.fullscreen) (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
-                    |> stack
-                )
-            ]
+          <|
+            (List.map (viewElement model) (Dict.values model.layout.layout.elements)
+                |> applyWhen (not model.fullscreen) (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
+                |> stack
+            )
         ]
     }
 

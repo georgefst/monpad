@@ -195,7 +195,8 @@ let noTextStyle =
         }
       : TextStyle
 
-let defaultTextStyle = noTextStyle ⫽ { colour = cols.red, italic = True, bold = True }
+let defaultTextStyle =
+      noTextStyle ⫽ { colour = cols.red, italic = True, bold = True }
 
 let Elem =
       λ(a : Type) →

@@ -23,7 +23,7 @@ source-repository-package
   location: https://github.com/georgefst/servant
   subdir: servant
 
---TODO GHC 9.0 support is not yet on Hackage
+--TODO GHC 9.0 support is not yet on Hackage due to performance, see https://github.com/composewell/streamly/issues/1061
 source-repository-package
   type: git
   location: https://github.com/composewell/streamly

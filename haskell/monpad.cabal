@@ -34,7 +34,7 @@ common common
     build-depends:
         georgefst-utils,
         base >= 4.14,
-        bytestring ^>= 0.10.8,
+        bytestring ^>= {0.10.8, 0.11},
         composition ^>= 1.0.2.1,
         containers ^>= 0.6.2.1,
         dhall ^>= 1.39,
@@ -53,7 +53,7 @@ common common
         streamly ^>= 0.7.2,
         streams ^>= 3.3,
         text ^>= 1.2.3,
-        time ^>= 1.9.3,
+        time ^>= {1.9.3, 1.10, 1.11, 1.12},
         transformers ^>= 0.5.6,
         unordered-containers ^>= 0.2.10,
     default-language: Haskell2010
@@ -171,4 +171,4 @@ executable monpad
         app
     build-depends:
         monpad,
-        optparse-applicative ^>= 0.15.1.0,
+        optparse-applicative ^>= {0.15.1.0, 0.16},

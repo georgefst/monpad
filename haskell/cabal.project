@@ -23,13 +23,13 @@ source-repository-package
   location: https://github.com/georgefst/servant
   subdir: servant
 
+--TODO https://github.com/composewell/streamly/pull/1106
 --TODO GHC 9.0 support is not yet on Hackage due to performance, see https://github.com/composewell/streamly/issues/1061
 source-repository-package
   type: git
-  location: https://github.com/composewell/streamly
-  tag: eb16544f9822b817ca245aaada966da20f14e2a3
+  location: https://github.com/georgefst/streamly
+  tag: 4b98808499bf61bb97c6909238cdc906b6935500
 
 allow-newer:
   http-api-data:base,
   servant-server:base,
-  streamly:Win32,

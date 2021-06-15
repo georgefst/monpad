@@ -35,7 +35,6 @@ allow-newer:
   dhall:template-haskell,
   http-api-data:base,
   servant-server:base,
-  streamly-fsnotify:semirings,
   streamly:Win32,
 
 constraints:

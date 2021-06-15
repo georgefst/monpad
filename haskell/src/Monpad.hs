@@ -68,7 +68,8 @@ import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
 import Streamly
-import Streamly.Internal.Prelude qualified as SP
+import Streamly.Prelude qualified as SP
+import Streamly.Internal.Data.Stream.IsStream qualified as SP
 import System.IO
 import Util.Util
 

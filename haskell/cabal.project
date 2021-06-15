@@ -36,8 +36,3 @@ allow-newer:
   http-api-data:base,
   servant-server:base,
   streamly:Win32,
-
-constraints:
-  http-client == 0.7.8,
-  memory == 0.16.0,
-  semirings == 0.6,

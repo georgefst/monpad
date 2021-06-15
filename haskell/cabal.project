@@ -28,6 +28,7 @@ allow-newer:
   servant-client:http-client,
   streamly-fsnotify:semirings,
   streamly:ghc-prim,
+  streamly:Win32,
 
 constraints:
   semirings == 0.6,

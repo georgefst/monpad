@@ -6,7 +6,7 @@
 {- cabal:
 build-depends:
     base >= 4.13,
-    dhall ^>= 1.36,
+    dhall ^>= 1.39,
     extra ^>= 1.7.4,
     language-javascript ^>= 0.7.1.0,
     pretty-simple ^>= 4.0,

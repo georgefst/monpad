@@ -1,12 +1,35 @@
---TODO use Hackage when merged: https://github.com/folq/haskell-to-elm/pull/18
-source-repository-package
-  type: git
-  location: https://github.com/georgefst/haskell-to-elm
-  tag: 33d6076972b4aa753031299692c7ab631ddb780d
+packages: .
 
 source-repository-package
   type: git
   location: https://github.com/georgefst/georgefst-utils
   tag: 8b1b0ff9f5ce8faaf019498f971b545702f836e5
 
-packages: .
+--TODO https://github.com/folq/haskell-to-elm/pull/18
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/haskell-to-elm
+  tag: 33d6076972b4aa753031299692c7ab631ddb780d
+
+--TODO https://github.com/folq/elm-syntax/pull/2
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/elm-syntax
+  tag: 39bbedaf5f2f397c23020e483ffae586f9409b7f
+
+--TODO https://github.com/haskell-servant/servant/pull/1392
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/servant
+  subdir: servant
+allow-newer:
+  servant:http-api-data,
+  servant-server:base,
+  servant-server:http-api-data,
+
+--TODO https://github.com/composewell/streamly/pull/1106
+--TODO GHC 9.0 support is not yet on Hackage due to performance, see https://github.com/composewell/streamly/issues/1061
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/streamly
+  tag: 4b98808499bf61bb97c6909238cdc906b6935500

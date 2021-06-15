@@ -3,7 +3,9 @@
 module Layout where
 
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Data.Aeson qualified as J
 import Data.Aeson.Types (FromJSON, ToJSON, ToJSONKey)
+import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor (Bifunctor)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
@@ -14,6 +16,7 @@ import Deriving.Aeson (CustomJSON (CustomJSON))
 import Dhall (FromDhall (autoWith))
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
+import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
 import Linear.V2 (V2)
 import Orphans.V2 ()
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
@@ -30,7 +33,7 @@ layoutsFromDhall = runMaybeT . traverse \t -> do
     pure (l, Just e)
 
 newtype LayoutID = LayoutID {unwrap :: Text}
-    deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall)
+    deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)
     deriving Show via (ShowNewtypeWithoutRecord "LayoutID" Text)
 
 data Layout a b = Layout
@@ -66,7 +69,7 @@ data FullElement a b = FullElement
 
 newtype ElementID = ElementID {unwrap :: Text}
     deriving stock (Eq, Ord)
-    deriving newtype (FromDhall, ToJSON, ToJSONKey, FromJSON)
+    deriving newtype (FromDhall, ToJSON, ToJSONKey, FromJSON, HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value)
     deriving Show via (ShowNewtypeWithoutRecord "ElementID" Text)
 
 data Element a b

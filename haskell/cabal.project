@@ -30,9 +30,6 @@ source-repository-package
   tag: eb16544f9822b817ca245aaada966da20f14e2a3
 
 allow-newer:
-  dhall:base,
-  dhall:memory,
-  dhall:template-haskell,
   http-api-data:base,
   servant-server:base,
   streamly:Win32,

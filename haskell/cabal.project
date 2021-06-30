@@ -17,16 +17,6 @@ source-repository-package
   location: https://github.com/georgefst/elm-syntax
   tag: 39bbedaf5f2f397c23020e483ffae586f9409b7f
 
---TODO https://github.com/haskell-servant/servant/pull/1392
-source-repository-package
-  type: git
-  location: https://github.com/georgefst/servant
-  subdir: servant
-allow-newer:
-  servant:http-api-data,
-  servant-server:base,
-  servant-server:http-api-data,
-
 --TODO https://github.com/composewell/streamly/pull/1106
 --TODO GHC 9.0 support is not yet on Hackage due to performance, see https://github.com/composewell/streamly/issues/1061
 source-repository-package

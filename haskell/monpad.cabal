@@ -50,7 +50,7 @@ common common
         random ^>= 1.2.0,
         record-hasfield ^>= 1.0,
         safe ^>= 0.3.19,
-        streamly ^>= 0.7.2,
+        streamly ^>= 0.8,
         streams ^>= 3.3,
         text ^>= 1.2.3,
         time ^>= {1.9.3, 1.10, 1.11, 1.12},

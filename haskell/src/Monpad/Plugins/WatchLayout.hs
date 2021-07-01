@@ -15,7 +15,6 @@ import Dhall (FromDhall)
 import Dhall.Core qualified as D
 import Dhall.Src qualified as D
 import Optics (view)
-import Streamly (serially)
 import Streamly.Prelude qualified as SP
 
 import Monpad
@@ -40,7 +39,7 @@ sendLayout = mempty
                 let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
                 T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
                 snd <$> watchDirectory dir (isModification `conj` isImport)
-            flip foldMap evss $ serially
+            flip foldMap evss $ SP.fromSerial
                 . traceStream (const $ T.putStrLn "Sending new layout to client")
                 . SP.map (const . send name)
                 . SP.mapMaybeM (const $ getLayout expr)

@@ -11,7 +11,6 @@ import Data.Maybe
 import Data.Time
 import Data.Traversable
 import Optics
-import Streamly
 import System.FilePath
 import Util.Util
 
@@ -61,16 +60,16 @@ getHostName' = f <$> getHostName
     f x = maybe x T.unpack $ T.stripSuffix ".local" $ T.pack x
 
 -- | Attach an extra action to each element of the stream.
-traceStream :: (a -> IO ()) -> Serial a -> Serial a
+traceStream :: (a -> IO ()) -> SP.Serial a -> SP.Serial a
 traceStream f = SP.mapM \x -> f x >> pure x
 
 -- | Ignore events which are followed within a given number of microseconds.
-lastOfGroup :: Int -> Async a -> Serial a
-lastOfGroup interval = f2 . asyncly . f1
+lastOfGroup :: Int -> SP.Async a -> SP.Serial a
+lastOfGroup interval = f2 . SP.adapt . f1
   where
     -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
     f1 = SP.concatMapWith (<>) \x ->
-        SP.cons Nothing $ SP.yieldM (threadDelay interval >> pure (Just x))
+        SP.cons Nothing $ SP.fromEffect (threadDelay interval >> pure (Just x))
     -- ignore any event which appears within `interval` of a 'Nothing'
     f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (pure (const False, error "lastOfGroup")) \(tooSoon, _) -> \case
         Just x -> do

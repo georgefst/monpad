@@ -67,7 +67,6 @@ import Optics.State.Operators
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
-import Streamly
 import Streamly.Prelude qualified as SP
 import Streamly.Internal.Data.Stream.IsStream qualified as SP
 import System.IO
@@ -212,7 +211,7 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
     , onPong :: e -> NominalDiffTime -> IO (Endo s, [ServerUpdate a b])
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: MonpadEnv e a b -> Async (MonpadState s a b -> [ServerUpdate a b])
+    , updates :: MonpadEnv e a b -> SP.Async (MonpadState s a b -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
@@ -299,12 +298,12 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     putMVar extraModifys f
             pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         conn <- WS.acceptRequest pending
-        let allUpdates = asyncly $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
-            clientUpdates = serially . SP.repeatM $ getUpdate conn
-            serverUpdates = ask >>= \env -> foldMap serially
+        let allUpdates = SP.fromAsync $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
+            clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
+            serverUpdates = ask >>= \env -> foldMap SP.fromSerial
                 [ SP.cons u0 do
                     s <- get
-                    f <- SP.hoist liftIO $ asyncly $ updates env
+                    f <- SP.hoist liftIO $ SP.fromAsync $ updates env
                     pure $ f s
                 , SP.repeatM do
                     liftIO $ takeMVar extraUpdates

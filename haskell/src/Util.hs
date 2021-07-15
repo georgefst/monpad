@@ -92,7 +92,9 @@ dhallImports e = do
         D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
         _ -> Nothing
 
---TODO can we guarantee this is totally safe? and why doesn't the library provide it?
+{-TODO can we guarantee this is totally safe? and why doesn't the library provide it?
+https://github.com/dhall-lang/dhall-haskell/issues/2254
+-}
 -- | Resolve imports. A version of 'Dhall.load' which doesn't throw exceptions.
 dhallLoadSafe :: DhallExpr -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
 dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load

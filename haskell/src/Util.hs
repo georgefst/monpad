@@ -25,6 +25,7 @@ import Dhall (FromDhall, auto, extract, toMonadic)
 import Dhall.Core qualified as D
 import Dhall.Import qualified as D
 import Dhall.Parser qualified as D
+import Dhall.TypeCheck qualified as D
 import Network.HostName (getHostName)
 import Network.Socket (
     AddrInfo (addrAddress),
@@ -102,7 +103,7 @@ dhallExprFromText = printError . D.exprFromText ""
 -- | Get a Haskell value from a Dhall expression, and return the hash.
 dhallToHs :: FromDhall a => DhallExpr -> MaybeT IO (a, Text)
 dhallToHs e = do
-    e' <- D.normalize <$> (printError =<< liftIO (dhallLoadSafe e))
+    e' <- printError . D.typeOf . D.normalize =<< printError =<< liftIO (dhallLoadSafe e)
     x <- printError . toMonadic . extract auto $ D.renote e'
     pure (x, D.hashExpressionToCode e')
 

@@ -2,7 +2,6 @@
 module Test where
 
 import Control.Monad.Reader
-import Data.Monoid
 import Optics
 import System.IO
 import Text.Pretty.Simple
@@ -41,7 +40,7 @@ test ps ls = do
                 pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg{outputOptionsCompact = True} (c, u)
                 mempty
             , onDroppedConnection = curry $ const . (>> mempty) . pPrint . ("disconnected" :: Text,)
-            , onPong = const $ ((Endo id, []) <$) . pPrint . ("pong" :: Text,)
+            , onPong = const $ (mempty <$) . pPrint . ("pong" :: Text,)
             }
 
 testExt :: IO ()

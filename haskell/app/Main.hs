@@ -62,7 +62,10 @@ parser = do
                 Just Logger.Loud -> 3
          in option reader $ mconcat
             [ short 'v'
-            , help "Verbosity - how much info to log to stdout about messages from clients etc."
+            , help $
+                "Verbosity (0 to "
+                    ++ show (fromEnum (maxBound @Logger.Settings) + 1)
+                    ++ ") - how much info to log to stdout about messages from clients etc."
             , value $ Just Logger.Quiet
             , showDefaultWith $ show . verbosityToInt
             ]

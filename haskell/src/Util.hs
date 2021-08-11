@@ -16,12 +16,14 @@ import Util.Util
 
 import Control.Exception (try)
 import Control.Monad.Trans.Maybe (MaybeT)
+import Data.Either.Validation (validationToEither)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Void (Void)
-import Dhall (FromDhall, auto, extract, toMonadic)
+import Dhall (FromDhall)
+import Dhall qualified as D
 import Dhall.Core qualified as D
 import Dhall.Import qualified as D
 import Dhall.Parser qualified as D
@@ -105,9 +107,14 @@ dhallExprFromText = printError . D.exprFromText ""
 -- | Get a Haskell value from a Dhall expression, and return the hash.
 dhallToHs :: FromDhall a => DhallExpr -> MaybeT IO (a, Text)
 dhallToHs e = do
-    e' <- printError . D.typeOf . D.normalize =<< printError =<< liftIO (dhallLoadSafe e)
-    x <- printError . toMonadic . extract auto $ D.renote e'
+    e0 <- printError =<< liftIO (dhallLoadSafe e)
+    expectedType <- printError $ validationToEither expected
+    _ <- printError . D.typeOf $ D.Annot e0 expectedType
+    let e' = D.normalize e0
+    x <- printError . D.toMonadic . extract $ D.renote e'
     pure (x, D.hashExpressionToCode e')
+  where
+    D.Decoder{extract, expected} = D.auto
 
 printError :: Show e => Either e a -> MaybeT IO a
 printError = either (\e -> liftIO (print e) >> mzero) pure

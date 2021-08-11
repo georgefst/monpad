@@ -1,4 +1,7 @@
-module Auto.Shape exposing (..)
+module Auto.Shape exposing
+    ( Shape(..)
+    , decode
+    )
 
 import Auto.IntVec2
 import Json.Decode

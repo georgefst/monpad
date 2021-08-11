@@ -1,4 +1,7 @@
-module Auto.Colour exposing (..)
+module Auto.Colour exposing
+    ( Colour
+    , decode
+    )
 
 import Json.Decode
 import Json.Decode.Pipeline

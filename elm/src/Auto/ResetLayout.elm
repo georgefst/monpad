@@ -1,4 +1,7 @@
-module Auto.ResetLayout exposing (..)
+module Auto.ResetLayout exposing
+    ( ResetLayout(..)
+    , decode
+    )
 
 import Json.Decode
 

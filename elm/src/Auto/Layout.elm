@@ -1,4 +1,7 @@
-module Auto.Layout exposing (..)
+module Auto.Layout exposing
+    ( Layout
+    , decode
+    )
 
 import Auto.Colour
 import Auto.FullElement

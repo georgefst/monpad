@@ -1,4 +1,7 @@
-module Auto.TextStyle exposing (..)
+module Auto.TextStyle exposing
+    ( TextStyle
+    , decode
+    )
 
 import Auto.Colour
 import Auto.TextShadow

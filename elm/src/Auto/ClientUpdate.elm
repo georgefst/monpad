@@ -1,4 +1,7 @@
-module Auto.ClientUpdate exposing (..)
+module Auto.ClientUpdate exposing
+    ( ClientUpdate(..)
+    , encode
+    )
 
 import Json.Encode
 import Math.Vector2

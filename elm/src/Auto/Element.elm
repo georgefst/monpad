@@ -1,4 +1,7 @@
-module Auto.Element exposing (..)
+module Auto.Element exposing
+    ( Element(..)
+    , decode
+    )
 
 import Auto.Button
 import Auto.Indicator

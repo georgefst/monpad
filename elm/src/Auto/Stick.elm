@@ -1,4 +1,7 @@
-module Auto.Stick exposing (..)
+module Auto.Stick exposing
+    ( Stick
+    , decode
+    )
 
 import Auto.Colour
 import Json.Decode

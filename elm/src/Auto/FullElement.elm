@@ -1,4 +1,7 @@
-module Auto.FullElement exposing (..)
+module Auto.FullElement exposing
+    ( FullElement
+    , decode
+    )
 
 import Auto.Element
 import Auto.Image

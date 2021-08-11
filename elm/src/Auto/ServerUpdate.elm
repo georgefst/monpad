@@ -1,4 +1,7 @@
-module Auto.ServerUpdate exposing (..)
+module Auto.ServerUpdate exposing
+    ( ServerUpdate(..)
+    , decode
+    )
 
 import Auto.Colour
 import Auto.FullElement

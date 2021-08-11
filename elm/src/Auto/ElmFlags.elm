@@ -1,4 +1,7 @@
-module Auto.ElmFlags exposing (..)
+module Auto.ElmFlags exposing
+    ( ElmFlags
+    , decode
+    )
 
 import Auto.Layout
 import Json.Decode

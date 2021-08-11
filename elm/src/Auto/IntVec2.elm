@@ -1,4 +1,7 @@
-module Auto.IntVec2 exposing (..)
+module Auto.IntVec2 exposing
+    ( IntVec2
+    , decode
+    )
 
 import Json.Decode
 import Json.Decode.Pipeline

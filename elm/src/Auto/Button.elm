@@ -1,4 +1,7 @@
-module Auto.Button exposing (..)
+module Auto.Button exposing
+    ( Button
+    , decode
+    )
 
 import Auto.Colour
 import Auto.Shape

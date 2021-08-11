@@ -1,4 +1,7 @@
-module Auto.TextShadow exposing (..)
+module Auto.TextShadow exposing
+    ( TextShadow
+    , decode
+    )
 
 import Auto.Colour
 import Auto.IntVec2

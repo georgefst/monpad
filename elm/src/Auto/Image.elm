@@ -1,4 +1,7 @@
-module Auto.Image exposing (..)
+module Auto.Image exposing
+    ( Image
+    , decode
+    )
 
 import Json.Decode
 import Json.Decode.Pipeline

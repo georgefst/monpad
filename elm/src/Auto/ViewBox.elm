@@ -1,4 +1,7 @@
-module Auto.ViewBox exposing (..)
+module Auto.ViewBox exposing
+    ( ViewBox
+    , decode
+    )
 
 import Json.Decode
 import Json.Decode.Pipeline

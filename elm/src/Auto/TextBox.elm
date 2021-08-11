@@ -1,4 +1,7 @@
-module Auto.TextBox exposing (..)
+module Auto.TextBox exposing
+    ( TextBox
+    , decode
+    )
 
 import Auto.TextStyle
 import Json.Decode

@@ -1,4 +1,7 @@
-module Auto.Indicator exposing (..)
+module Auto.Indicator exposing
+    ( Indicator
+    , decode
+    )
 
 import Auto.Colour
 import Auto.Shape

@@ -1,4 +1,7 @@
-module Auto.Slider exposing (..)
+module Auto.Slider exposing
+    ( Slider
+    , decode
+    )
 
 import Auto.Colour
 import Auto.IntVec2

@@ -4,16 +4,13 @@ module Layout where
 
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Aeson qualified as J
-import Data.Aeson.Types (FromJSON, ToJSON, ToJSONKey)
+import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor (Bifunctor)
 import Data.List.NonEmpty (NonEmpty)
-import Data.Map (Map)
-import Data.Map qualified as Map
 import Data.Text (Text)
-import Data.Tuple.Extra ((&&&))
 import Deriving.Aeson (CustomJSON (CustomJSON))
-import Dhall (FromDhall (autoWith))
+import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Generic.Functor (GenericBifunctor (GenericBifunctor))
 import Language.Haskell.To.Elm (HasElmDecoder, HasElmEncoder, HasElmType)
@@ -37,7 +34,7 @@ newtype LayoutID = LayoutID {unwrap :: Text}
     deriving Show via (ShowNewtypeWithoutRecord "LayoutID" Text)
 
 data Layout a b = Layout
-    { elements :: ElementMap a b
+    { elements :: [FullElement a b]
     , viewBox :: ViewBox
     , backgroundColour :: Colour
     , name :: LayoutID
@@ -45,15 +42,6 @@ data Layout a b = Layout
     deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON (Layout a b)
     deriving (Bifunctor) via GenericBifunctor Layout
-
--- | A newtype wrapper so we can have Haskell and Elm use a Map/Dict, but Dhall expect a list.
-newtype ElementMap a b = ElementMap {unwrap :: Map ElementID (FullElement a b)}
-    deriving stock (Generic, Functor)
-    deriving newtype (ToJSON)
-    deriving (Bifunctor) via GenericBifunctor ElementMap
-    deriving (Show) via ShowNewtypeWithoutRecord "ElementMap" (Map ElementID (FullElement a b))
-instance (FromDhall a, FromDhall b) => FromDhall (ElementMap a b) where
-    autoWith = fmap (ElementMap . Map.fromList . map ((.name) &&& id)) . autoWith
 
 data FullElement a b = FullElement
     { element :: Element a b
@@ -69,7 +57,7 @@ data FullElement a b = FullElement
 
 newtype ElementID = ElementID {unwrap :: Text}
     deriving stock (Eq, Ord)
-    deriving newtype (FromDhall, ToJSON, ToJSONKey, FromJSON, HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value)
+    deriving newtype (FromDhall, ToJSON, FromJSON, HasElmType, HasElmEncoder J.Value, HasElmDecoder J.Value)
     deriving Show via (ShowNewtypeWithoutRecord "ElementID" Text)
 
 data Element a b

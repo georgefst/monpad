@@ -34,6 +34,7 @@ import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.IORef
+import Data.Functor
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
@@ -342,9 +343,9 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                                 ShowElement i ->
                                     (currentLayout % el i % #hidden) .= False
                                 AddElement x ->
-                                    (currentLayout % elementMap) %= Map.insert x.name x
+                                    (currentLayout % #elements) %= (x :)
                                 RemoveElement i ->
-                                    (currentLayout % elementMap) %= Map.delete i
+                                    (currentLayout % #elements) %= filter ((/= i) . view #name)
                                 SetBackgroundColour x ->
                                     (currentLayout % #backgroundColour) .= x
                                 SetIndicatorHollowness i x ->
@@ -372,13 +373,12 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                             ClientUpdate _ -> mempty
                         onUpdate u
                   where
-                    el :: ElementID -> AffineTraversal' (Layout a b) (FullElement a b)
-                    el i = elMaybe i % _Just
+                    -- traverse all elements whose names match
+                    el :: ElementID -> Traversal' (Layout a b) (FullElement a b)
+                    el i = #elements % traversed % elMaybe i % _Just
                     elMaybe i = lens
-                        (Map.lookup i . view elementMap)
-                        (flip $ over elementMap . maybe id
-                            (\x -> Map.insert (view #name x) x)
-                        )
+                        (\x -> guard (view #name x == i) $> x)
+                        (\x my -> fromMaybe x $ guard (view #name x == i) >> my)
                     sus = us & mapMaybe \case
                         ServerUpdate s -> Just s
                         ClientUpdate _ -> Nothing
@@ -411,6 +411,3 @@ currentLayoutMaybe = lens
 
 currentLayoutError :: Layout a b
 currentLayoutError = error "current layout is not in map!"
-
-elementMap :: Lens' (Layout a b) (Map ElementID (FullElement a b))
-elementMap = #elements % coerced

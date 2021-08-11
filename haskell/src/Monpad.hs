@@ -133,6 +133,7 @@ loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
 mainHtml :: Layouts a b -> Port -> ClientID -> Html ()
+mainHtml _ _ (ClientID "") = loginHtml Nothing
 mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
     [ style_ (commonCSS ())
     , style_ (appCSS ())

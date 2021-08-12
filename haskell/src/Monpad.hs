@@ -118,8 +118,10 @@ serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
     pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
-loginHtml :: Maybe Text -> Html ()
-loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] $ mconcat
+data UsernameError
+    = EmptyUsername
+loginHtml :: Maybe UsernameError -> Maybe Text -> Html ()
+loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ "monpad: login"
     , style_ (commonCSS ())
     , style_ (loginCSS ())
@@ -127,7 +129,13 @@ loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
     , input_ [type_ "submit", value_ "Go!"]
-    ]
+    ] <> case err of
+        Nothing -> []
+        Just EmptyUsername ->
+            [ p_
+                [ style_ "color: red" ]
+                "Empty usernames are not allowed!"
+            ]
   where
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
@@ -272,12 +280,20 @@ serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
     run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts
 
 httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Server HttpApi
-httpServer wsPort loginImage assetsDir layouts =
-    (pure . maybe (loginHtml loginImage) (const $ mainHtml layouts wsPort))
-        :<|> maybe
-            (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
-            serveDirectoryWebApp
-            assetsDir
+httpServer wsPort loginImage assetsDir layouts = core :<|> assets
+  where
+    core :: Server CoreApi
+    core = \case
+        Nothing -> pure $ loginHtml Nothing loginImage
+        Just u -> -- there is a username query param in the URL
+            if u == ClientID ""
+                then pure $ loginHtml (Just EmptyUsername) loginImage
+                else pure $ mainHtml layouts wsPort
+    assets :: Server AssetsApi
+    assets = maybe
+        (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
+        serveDirectoryWebApp
+        assetsDir
 
 websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
 websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case mu of

@@ -147,7 +147,7 @@ mainHtml layouts wsPort (ClientID _username) = doctypehtml_ $ mconcat
   where
     jsScript = "text/javascript"
 
---TODO use expose a cleaner interface, rather than requiring use of overloaded-labels lenses?
+--TODO expose a cleaner interface, rather than requiring use of overloaded-labels lenses?
 -- | The Monpad monad
 newtype Monpad e s a b x = Monpad
     { unMonpad ::

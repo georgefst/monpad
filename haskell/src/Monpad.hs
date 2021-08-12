@@ -133,7 +133,7 @@ loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
 mainHtml :: Layouts a b -> Port -> ClientID -> Html ()
-mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
+mainHtml layouts wsPort (ClientID _username) = doctypehtml_ $ mconcat
     [ style_ (commonCSS ())
     , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
@@ -141,7 +141,6 @@ mainHtml layouts wsPort (ClientID username) = doctypehtml_ $ mconcat
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ biVoid . fst <$> layouts
         , makeAttribute "wsPort" $ showT wsPort
-        , makeAttribute "username" username
         ]
         (jsJS ())
     ]

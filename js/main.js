@@ -1,6 +1,6 @@
 const attr = s => document.currentScript.attributes.getNamedItem(s).value
 
-const username = attr("username")
+const username = new URLSearchParams(window.location.search).get("username")
 
 const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + new URLSearchParams({ username })
 const ws = new WebSocket(wsAddress)

@@ -132,8 +132,8 @@ loginHtml imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
-mainHtml :: Layouts a b -> Port -> ClientID -> Html ()
-mainHtml layouts wsPort (ClientID _username) = doctypehtml_ $ mconcat
+mainHtml :: Layouts a b -> Port -> Html ()
+mainHtml layouts wsPort = doctypehtml_ $ mconcat
     [ style_ (commonCSS ())
     , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
@@ -273,7 +273,7 @@ serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
 
 httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Server HttpApi
 httpServer wsPort loginImage assetsDir layouts =
-    (pure . maybe (loginHtml loginImage) (mainHtml layouts wsPort))
+    (pure . maybe (loginHtml loginImage) (const $ mainHtml layouts wsPort))
         :<|> maybe
             (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
             serveDirectoryWebApp

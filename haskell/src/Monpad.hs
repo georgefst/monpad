@@ -33,15 +33,15 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
-import Data.IORef
 import Data.Functor
+import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
-import Data.Proxy
 import Data.Monoid
+import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
@@ -68,8 +68,8 @@ import Optics.State.Operators
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
+import Streamly.Internal.Data.Stream.IsStream qualified as SP (hoist)
 import Streamly.Prelude qualified as SP
-import Streamly.Internal.Data.Stream.IsStream qualified as SP
 import System.IO
 import Util.Util
 

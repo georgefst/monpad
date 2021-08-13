@@ -7,8 +7,6 @@ const ws = new WebSocket(wsAddress)
 
 const layouts = JSON.parse(attr("layouts"))
 
-window.onbeforeunload = () => ws.close()
-
 ws.onopen = _event => {
     // Elm
     elmInitialised = false

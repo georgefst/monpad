@@ -33,6 +33,7 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
+import Data.ByteString.Char8 qualified as BS
 import Data.Functor
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
@@ -83,6 +84,13 @@ import Util
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
+validateUsername :: ClientID -> Maybe UsernameError
+validateUsername u
+    | u == ClientID "" = Just EmptyUsername
+    | otherwise = Nothing
+data UsernameError
+    = EmptyUsername
+    deriving (Show)
 
 data Update a b
     = ClientUpdate ClientUpdate
@@ -118,8 +126,6 @@ serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
     pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
-data UsernameError
-    = EmptyUsername
 loginHtml :: Maybe UsernameError -> Maybe Text -> Html ()
 loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ "monpad: login"
@@ -286,9 +292,9 @@ httpServer wsPort loginImage assetsDir layouts = core :<|> assets
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
         Just u -> -- there is a username query param in the URL
-            if u == ClientID ""
-                then pure $ loginHtml (Just EmptyUsername) loginImage
-                else pure $ mainHtml layouts wsPort
+            case validateUsername u of
+                Nothing -> pure $ mainHtml layouts wsPort
+                Just err -> pure $ loginHtml (Just err) loginImage
     assets :: Server AssetsApi
     assets = maybe
         (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
@@ -299,6 +305,7 @@ websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
 websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
+    Just clientId | Just err <- validateUsername clientId -> WS.rejectRequest pending . BS.pack $ show err
     Just clientId -> do
         lastPing <- newIORef Nothing
         (e, s0, u0) <- onNewConnection layouts clientId

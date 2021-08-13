@@ -4,6 +4,10 @@ const username = new URLSearchParams(window.location.search).get("username")
 
 const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + new URLSearchParams({ username })
 const ws = new WebSocket(wsAddress)
+ws.onclose = event => {
+    console.log(event)
+    alert("Connection lost. See console for details.")
+}
 
 const layouts = JSON.parse(attr("layouts"))
 

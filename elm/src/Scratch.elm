@@ -11,7 +11,6 @@ import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
 import Basics.Extra exposing (..)
 import Color exposing (..)
-import Dict exposing (Dict)
 import Json.Decode as Json
 import List.Extra exposing (..)
 import Loadable
@@ -104,145 +103,138 @@ sub cycleLength tickMs model f =
                     / toFloat cycleLength
 
 
-mkElementDict : List FullElement -> Dict String FullElement
-mkElementDict =
-    Dict.fromList << List.map (\x -> ( x.name, x ))
-
-
 flags : ElmFlags
 flags =
     { username = "GT"
     , layouts =
         [ { elements =
-                mkElementDict
-                    [ { location = { x = -600, y = 0 }
-                      , image = Nothing
-                      , text = Nothing
-                      , name = "indicator"
-                      , hidden = False
-                      , element =
-                            Indicator
-                                { hollowness = 0.5
-                                , arcStart = 0
-                                , arcEnd = 2 / 3
-                                , centre = vec2 0 0
-                                , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
-                                , shape = Circle 300
+                [ { location = { x = -600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
+                  , name = "indicator"
+                  , hidden = False
+                  , element =
+                        Indicator
+                            { hollowness = 0.5
+                            , arcStart = 0
+                            , arcEnd = 2 / 3
+                            , centre = vec2 0 0
+                            , colour = { red = 0.8, green = 0, blue = 0.5, alpha = 1 }
+                            , shape = Circle 300
+                            }
+                  }
+                , { location = { x = 900, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
+                  , name = "powerbar"
+                  , hidden = False
+                  , element =
+                        Indicator
+                            { hollowness = 0
+                            , arcStart = 0.5
+                            , arcEnd = 1
+                            , centre = vec2 0 0
+                            , colour = toRgba purple
+                            , shape = Rectangle { x = 100, y = 800 }
+                            }
+                  }
+                , { location = { x = 600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
+                  , name = "stick"
+                  , hidden = False
+                  , element =
+                        Stick
+                            { radius = 80
+                            , range = 300
+                            , backgroundColour = toRgba blue
+                            , stickColour = toRgba white
+                            , stickDataX = ()
+                            , stickDataY = ()
+                            }
+                  }
+                , { location = { x = -300, y = -200 }
+                  , image = Nothing
+                  , text = Nothing
+                  , name = "slider"
+                  , hidden = True
+                  , element =
+                        Slider
+                            { radius = 40
+                            , width = 80
+                            , offset = { x = 600, y = 400 }
+                            , initialPosition = 0.2
+                            , resetOnRelease = True
+                            , backgroundColour = toRgba green
+                            , sliderColour = toRgba white
+                            , sliderData = ()
+                            }
+                  }
+                , { location = { x = 0, y = 350 }
+                  , image = Nothing
+                  , name = "button"
+                  , hidden = False
+                  , text =
+                        Just
+                            { style =
+                                { bold = True
+                                , italic = True
+                                , underline = True
+                                , colour = toRgba darkGray
+                                , size = 60
+                                , shadow =
+                                    [ { offset = { x = 2, y = -1 }
+                                      , blur = 2
+                                      , colour = toRgba black
+                                      }
+                                    ]
+                                , font = "sans-serif"
                                 }
-                      }
-                    , { location = { x = 900, y = 0 }
-                      , image = Nothing
-                      , text = Nothing
-                      , name = "powerbar"
-                      , hidden = False
-                      , element =
-                            Indicator
-                                { hollowness = 0
-                                , arcStart = 0.5
-                                , arcEnd = 1
-                                , centre = vec2 0 0
-                                , colour = toRgba purple
-                                , shape = Rectangle { x = 100, y = 800 }
-                                }
-                      }
-                    , { location = { x = 600, y = 0 }
-                      , image = Nothing
-                      , text = Nothing
-                      , name = "stick"
-                      , hidden = False
-                      , element =
-                            Stick
-                                { radius = 80
-                                , range = 300
-                                , backgroundColour = toRgba blue
-                                , stickColour = toRgba white
-                                , stickDataX = ()
-                                , stickDataY = ()
-                                }
-                      }
-                    , { location = { x = -300, y = -200 }
-                      , image = Nothing
-                      , text = Nothing
-                      , name = "slider"
-                      , hidden = True
-                      , element =
-                            Slider
-                                { radius = 40
-                                , width = 80
-                                , offset = { x = 600, y = 400 }
-                                , initialPosition = 0.2
-                                , resetOnRelease = True
-                                , backgroundColour = toRgba green
-                                , sliderColour = toRgba white
-                                , sliderData = ()
-                                }
-                      }
-                    , { location = { x = 0, y = 350 }
-                      , image = Nothing
-                      , name = "button"
-                      , hidden = False
-                      , text =
-                            Just
-                                { style =
-                                    { bold = True
-                                    , italic = True
-                                    , underline = True
-                                    , colour = toRgba darkGray
-                                    , size = 60
-                                    , shadow =
-                                        [ { offset = { x = 2, y = -1 }
-                                          , blur = 2
-                                          , colour = toRgba black
-                                          }
-                                        ]
-                                    , font = "sans-serif"
-                                    }
-                                , text = "c'est un button"
-                                }
-                      , element =
-                            Button
-                                { shape = Rectangle { x = 300, y = 100 }
-                                , colour = toRgba yellow
-                                , buttonData = ()
-                                }
-                      }
-                    , { location = { x = -500, y = 0 }
-                      , name = "image"
-                      , hidden = False
-                      , element = Empty
-                      , image =
-                            Just
-                                { width = 1000
-                                , height = 1000
-                                , url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
-                                }
-                      , text = Nothing
-                      }
-                    ]
+                            , text = "c'est un button"
+                            }
+                  , element =
+                        Button
+                            { shape = Rectangle { x = 300, y = 100 }
+                            , colour = toRgba yellow
+                            , buttonData = ()
+                            }
+                  }
+                , { location = { x = -500, y = 0 }
+                  , name = "image"
+                  , hidden = False
+                  , element = Empty
+                  , image =
+                        Just
+                            { width = 1000
+                            , height = 1000
+                            , url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
+                            }
+                  , text = Nothing
+                  }
+                ]
           , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
           , backgroundColour = { red = 0.81, green = 0.91, blue = 0.97, alpha = 1.0 }
           , name = "A"
           }
         , { elements =
-                mkElementDict
-                    [ { location = { x = -600, y = 0 }
-                      , image = Nothing
-                      , text = Nothing
-                      , name = "0"
-                      , hidden = False
-                      , element =
-                            Slider
-                                { radius = 200
-                                , width = 200
-                                , offset = { x = 600 * 2, y = 0 }
-                                , backgroundColour = toRgba red
-                                , sliderColour = toRgba white
-                                , resetOnRelease = True
-                                , initialPosition = 0
-                                , sliderData = ()
-                                }
-                      }
-                    ]
+                [ { location = { x = -600, y = 0 }
+                  , image = Nothing
+                  , text = Nothing
+                  , name = "0"
+                  , hidden = False
+                  , element =
+                        Slider
+                            { radius = 200
+                            , width = 200
+                            , offset = { x = 600 * 2, y = 0 }
+                            , backgroundColour = toRgba red
+                            , sliderColour = toRgba white
+                            , resetOnRelease = True
+                            , initialPosition = 0
+                            , sliderData = ()
+                            }
+                  }
+                ]
           , viewBox = { x = -1000, y = -500, w = 2000, h = 1000 }
           , backgroundColour = toRgba white
           , name = "B"

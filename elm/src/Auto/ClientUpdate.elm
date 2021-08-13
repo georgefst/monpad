@@ -13,6 +13,9 @@ type ClientUpdate
     | ButtonDown String
     | StickMove String Math.Vector2.Vec2
     | SliderMove String Float
+    | InputBool String Bool
+    | InputNumber String Float
+    | InputText String String
 
 
 encode : ClientUpdate -> Json.Encode.Value
@@ -31,3 +34,15 @@ encode a =
         SliderMove b c ->
             Json.Encode.object [ ("SliderMove" , Json.Encode.list identity [ Json.Encode.string b
             , Json.Encode.float c ]) ]
+
+        InputBool b c ->
+            Json.Encode.object [ ("InputBool" , Json.Encode.list identity [ Json.Encode.string b
+            , Json.Encode.bool c ]) ]
+
+        InputNumber b c ->
+            Json.Encode.object [ ("InputNumber" , Json.Encode.list identity [ Json.Encode.string b
+            , Json.Encode.float c ]) ]
+
+        InputText b c ->
+            Json.Encode.object [ ("InputText" , Json.Encode.list identity [ Json.Encode.string b
+            , Json.Encode.string c ]) ]

@@ -5,6 +5,7 @@ module Auto.Element exposing
 
 import Auto.Button
 import Auto.Indicator
+import Auto.Input
 import Auto.Slider
 import Auto.Stick
 import Json.Decode
@@ -16,6 +17,7 @@ type Element
     | Button Auto.Button.Button
     | Slider Auto.Slider.Slider
     | Indicator Auto.Indicator.Indicator
+    | Input Auto.Input.Input
     | Empty 
 
 
@@ -29,4 +31,6 @@ decode =
     Json.Decode.Pipeline.required "Slider" Auto.Slider.decode
     , Json.Decode.succeed Indicator |>
     Json.Decode.Pipeline.required "Indicator" Auto.Indicator.decode
+    , Json.Decode.succeed Input |>
+    Json.Decode.Pipeline.required "Input" Auto.Input.decode
     , Json.Decode.succeed Empty ]

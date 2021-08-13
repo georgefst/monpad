@@ -57,6 +57,10 @@ let Indicator =
       , shape : Shape
       }
 
+let InputType = < CheckBox | Number | Text >
+
+let Input = { width : Natural, height : Natural, inputType : InputType }
+
 let Element =
       λ(a : Type) →
       λ(b : Type) →
@@ -64,6 +68,7 @@ let Element =
         | Stick : Stick a
         | Slider : Slider a
         | Indicator : Indicator
+        | Input : Input
         | Empty
         >
 
@@ -151,6 +156,7 @@ let mapLayout
                                       ⫽ { sliderData = fa slider.sliderData }
                                     )
                             , Indicator = (Element a1 b1).Indicator
+                            , Input = (Element a1 b1).Input
                             , Empty = (Element a1 b1).Empty
                             }
                             fe.element
@@ -233,4 +239,6 @@ in  λ(a : Type) →
       , Image
       , TextBox
       , Indicator
+      , Input
+      , InputType
       }

@@ -65,6 +65,7 @@ data Element a b
     | Button (Button b)
     | Slider (Slider a)
     | Indicator Indicator
+    | Input Input
     | Empty
     deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON (Element a b)
@@ -103,6 +104,20 @@ data Slider a = Slider'
     }
     deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON (Slider a)
+
+data Input = Input'
+    { width :: Word
+    , height :: Word
+    , inputType :: InputType
+    }
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON Input
+data InputType
+    = CheckBox
+    | Number
+    | Text
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON InputType
 
 data Image = Image
     { width :: Word

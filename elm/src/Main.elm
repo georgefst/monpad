@@ -8,6 +8,8 @@ import Auto.ElmFlags exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.Image exposing (..)
 import Auto.Indicator exposing (..)
+import Auto.Input exposing (..)
+import Auto.InputType as InputType
 import Auto.IntVec2 exposing (..)
 import Auto.Layout exposing (..)
 import Auto.ResetLayout exposing (..)
@@ -247,6 +249,9 @@ viewElement model element =
             Element.Indicator x ->
                 viewIndicator element.name x
 
+            Element.Input x ->
+                viewInput element.name x
+
             Element.Empty ->
                 stack []
         )
@@ -436,6 +441,56 @@ viewIndicator _ ind =
         |> styled1 ind.colour
 
 
+viewInput : String -> Input -> Collage Msgs
+viewInput name inp =
+    html (both toFloat ( inp.width, inp.height )) [] <|
+        div
+            [ style "display" "flex"
+            , style "width" "100%"
+            , style "height" "100%"
+            ]
+            [ input
+                [ H.type_ <|
+                    case inp.inputType of
+                        InputType.CheckBox ->
+                            "checkbox"
+
+                        InputType.Number ->
+                            "number"
+
+                        InputType.Text ->
+                            "text"
+                , style "flex" "auto"
+                , onInput <|
+                    \s ->
+                        List.singleton <|
+                            case inp.inputType of
+                                InputType.CheckBox ->
+                                    case s of
+                                        "on" ->
+                                            ClientUpdate <| InputBool name True
+
+                                        "off" ->
+                                            ClientUpdate <| InputBool name False
+
+                                        _ ->
+                                            ConsoleLog <| "Failed to decode checkbox input: " ++ s
+
+                                InputType.Number ->
+                                    case String.toFloat s of
+                                        Just f ->
+                                            ClientUpdate <| InputNumber name f
+
+                                        Nothing ->
+                                            ConsoleLog <| "Failed to decode number input: " ++ s
+
+                                InputType.Text ->
+                                    ClientUpdate <| InputText name s
+                ]
+                []
+            ]
+
+
 viewFullscreenButton : ViewBox -> Collage (List Msg)
 viewFullscreenButton vb =
     let
@@ -599,6 +654,15 @@ update msg model =
 
                         SliderMove t p ->
                             { model | layout = { layoutState | sliderPos = Dict.insert t p layoutState.sliderPos } }
+
+                        InputBool _ _ ->
+                            model
+
+                        InputNumber _ _ ->
+                            model
+
+                        InputText _ _ ->
+                            model
             in
             ( model1, sendUpdate u )
 

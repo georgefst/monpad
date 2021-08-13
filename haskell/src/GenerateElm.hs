@@ -55,6 +55,8 @@ elm pathToElm = writeDefs pathToElm $ mconcat
     , defAndDecoder @(Stick ())
     , defAndDecoder @(Slider ())
     , defAndDecoder @(Button ())
+    , defAndDecoder @Input
+    , defAndDecoder @InputType
     , defAndDecoder @Image
     , defAndDecoder @TextBox
     , defAndDecoder @TextStyle
@@ -138,6 +140,16 @@ deriving instance SOP.Generic (Button a)
 deriving instance SOP.HasDatatypeInfo (Button a)
 deriving via Via1 Button () instance HasElmType (Button a)
 deriving via Via1 Button () instance HasElmDecoder J.Value (Button a)
+
+deriving instance SOP.Generic Input
+deriving instance SOP.HasDatatypeInfo Input
+deriving via Via Input instance HasElmType Input
+deriving via Via Input instance HasElmDecoder J.Value Input
+
+deriving instance SOP.Generic InputType
+deriving instance SOP.HasDatatypeInfo InputType
+deriving via Via InputType instance HasElmType InputType
+deriving via Via InputType instance HasElmDecoder J.Value InputType
 
 deriving instance SOP.Generic Image
 deriving instance SOP.HasDatatypeInfo Image

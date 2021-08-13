@@ -103,6 +103,9 @@ data ClientUpdate
     | ButtonDown ElementID
     | StickMove ElementID (V2 Double) -- always a vector within the unit circle
     | SliderMove ElementID Double -- between 0 and 1
+    | InputBool ElementID Bool
+    | InputNumber ElementID Double
+    | InputText ElementID Text
     deriving (Eq, Ord, Show, Generic)
     deriving (FromJSON) via CustomJSON Opts.JSON ClientUpdate
 

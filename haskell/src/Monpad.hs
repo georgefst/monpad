@@ -35,6 +35,8 @@ import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.ByteString.Char8 qualified as BS
+import Data.Either.Combinators
+import Data.Either.Extra
 import Data.Functor
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
@@ -44,7 +46,11 @@ import Data.Map qualified as Map
 import Data.Maybe
 import Data.Proxy
 import Data.Semigroup.Monad
+import Data.Set (Set)
+import Data.Set qualified as Set
+import Data.String (fromString)
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
@@ -84,12 +90,14 @@ import Util
 newtype ClientID = ClientID Text
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
-validateUsername :: ClientID -> Maybe UsernameError
-validateUsername u
-    | u == ClientID "" = Just EmptyUsername
-    | otherwise = Nothing
+validateUsername :: MVar (Set ClientID) -> ClientID -> IO (Maybe UsernameError)
+validateUsername users u = eitherToMaybe . swapEither <$> runExceptT do
+    when (u == ClientID "") $ throwError EmptyUsername
+    isNew <- liftIO $ modifyMVar users $ pure . setInsert' u
+    when isNew . throwError $ DuplicateUsername u
 data UsernameError
     = EmptyUsername
+    | DuplicateUsername ClientID
     deriving (Show)
 
 data Update a b
@@ -141,9 +149,12 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
     ] <> case err of
         Nothing -> []
         Just EmptyUsername ->
-            [ p_
-                [ style_ "color: red" ]
+            [ p_ [ style_ "color: red" ]
                 "Empty usernames are not allowed!"
+            ]
+        Just (DuplicateUsername (ClientID u)) ->
+            [ p_ [ style_ "color: red" ] $
+                "The username " <> fromString (T.unpack u) <> " is already in use!"
             ]
   where
     nameBoxId = "name"
@@ -267,9 +278,10 @@ combineConfs sc1 sc2 = ServerConfig
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
 server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+    users <- newMVar Set.empty
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf
+        httpServer port loginImage assetsDir layouts users :<|> websocketServer pingFrequency layouts conf users
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -284,17 +296,18 @@ serverExtWs ::
     Layouts a b ->
     IO ()
 serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
+    users <- newMVar Set.empty
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts users
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Server HttpApi
-httpServer wsPort loginImage assetsDir layouts = core :<|> assets
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> MVar (Set ClientID) -> Server HttpApi
+httpServer wsPort loginImage assetsDir layouts users = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
         Just u -> -- there is a username query param in the URL
-            case validateUsername u of
+            liftIO (validateUsername users u) >>= \case
                 Nothing -> pure $ mainHtml layouts wsPort
                 Just err -> pure $ loginHtml (Just err) loginImage
     assets :: Server AssetsApi
@@ -303,12 +316,13 @@ httpServer wsPort loginImage assetsDir layouts = core :<|> assets
         serveDirectoryWebApp
         assetsDir
 
-websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
+websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> MVar (Set ClientID) -> Server WsApi
+websocketServer pingFrequency layouts ServerConfig{..} users mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
-    Just clientId | Just err <- validateUsername clientId -> WS.rejectRequest pending . BS.pack $ show err
-    Just clientId -> do
+    Just clientId -> validateUsername users clientId >>= \case
+      Just err -> WS.rejectRequest pending . BS.pack $ show err
+      Nothing -> do
         lastPing <- newIORef Nothing
         (e, s0, u0) <- onNewConnection layouts clientId
         extraUpdates <- newEmptyMVar
@@ -404,7 +418,11 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
                         ServerUpdate s -> Just s
                         ClientUpdate _ -> Nothing
         WS.withPingThread conn pingFrequency onPing
-            . (=<<) (either (\err -> onDroppedConnection err clientId e) pure)
+            . (=<<)
+                ( either
+                    (\err -> onDroppedConnection err clientId e >> modifyMVar_ users (pure . Set.delete clientId))
+                    pure
+                )
             . runMonpad layouts clientId e s0
             . SP.drain
             . SP.mapM (handleUpdates <=< either throwError pure)

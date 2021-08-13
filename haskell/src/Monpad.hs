@@ -296,8 +296,8 @@ httpServer wsPort loginImage assetsDir layouts = core :<|> assets
         assetsDir
 
 websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case mu of
-    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending0 (encodeUtf8 err)
+websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
+    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
     Just clientId -> do
         lastPing <- newIORef Nothing
@@ -312,8 +312,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending0 = liftIO case
                     (Endo f, us) <- onPong e (t1 - t0)
                     putMVar extraUpdates us
                     putMVar extraModifys f
-            pending = pending0 & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
-        conn <- WS.acceptRequest pending
+        conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         let allUpdates = SP.fromAsync $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
             serverUpdates = ask >>= \env -> foldMap SP.fromSerial

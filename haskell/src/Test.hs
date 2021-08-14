@@ -33,16 +33,16 @@ test ps ls = do
 
 -- NB: this cover all plugins except 'Logger', which is always in use here.
 data P
-    = WatchLayout
+    = WL
     | QR FilePath
-    | LayoutSwitcher
-    | PingIndicator
+    | LS
+    | PI
 plugin :: P -> Plugin () ()
 plugin = \case
-    WatchLayout -> WatchLayout.plugin
+    WL -> WatchLayout.plugin
     QR path -> QR.plugin path
-    LayoutSwitcher -> LayoutSwitcher.plugin ()
-    PingIndicator -> PingIndicator.plugin
+    LS -> LayoutSwitcher.plugin ()
+    PI -> PingIndicator.plugin
 
 testExt :: IO ()
 testExt = do

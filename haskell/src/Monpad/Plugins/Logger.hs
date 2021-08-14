@@ -16,7 +16,7 @@ data Settings
     deriving (Show, Enum, Bounded)
 
 plugin :: (Show a, Show b) => (Text -> IO ()) -> Settings -> Plugin a b
-plugin f settings = Plugin @() @() $ logUpdates settings f <> logImportantStuff f
+plugin f settings = Plugin @() @() $ logUpdates settings f <> logImportantStuff f <> logPong settings f
 
 logImportantStuff :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
 logImportantStuff f = mempty
@@ -44,9 +44,21 @@ logUpdates settings f = mempty
   where
     printClientUpdate c u = do
         liftIO $ f $ "Message received from client: " <> c
-        pPrint' u
+        pPrintIndented u
     printServerUpdate c u = do
         liftIO $ f $ "Message sent to client: " <> c
-        pPrint' u
-    pPrint' :: Show x => x -> Monpad e s a b ()
-    pPrint' = pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}
+        pPrintIndented u
+
+logPong :: Settings -> (Text -> IO ()) -> ServerConfig () () a b
+logPong settings f = case settings of
+    Normal -> mempty
+    Quiet -> mempty
+    Loud -> mempty
+        { onPong = \() t -> do
+            liftIO $ f "Pong: "
+            pPrintIndented t
+            mempty
+        }
+
+pPrintIndented :: (Show x, MonadIO m) => x -> m ()
+pPrintIndented = pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}

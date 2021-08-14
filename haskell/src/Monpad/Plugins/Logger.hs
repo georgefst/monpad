@@ -24,7 +24,7 @@ logImportantStuff f = mempty
     , onNewConnection = \_ (ClientID i) -> do
         f $ "New client: " <> i
         mempty
-    , onDroppedConnection = \(ClientID i) _ _ ->
+    , onDroppedConnection = \_ (ClientID i) _ ->
         f $ "Client disconnected: " <> i
     }
 
@@ -54,7 +54,7 @@ logPong settings f = case settings of
     Normal -> mempty
     Quiet -> mempty
     Loud -> mempty
-        { onPong = \(ClientID c) () t -> do
+        { onPong = \t (ClientID c) () -> do
             liftIO $ f $ "Pong: " <> c
             pPrintIndented t
             mempty

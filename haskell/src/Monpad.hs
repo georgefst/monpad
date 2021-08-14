@@ -225,8 +225,8 @@ data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO ()
     -- ^ do something with the URL, when the server starts
     , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
-    , onDroppedConnection :: ClientID -> MonpadException -> e -> IO ()
-    , onPong :: ClientID -> e -> NominalDiffTime -> IO (Endo s, [ServerUpdate a b])
+    , onDroppedConnection :: MonpadException -> ClientID -> e -> IO ()
+    , onPong :: NominalDiffTime -> ClientID -> e -> IO (Endo s, [ServerUpdate a b])
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: MonpadEnv e a b -> SP.Async (MonpadState s a b -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
@@ -247,9 +247,9 @@ combineConfs sc1 sc2 = ServerConfig
     , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 >> f2 e2)
         <<*>> sc1.onDroppedConnection
         <<*>> sc2.onDroppedConnection
-    , onPong = \c (e1, e2) t -> do
-        (Endo sf1, u1) <- sc1.onPong c e1 t
-        (Endo sf2, u2) <- sc2.onPong c e2 t
+    , onPong = \t c (e1, e2) -> do
+        (Endo sf1, u1) <- sc1.onPong t c e1
+        (Endo sf2, u2) <- sc2.onPong t c e2
         pure (Endo $ sf1 *** sf2, u1 <> u2)
     , updates = \e ->
         ((. over #extra fst) <$> sc1.updates (over #extra fst e))
@@ -319,7 +319,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
                 Nothing -> warn "pong before ping"
                 Just t0 -> do
                     t1 <- getPOSIXTime
-                    (Endo f, us) <- onPong clientId e (t1 - t0)
+                    (Endo f, us) <- onPong (t1 - t0) clientId e
                     putMVar extraUpdates us
                     putMVar extraModifys f
         conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
@@ -407,7 +407,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
                         ServerUpdate s -> Just s
                         ClientUpdate _ -> Nothing
         WS.withPingThread conn pingFrequency onPing
-            . (=<<) (either (flip (onDroppedConnection clientId) e) pure)
+            . (=<<) (either (\err -> onDroppedConnection err clientId e) pure)
             . runMonpad layouts clientId e s0
             . SP.drain
             $ SP.mapM handleUpdates allUpdates

@@ -34,7 +34,7 @@ logUpdates settings f = mempty
         ClientID c <- asks $ view #client
         let (pc, ps) = case settings of
                 Normal -> (printClientUpdate c, mempty)
-                Quiet -> (mempty, mempty)
+                Quiet -> mempty
                 Loud -> (printClientUpdate c, printServerUpdate c)
         case u of
             ClientUpdate cu -> pc cu

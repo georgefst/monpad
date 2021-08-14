@@ -5,6 +5,7 @@ import Optics
 import Text.Pretty.Simple
 
 import Data.Text (Text)
+import qualified Data.Text.Lazy as TL
 
 import Monpad
 import Monpad.Plugins
@@ -44,10 +45,10 @@ logUpdates settings f = mempty
   where
     printClientUpdate c u = do
         liftIO $ f $ "Message received from client: " <> c
-        pPrintIndented u
+        pLogIndented f u
     printServerUpdate c u = do
         liftIO $ f $ "Message sent to client: " <> c
-        pPrintIndented u
+        pLogIndented f u
 
 logPong :: Settings -> (Text -> IO ()) -> ServerConfig () () a b
 logPong settings f = case settings of
@@ -56,9 +57,9 @@ logPong settings f = case settings of
     Loud -> mempty
         { onPong = \t (ClientID c) () -> do
             liftIO $ f $ "Pong: " <> c
-            pPrintIndented t
+            pLogIndented f t
             mempty
         }
 
-pPrintIndented :: (Show x, MonadIO m) => x -> m ()
-pPrintIndented = pPrintOpt CheckColorTty defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}
+pLogIndented :: (Show x, MonadIO m) => (Text -> IO ()) -> x -> m ()
+pLogIndented f = liftIO . f . TL.toStrict . pShowOpt defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}

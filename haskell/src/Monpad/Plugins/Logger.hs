@@ -50,12 +50,12 @@ logUpdates settings f = mempty
         liftIO $ f $ "Message sent to client: " <> c
         pLogIndented f u
 
-logPong :: Settings -> (Text -> IO ()) -> ServerConfig () () a b
+logPong :: (Monoid e, Monoid s) => Settings -> (Text -> IO ()) -> ServerConfig e s a b
 logPong settings f = case settings of
     Normal -> mempty
     Quiet -> mempty
     Loud -> mempty
-        { onPong = \t (ClientID c) () -> do
+        { onPong = \t (ClientID c) _ -> do
             liftIO $ f $ "Pong: " <> c
             pLogIndented f t
             mempty

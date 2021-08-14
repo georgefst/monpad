@@ -54,8 +54,8 @@ logPong settings f = case settings of
     Normal -> mempty
     Quiet -> mempty
     Loud -> mempty
-        { onPong = \() t -> do
-            liftIO $ f "Pong: "
+        { onPong = \(ClientID c) () t -> do
+            liftIO $ f $ "Pong: " <> c
             pPrintIndented t
             mempty
         }

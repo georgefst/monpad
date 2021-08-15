@@ -461,22 +461,14 @@ viewInput name inp =
                         InputType.Text ->
                             "text"
                 , style "flex" "auto"
-                , onInput <|
-                    \s ->
-                        List.singleton <|
-                            case inp.inputType of
-                                InputType.CheckBox ->
-                                    case s of
-                                        "on" ->
-                                            ClientUpdate <| InputBool name True
+                , H.map List.singleton <|
+                    case inp.inputType of
+                        InputType.CheckBox ->
+                            onCheck (ClientUpdate << InputBool name)
 
-                                        "off" ->
-                                            ClientUpdate <| InputBool name False
-
-                                        _ ->
-                                            ConsoleLog <| "Failed to decode checkbox input: " ++ s
-
-                                InputType.Number ->
+                        InputType.Number ->
+                            onInput <|
+                                \s ->
                                     case String.toFloat s of
                                         Just f ->
                                             ClientUpdate <| InputNumber name f
@@ -484,8 +476,8 @@ viewInput name inp =
                                         Nothing ->
                                             ConsoleLog <| "Failed to decode number input: " ++ s
 
-                                InputType.Text ->
-                                    ClientUpdate <| InputText name s
+                        InputType.Text ->
+                            onInput (ClientUpdate << InputText name)
                 ]
                 []
             ]

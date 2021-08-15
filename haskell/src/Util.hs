@@ -8,8 +8,10 @@ import Data.Foldable
 import Data.Functor
 import Data.List.Extra
 import Data.Maybe
+import Data.Monoid
 import Data.Time
 import Data.Traversable
+import Data.Tuple.Extra
 import Optics
 import System.FilePath
 import Util.Util
@@ -38,6 +40,9 @@ import Network.Socket (
     hostAddressToTuple,
  )
 import Streamly.Prelude qualified as SP
+
+zipEndo :: Endo a -> Endo b -> Endo (a, b)
+zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2
 
 getLocalIp :: IO (Maybe HostAddress)
 getLocalIp = do

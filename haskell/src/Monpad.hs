@@ -33,6 +33,7 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Biapplicative (biliftA2)
 import Data.ByteString.Char8 qualified as BS
 import Data.Functor
 import Data.IORef
@@ -241,16 +242,15 @@ combineConfs sc1 sc2 = ServerConfig
     { onStart = pure (<>)
         <*> sc1.onStart
         <*> sc2.onStart
-    , onNewConnection = pure (pure (pure \(e1, s1, u1) (e2, s2, u2) -> ((e1, e2), (s1, s2), u1 ++ u2)))
+    , onNewConnection = pure (pure (pure \(e1, s1, u1) (e2, s2, u2) -> ((e1, e2), (s1, s2), u1 <> u2)))
         <<<*>>> sc1.onNewConnection
         <<<*>>> sc2.onNewConnection
-    , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 >> f2 e2)
+    , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 <> f2 e2)
         <<*>> sc1.onDroppedConnection
         <<*>> sc2.onDroppedConnection
-    , onPong = \t c (e1, e2) -> do
-        (Endo sf1, u1) <- sc1.onPong t c e1
-        (Endo sf2, u2) <- sc2.onPong t c e2
-        pure (Endo $ sf1 *** sf2, u1 <> u2)
+    , onPong = pure (pure \f1 f2 (e1, e2) -> biliftA2 zipEndo (<>) <$> f1 e1 <*> f2 e2)
+        <<*>> sc1.onPong
+        <<*>> sc2.onPong
     , updates = \e ->
         ((. over #extra fst) <$> sc1.updates (over #extra fst e))
             <>

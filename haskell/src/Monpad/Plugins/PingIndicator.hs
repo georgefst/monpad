@@ -27,6 +27,7 @@ showPing =
         onPong = \time _ _ -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
+                --TODO these values come from `monpad.dhall` - embed at compile time?
                 r = sRGB 0.85 0.28 0.28
                 y = sRGB 0.94 0.95 0.33
                 g = sRGB 0.2 0.72 0.2

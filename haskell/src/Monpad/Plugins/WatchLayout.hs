@@ -41,7 +41,7 @@ sendLayout = mempty
                 snd <$> watchDirectory dir (isModification `conj` isImport)
             flip foldMap evss $ SP.fromSerial
                 . traceStream (const $ T.putStrLn "Sending new layout to client")
-                . SP.map (const . send name)
+                . SP.map (send name)
                 . SP.mapMaybeM (const $ getLayout expr)
                 . lastOfGroup 100_000
     }

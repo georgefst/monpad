@@ -302,7 +302,7 @@ httpServer wsPort loginImage assetsDir layouts = core :<|> assets
         serveDirectoryWebApp
         assetsDir
 
-websocketServer :: Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
+websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
 websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
     Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
       where err = "no username parameter"
@@ -319,14 +319,19 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
                     us <- onPong (t1 - t0) clientId e
                     putMVar extraUpdates us
         conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
-        let allUpdates = SP.fromAsync $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
-            clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
-            serverUpdates = ask >>= \env -> foldMap SP.fromSerial
-                [ SP.cons u0 do
-                    SP.hoist liftIO $ updates env
-                , SP.repeatM do
-                    liftIO $ takeMVar extraUpdates
-                ]
+        let {- We have to take care here not to attempt a parallel composition in a stateful monad.
+            This is not supported by Streamly, but the types don't do anything to disallow it.
+            See: https://github.com/composewell/streamly/issues/1203.
+            We instead use an ad-hoc, simpler, monad stack, and only lift to `Monpad` once we're back to `Serial`.
+            -}
+            allUpdates :: SP.SerialT (ReaderT (MonpadEnv e a b) IO) (Either MonpadException [Update a b])
+            allUpdates = SP.fromAsync $
+                (pure . ClientUpdate <<$>> clientUpdates)
+                    <> (pure . map ServerUpdate <$> serverUpdates)
+            clientUpdates = SP.fromSerial . SP.hoist liftIO . SP.repeatM $ getUpdate conn
+            serverUpdates = SP.cons u0 $
+                (SP.fromSerial . SP.hoist liftIO . updates =<< ask)
+                    <> SP.repeatM (liftIO $ takeMVar extraUpdates)
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where
                 go us = if null us
@@ -401,10 +406,12 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
             . (=<<) (either (\err -> onDroppedConnection err clientId e) pure)
             . runMonpad layouts clientId e s0
             . SP.drain
-            $ SP.mapM handleUpdates allUpdates
+            . SP.mapM (handleUpdates <=< either throwError pure)
+            . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
+            $ allUpdates
       where
         sendUpdates conn = liftIO . WS.sendTextData conn . encode
-        getUpdate conn = liftIO (try $ WS.receiveData conn) >>= \case
+        getUpdate conn = liftIO (try $ WS.receiveData conn) <&> \case
             Left err -> throwError $ WebSocketException err
             Right b -> case eitherDecode b of
                 Left err -> throwError $ UpdateDecodeException err

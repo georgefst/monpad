@@ -1,10 +1,7 @@
 module Monpad.Plugins.PingIndicator (plugin) where
 
-import Data.Monoid
-import Data.Time
 import Util.Util
 
-import Control.Monad.State (gets)
 import Data.Colour qualified
 import Data.Colour.RGBSpace (uncurryRGB)
 import Data.Colour.SRGB (sRGB, toSRGB)
@@ -12,18 +9,16 @@ import Data.Convertible (convert)
 import Data.List.NonEmpty qualified as NE
 import Data.Prizm.Color as Prizm
 import Data.Prizm.Color.CIE as CIE
-import Optics (view)
 
 import Monpad
 import Monpad.Plugins
 
 plugin :: Plugin a b
-plugin = Plugin $ showPing @()
+plugin = Plugin $ showPing @() @()
 
-showPing :: (Monoid e) => ServerConfig e (NominalDiffTime, Colour) a b
+showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
 showPing =
-    let s0 = (0, Colour 1 1 1 1) --white
-        onNewConnection = \layouts -> const $ pure (mempty, s0, [uncurry addIndicator s0 . fst $ NE.head layouts])
+    let onNewConnection = \layouts -> const $ pure (mempty, mempty, [addIndicator . fst $ NE.head layouts])
         onPong = \time _ _ -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
@@ -34,14 +29,11 @@ showPing =
                 colour = fromPrizm 1 if goodness < 0.5
                     then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
                     else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
-            in  ( Endo $ const (time, colour)
-                ,
-                    [ SetText elementId $ showT time
-                    , SetIndicatorColour elementId colour
-                    ]
-                )
+            in  [ SetText elementId $ showT time
+                , SetIndicatorColour elementId colour
+                ]
         elementId = ElementID "_internal_ping_indicator"
-        addIndicator time colour Layout{..} =
+        addIndicator Layout{..} =
             let (location, width, height) =
                     let ViewBox{..} = viewBox
                         s = min w h `div` 4
@@ -55,7 +47,7 @@ showPing =
                     { location
                     , name = elementId
                     , text = Just TextBox
-                        { text = showT time
+                        { text = "Ping"
                         , style = TextStyle (width `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
                         }
                     , image = Nothing
@@ -64,14 +56,12 @@ showPing =
                         , arcStart = 0
                         , arcEnd = 1
                         , centre = 0
-                        , colour
+                        , colour = Colour 1 1 1 1 -- white
                         , shape = square
                         }
                     , hidden = False
                     }
-        onUpdate = onLayoutChange \l -> do
-            s <- gets $ view #extra
-            pure . pure $ uncurry addIndicator s l
+        onUpdate = onLayoutChange $ pure . pure . addIndicator
      in ServerConfig
             { onNewConnection
             , onPong

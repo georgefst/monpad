@@ -33,7 +33,6 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
-import Data.Biapplicative (biliftA2)
 import Data.ByteString.Char8 qualified as BS
 import Data.Functor
 import Data.IORef
@@ -42,7 +41,6 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
-import Data.Monoid
 import Data.Proxy
 import Data.Semigroup.Monad
 import Data.Text (Text)
@@ -227,7 +225,7 @@ data ServerConfig e s a b = ServerConfig
     -- ^ do something with the URL, when the server starts
     , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
     , onDroppedConnection :: MonpadException -> ClientID -> e -> IO ()
-    , onPong :: NominalDiffTime -> ClientID -> e -> IO (Endo s, [ServerUpdate a b])
+    , onPong :: NominalDiffTime -> ClientID -> e -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: MonpadEnv e a b -> SP.Async (MonpadState s a b -> [ServerUpdate a b])
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
@@ -248,7 +246,7 @@ combineConfs sc1 sc2 = ServerConfig
     , onDroppedConnection = pure (pure \f1 f2 (e1, e2) -> f1 e1 <> f2 e2)
         <<*>> sc1.onDroppedConnection
         <<*>> sc2.onDroppedConnection
-    , onPong = pure (pure \f1 f2 (e1, e2) -> biliftA2 zipEndo (<>) <$> f1 e1 <*> f2 e2)
+    , onPong = pure (pure \f1 f2 (e1, e2) -> (<>) <$> f1 e1 <*> f2 e2)
         <<*>> sc1.onPong
         <<*>> sc2.onPong
     , updates = \e ->
@@ -313,15 +311,13 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
         lastPing <- newIORef Nothing
         (e, s0, u0) <- onNewConnection layouts clientId
         extraUpdates <- newEmptyMVar
-        extraModifys <- newEmptyMVar
         let onPing = writeIORef lastPing . Just =<< getPOSIXTime
             onPong' = readIORef lastPing >>= \case
                 Nothing -> warn "pong before ping"
                 Just t0 -> do
                     t1 <- getPOSIXTime
-                    (Endo f, us) <- onPong (t1 - t0) clientId e
+                    us <- onPong (t1 - t0) clientId e
                     putMVar extraUpdates us
-                    putMVar extraModifys f
         conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
         let allUpdates = SP.fromAsync $ (pure . ClientUpdate <$> clientUpdates) <> (ServerUpdate <<$>> serverUpdates)
             clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
@@ -330,9 +326,6 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
                     SP.mapM gets $ SP.hoist liftIO $ SP.fromAsync $ updates env
                 , SP.repeatM do
                     liftIO $ takeMVar extraUpdates
-                , SP.repeatM do
-                    modify . over #extra =<< liftIO (takeMVar extraModifys)
-                    mempty
                 ]
             handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
               where

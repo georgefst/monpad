@@ -227,7 +227,7 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: MonpadException -> ClientID -> e -> IO ()
     , onPong :: NominalDiffTime -> ClientID -> e -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: MonpadEnv e a b -> SP.Async [ServerUpdate a b]
+    , updates :: MonpadEnv e a b -> SP.Serial [ServerUpdate a b]
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
@@ -323,7 +323,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
             clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
             serverUpdates = ask >>= \env -> foldMap SP.fromSerial
                 [ SP.cons u0 do
-                    SP.hoist liftIO $ SP.fromAsync $ updates env
+                    SP.hoist liftIO $ updates env
                 , SP.repeatM do
                     liftIO $ takeMVar extraUpdates
                 ]

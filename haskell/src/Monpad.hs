@@ -327,9 +327,7 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
             clientUpdates = SP.fromSerial . SP.repeatM $ getUpdate conn
             serverUpdates = ask >>= \env -> foldMap SP.fromSerial
                 [ SP.cons u0 do
-                    s <- get
-                    f <- SP.hoist liftIO $ SP.fromAsync $ updates env
-                    pure $ f s
+                    SP.mapM gets $ SP.hoist liftIO $ SP.fromAsync $ updates env
                 , SP.repeatM do
                     liftIO $ takeMVar extraUpdates
                 , SP.repeatM do

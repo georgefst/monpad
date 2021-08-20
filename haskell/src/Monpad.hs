@@ -306,9 +306,9 @@ httpServer wsPort loginImage assetsDir layouts users = core :<|> assets
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
         Just u -> -- there is a username query param in the URL
-            liftIO (validateUsername users u) >>= \case
-                Nothing -> pure $ mainHtml layouts wsPort
-                Just err -> pure $ loginHtml (Just err) loginImage
+            liftIO (validateUsername users u) <&> \case
+                Nothing -> mainHtml layouts wsPort
+                Just err -> loginHtml (Just err) loginImage
     assets :: Server AssetsApi
     assets = maybe
         (pure $ const ($ responseLBS status404 [] "no asset directory specified"))

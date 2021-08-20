@@ -33,6 +33,7 @@ import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Bifunctor
 import Data.ByteString.Char8 qualified as BS
 import Data.Functor
 import Data.IORef
@@ -411,11 +412,9 @@ websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case 
             $ allUpdates
       where
         sendUpdates conn = liftIO . WS.sendTextData conn . encode
-        getUpdate conn = liftIO (try $ WS.receiveData conn) <&> \case
-            Left err -> throwError $ WebSocketException err
-            Right b -> case eitherDecode b of
-                Left err -> throwError $ UpdateDecodeException err
-                Right x -> pure x
+        getUpdate conn =
+            (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
+                <$> liftIO (try $ WS.receiveData conn)
 
 --TODO colours
 warn :: MonadIO m => Text -> m ()

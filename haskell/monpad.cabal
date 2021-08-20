@@ -145,6 +145,7 @@ library
         servant-server ^>= 0.18,
         servant-websockets ^>= 2.0,
         streamly-fsnotify ^>= 1.1.1.0,
+        stm ^>= 2.5,
         transformers-base ^>= 0.4.5.2,
         wai ^>= 3.2.2,
         warp ^>= 3.3.9,

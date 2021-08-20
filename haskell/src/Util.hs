@@ -146,3 +146,11 @@ setInsert' :: Ord a => a -> Set a -> (Set a, Bool)
 setInsert' x s = (s', Set.size s /= Set.size s')
   where
     s' = Set.insert x s
+
+{- | Returns 'True' iff element was present.
+'Set.size' is O(1), so this is quicker than checking membership first.
+-}
+setDelete' :: Ord a => a -> Set a -> (Set a, Bool)
+setDelete' x s = (s', Set.size s /= Set.size s')
+  where
+    s' = Set.delete x s

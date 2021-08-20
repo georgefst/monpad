@@ -24,6 +24,7 @@ module Monpad (
 ) where
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Catch (MonadThrow)
@@ -34,9 +35,6 @@ import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.ByteString.Char8 qualified as BS
-import Data.Either.Combinators
-import Data.Either.Extra
 import Data.Functor
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
@@ -87,18 +85,23 @@ import Orphans.Generic ()
 import ServerUpdate
 import Util
 
-newtype ClientID = ClientID Text
+newtype ClientID = ClientID {unwrap :: Text}
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
-validateUsername :: MVar (Set ClientID) -> ClientID -> IO (Maybe UsernameError)
-validateUsername users u = eitherToMaybe . swapEither <$> runExceptT do
-    when (u == ClientID "") $ throwError EmptyUsername
-    isNew <- liftIO $ modifyMVar users $ pure . setInsert' u
-    unless isNew . throwError $ DuplicateUsername u
 data UsernameError
     = EmptyUsername
-    | DuplicateUsername ClientID
+    | DuplicateUsername
+        Bool
+        -- ^ is the user with this name fully connected? as opposed to being in the waiting set
+        ClientID
     deriving (Show)
+data Clients = Clients
+    { connected :: TVar (Set ClientID)
+    -- ^ full WS connection
+    , waiting :: TVar (Set ClientID)
+    -- ^ HTTP connection but not yet WS
+    }
+    deriving (Generic)
 
 data Update a b
     = ClientUpdate ClientUpdate
@@ -152,8 +155,9 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
             [ p_ [ style_ "color: red" ] case e of
                 EmptyUsername ->
                     "Empty usernames are not allowed!"
-                (DuplicateUsername (ClientID u)) ->
+                (DuplicateUsername fully (ClientID u)) ->
                     "The username " <> fromString (T.unpack u) <> " is already in use!"
+                        <> if fully then mempty else " (though not fully connected)"
             ]
   where
     nameBoxId = "name"
@@ -277,10 +281,11 @@ combineConfs sc1 sc2 = ServerConfig
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
 server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
-    users <- newMVar Set.empty
+    clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir layouts users :<|> websocketServer pingFrequency layouts conf users
+        httpServer port loginImage assetsDir layouts (Just clients)
+            :<|> websocketServer pingFrequency layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -295,33 +300,41 @@ serverExtWs ::
     Layouts a b ->
     IO ()
 serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
-    users <- newMVar Set.empty
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts users
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts clients
+  where
+    -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
+    clients = Nothing
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> MVar (Set ClientID) -> Server HttpApi
-httpServer wsPort loginImage assetsDir layouts users = core :<|> assets
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Maybe Clients -> Server HttpApi
+httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
-        Just u -> -- there is a username query param in the URL
-            liftIO (validateUsername users u) <&> \case
-                Nothing -> mainHtml layouts wsPort
-                Just err -> loginHtml (Just err) loginImage
+        -- there is a username query param in the URL - validate it, and add to waiting list
+        Just u -> liftIO $ atomically $
+            either (\err -> loginHtml (Just err) loginImage) (\() -> mainHtml layouts wsPort) <$> runExceptT do
+                when (u == ClientID "") $ throwError EmptyUsername
+                case mclients of
+                    Just Clients{waiting, connected} -> do
+                        alreadyConnected <- lift $ Set.member u <$> readTVar connected
+                        when alreadyConnected $ throwError $ DuplicateUsername True u
+                        isNew <- lift $ stateTVar waiting $ swap . setInsert' u
+                        unless isNew $ throwError $ DuplicateUsername False u
+                    Nothing -> pure ()
     assets :: Server AssetsApi
     assets = maybe
         (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
         serveDirectoryWebApp
         assetsDir
 
-websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> MVar (Set ClientID) -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} users mu pending = liftIO case mu of
-    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
-      where err = "no username parameter"
-    Just clientId -> validateUsername users clientId >>= \case
-        Just err -> WS.rejectRequest pending . BS.pack $ show err
-        Nothing -> do
+websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Clients -> Server WsApi
+websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = liftIO case mu of
+    Nothing -> rejectAndLog "no username parameter"
+    Just clientId -> registerConnection clientId >>= \case
+        False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
+        True -> do
             lastPing <- newIORef Nothing
             (e, s0, u0) <- onNewConnection layouts clientId
             extraUpdates <- newEmptyMVar
@@ -420,7 +433,10 @@ websocketServer pingFrequency layouts ServerConfig{..} users mu pending = liftIO
             WS.withPingThread conn pingFrequency onPing
                 . (=<<)
                     ( either
-                        (\err -> onDroppedConnection err clientId e >> modifyMVar_ users (pure . Set.delete clientId))
+                        ( \err -> do
+                            onDroppedConnection err clientId e
+                            atomically $ modifyTVar clients.connected $ Set.delete clientId
+                        )
                         pure
                     )
                 . runMonpad layouts clientId e s0
@@ -433,6 +449,17 @@ websocketServer pingFrequency layouts ServerConfig{..} users mu pending = liftIO
             getUpdate conn =
                 (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
                     <$> liftIO (try $ WS.receiveData conn)
+  where
+    rejectAndLog err = do
+        T.putStrLn $ "Rejecting WS connection: " <> err
+        WS.rejectRequest pending $ encodeUtf8 err
+    -- attempt to move client from the waiting set to the connected set
+    registerConnection clientId = atomically do
+        success <- stateTVar clients.waiting $ swap . setDelete' clientId
+        when success do
+            isNew <- stateTVar clients.connected $ swap . setInsert' clientId
+            unless isNew $ error $ "logic error - username in waiting and connected set: " <> show clientId
+        pure success
 
 --TODO colours
 warn :: MonadIO m => Text -> m ()

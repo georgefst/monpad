@@ -94,7 +94,7 @@ validateUsername :: MVar (Set ClientID) -> ClientID -> IO (Maybe UsernameError)
 validateUsername users u = eitherToMaybe . swapEither <$> runExceptT do
     when (u == ClientID "") $ throwError EmptyUsername
     isNew <- liftIO $ modifyMVar users $ pure . setInsert' u
-    when isNew . throwError $ DuplicateUsername u
+    unless isNew . throwError $ DuplicateUsername u
 data UsernameError
     = EmptyUsername
     | DuplicateUsername ClientID

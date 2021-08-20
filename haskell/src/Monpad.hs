@@ -148,13 +148,12 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
     , input_ [type_ "submit", value_ "Go!"]
     ] <> case err of
         Nothing -> []
-        Just EmptyUsername ->
-            [ p_ [ style_ "color: red" ]
-                "Empty usernames are not allowed!"
-            ]
-        Just (DuplicateUsername (ClientID u)) ->
-            [ p_ [ style_ "color: red" ] $
-                "The username " <> fromString (T.unpack u) <> " is already in use!"
+        Just e ->
+            [ p_ [ style_ "color: red" ] case e of
+                EmptyUsername ->
+                    "Empty usernames are not allowed!"
+                (DuplicateUsername (ClientID u)) ->
+                    "The username " <> fromString (T.unpack u) <> " is already in use!"
             ]
   where
     nameBoxId = "name"

@@ -21,6 +21,8 @@ import Control.Monad.Trans.Maybe (MaybeT)
 import Data.Either.Validation (validationToEither)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Void (Void)
@@ -135,3 +137,20 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
     -- the state map stores the number of occurrences of each name seen so far
     allNames = Map.fromList $ zip (view l <$> toList xs) (repeat (0 :: Int))
     err = error "broken invariant in `uniqueNames` - all names should be in map by construction"
+
+{- | Returns 'True' iff element is new.
+'Set.size' is O(1), so this is quicker than checking membership first.
+--TODO add to `containers`? https://github.com/haskell/containers/issues/31
+-}
+setInsert' :: Ord a => a -> Set a -> (Bool, Set a)
+setInsert' x s = (Set.size s /= Set.size s', s')
+  where
+    s' = Set.insert x s
+
+{- | Returns 'True' iff element was present.
+'Set.size' is O(1), so this is quicker than checking membership first.
+-}
+setDelete' :: Ord a => a -> Set a -> (Bool, Set a)
+setDelete' x s = (Set.size s /= Set.size s', s')
+  where
+    s' = Set.delete x s

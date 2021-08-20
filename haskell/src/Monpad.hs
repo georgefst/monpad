@@ -24,6 +24,7 @@ module Monpad (
 ) where
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Catch (MonadThrow)
@@ -34,7 +35,6 @@ import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
-import Data.ByteString.Char8 qualified as BS
 import Data.Functor
 import Data.IORef
 import Data.List.NonEmpty (NonEmpty)
@@ -44,7 +44,11 @@ import Data.Map qualified as Map
 import Data.Maybe
 import Data.Proxy
 import Data.Semigroup.Monad
+import Data.Set (Set)
+import Data.Set qualified as Set
+import Data.String (fromString)
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
@@ -81,16 +85,23 @@ import Orphans.Generic ()
 import ServerUpdate
 import Util
 
-newtype ClientID = ClientID Text
+newtype ClientID = ClientID {unwrap :: Text}
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
-validateUsername :: ClientID -> Maybe UsernameError
-validateUsername u
-    | u == ClientID "" = Just EmptyUsername
-    | otherwise = Nothing
 data UsernameError
     = EmptyUsername
+    | DuplicateUsername
+        Bool
+        -- ^ is the user with this name fully connected? as opposed to being in the waiting set
+        ClientID
     deriving (Show)
+data Clients = Clients
+    { connected :: TVar (Set ClientID)
+    -- ^ full WS connection
+    , waiting :: TVar (Set ClientID)
+    -- ^ HTTP connection but not yet WS
+    }
+    deriving (Generic)
 
 data Update a b
     = ClientUpdate ClientUpdate
@@ -140,10 +151,13 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
     , input_ [type_ "submit", value_ "Go!"]
     ] <> case err of
         Nothing -> []
-        Just EmptyUsername ->
-            [ p_
-                [ style_ "color: red" ]
-                "Empty usernames are not allowed!"
+        Just e ->
+            [ p_ [ style_ "color: red" ] case e of
+                EmptyUsername ->
+                    "Empty usernames are not allowed!"
+                (DuplicateUsername fully (ClientID u)) ->
+                    "The username " <> fromString (T.unpack u) <> " is already in use!"
+                        <> if fully then mempty else " (though not fully connected)"
             ]
   where
     nameBoxId = "name"
@@ -267,9 +281,11 @@ combineConfs sc1 sc2 = ServerConfig
 
 server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
 server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+    clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir layouts :<|> websocketServer pingFrequency layouts conf
+        httpServer port loginImage assetsDir layouts (Just clients)
+            :<|> websocketServer pingFrequency layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -285,136 +301,165 @@ serverExtWs ::
     IO ()
 serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts clients
+  where
+    -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
+    clients = Nothing
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Server HttpApi
-httpServer wsPort loginImage assetsDir layouts = core :<|> assets
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Maybe Clients -> Server HttpApi
+httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
-        Just u -> -- there is a username query param in the URL
-            case validateUsername u of
-                Nothing -> pure $ mainHtml layouts wsPort
-                Just err -> pure $ loginHtml (Just err) loginImage
+        -- there is a username query param in the URL - validate it, and add to waiting list
+        Just u -> liftIO $ atomically $
+            either (\err -> loginHtml (Just err) loginImage) (\() -> mainHtml layouts wsPort) <$> runExceptT do
+                when (u == ClientID "") $ throwError EmptyUsername
+                case mclients of
+                    Just Clients{waiting, connected} -> do
+                        alreadyConnected <- lift $ Set.member u <$> readTVar connected
+                        when alreadyConnected $ throwError $ DuplicateUsername True u
+                        isNew <- lift $ stateTVar waiting $ setInsert' u
+                        unless isNew $ throwError $ DuplicateUsername False u
+                    Nothing -> pure ()
     assets :: Server AssetsApi
     assets = maybe
         (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
         serveDirectoryWebApp
         assetsDir
 
-websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} mu pending = liftIO case mu of
-    Nothing -> T.putStrLn ("Rejecting WS connection: " <> err) >> WS.rejectRequest pending (encodeUtf8 err)
-      where err = "no username parameter"
-    Just clientId | Just err <- validateUsername clientId -> WS.rejectRequest pending . BS.pack $ show err
-    Just clientId -> do
-        lastPing <- newIORef Nothing
-        (e, s0, u0) <- onNewConnection layouts clientId
-        extraUpdates <- newEmptyMVar
-        let onPing = writeIORef lastPing . Just =<< getPOSIXTime
-            onPong' = readIORef lastPing >>= \case
-                Nothing -> warn "pong before ping"
-                Just t0 -> do
-                    t1 <- getPOSIXTime
-                    us <- onPong (t1 - t0) clientId e
-                    putMVar extraUpdates us
-        conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
-        let {- We have to take care here not to attempt a parallel composition in a stateful monad.
-            This is not supported by Streamly, but the types don't do anything to disallow it.
-            See: https://github.com/composewell/streamly/issues/1203.
-            We instead use an ad-hoc, simpler, monad stack, and only lift to `Monpad` once we're back to `Serial`.
-            -}
-            allUpdates :: SP.SerialT (ReaderT (MonpadEnv e a b) IO) (Either MonpadException [Update a b])
-            allUpdates = SP.fromAsync $
-                (pure . ClientUpdate <<$>> clientUpdates)
-                    <> (pure . map ServerUpdate <$> serverUpdates)
-            clientUpdates = SP.fromSerial . SP.hoist liftIO . SP.repeatM $ getUpdate conn
-            serverUpdates = SP.cons u0 $
-                (SP.fromSerial . SP.hoist liftIO . updates =<< ask)
-                    <> SP.repeatM (liftIO $ takeMVar extraUpdates)
-            handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
-              where
-                go us = if null us
-                    then mempty
-                    else fmap (sus ++) $ go . map ServerUpdate . concat =<< for us \u -> do
-                        case u of
-                            -- this needs to be equivalent to the same handling in the Elm code
-                            ServerUpdate su -> case su of
-                                PlayAudioURL{} -> mempty
-                                Vibrate{} -> mempty
-                                SetImageURL i x ->
-                                    (currentLayout % el i % #image % _Just % #url) .= x
-                                AddImage i x ->
-                                    (currentLayout % el i % #image) .= Just x
-                                DeleteImage i ->
-                                    (currentLayout % el i % #image) .= Nothing
-                                SetText i x ->
-                                    (currentLayout % el i % #text % _Just % #text) .= x
-                                AddText i x ->
-                                    (currentLayout % el i % #text) .= Just x
-                                DeleteText i ->
-                                    (currentLayout % el i % #text) .= Nothing
-                                SetLayout l ->
-                                    currentLayout .= l
-                                SwitchLayout i ->
-                                    #layout .= i
-                                HideElement i ->
-                                    (currentLayout % el i % #hidden) .= True
-                                ShowElement i ->
-                                    (currentLayout % el i % #hidden) .= False
-                                AddElement x ->
-                                    (currentLayout % #elements) %= (x :)
-                                RemoveElement i ->
-                                    (currentLayout % #elements) %= filter ((/= i) . view #name)
-                                SetBackgroundColour x ->
-                                    (currentLayout % #backgroundColour) .= x
-                                SetIndicatorHollowness i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #hollowness) .= x
-                                SetIndicatorArcStart i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #arcStart) .= x
-                                SetIndicatorArcEnd i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #arcEnd) .= x
-                                SetIndicatorShape i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #shape) .= x
-                                SetIndicatorCentre i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #centre) .= x
-                                SetIndicatorColour i x ->
-                                    (currentLayout % el i % #element % #_Indicator % #colour) .= x
-                                SetSliderPosition{} -> mempty
-                                SetButtonColour i x ->
-                                    (currentLayout % el i % #element % #_Button % #colour) .= x
-                                SetButtonPressed{} -> mempty
-                                ResetLayout x -> case x of
-                                    StateReset -> mempty -- this only affects the frontend
-                                    FullReset -> do
-                                        i <- gets $ view #layout
-                                        l <- asks $ maybe currentLayoutError fst . Map.lookup i . view #initialLayouts
-                                        currentLayout .= l
-                            ClientUpdate _ -> mempty
-                        onUpdate u
+websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Clients -> Server WsApi
+websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = liftIO case mu of
+    Nothing -> rejectAndLog "no username parameter"
+    Just clientId -> registerConnection clientId >>= \case
+        False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
+        True -> do
+            lastPing <- newIORef Nothing
+            (e, s0, u0) <- onNewConnection layouts clientId
+            extraUpdates <- newEmptyMVar
+            let onPing = writeIORef lastPing . Just =<< getPOSIXTime
+                onPong' = readIORef lastPing >>= \case
+                    Nothing -> warn "pong before ping"
+                    Just t0 -> do
+                        t1 <- getPOSIXTime
+                        us <- onPong (t1 - t0) clientId e
+                        putMVar extraUpdates us
+            conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
+            let {- We have to take care here not to attempt a parallel composition in a stateful monad.
+                This is not supported by Streamly, but the types don't do anything to disallow it.
+                See: https://github.com/composewell/streamly/issues/1203.
+                We instead use an ad-hoc, simpler, monad stack, and only lift to `Monpad` once we're back to `Serial`.
+                -}
+                allUpdates :: SP.SerialT (ReaderT (MonpadEnv e a b) IO) (Either MonpadException [Update a b])
+                allUpdates = SP.fromAsync $
+                    (pure . ClientUpdate <<$>> clientUpdates)
+                        <> (pure . map ServerUpdate <$> serverUpdates)
+                clientUpdates = SP.fromSerial . SP.hoist liftIO . SP.repeatM $ getUpdate conn
+                serverUpdates = SP.cons u0 $
+                    (SP.fromSerial . SP.hoist liftIO . updates =<< ask)
+                        <> SP.repeatM (liftIO $ takeMVar extraUpdates)
+                handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
                   where
-                    -- traverse all elements whose names match
-                    el :: ElementID -> Traversal' (Layout a b) (FullElement a b)
-                    el i = #elements % traversed % elMaybe i % _Just
-                    elMaybe i = lens
-                        (\x -> guard (view #name x == i) $> x)
-                        (\x my -> fromMaybe x $ guard (view #name x == i) >> my)
-                    sus = us & mapMaybe \case
-                        ServerUpdate s -> Just s
-                        ClientUpdate _ -> Nothing
-        WS.withPingThread conn pingFrequency onPing
-            . (=<<) (either (\err -> onDroppedConnection err clientId e) pure)
-            . runMonpad layouts clientId e s0
-            . SP.drain
-            . SP.mapM (handleUpdates <=< either throwError pure)
-            . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
-            $ allUpdates
-      where
-        sendUpdates conn = liftIO . WS.sendTextData conn . encode
-        getUpdate conn =
-            (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
-                <$> liftIO (try $ WS.receiveData conn)
+                    go us = if null us
+                        then mempty
+                        else fmap (sus ++) $ go . map ServerUpdate . concat =<< for us \u -> do
+                            case u of
+                                -- this needs to be equivalent to the same handling in the Elm code
+                                ServerUpdate su -> case su of
+                                    PlayAudioURL{} -> mempty
+                                    Vibrate{} -> mempty
+                                    SetImageURL i x ->
+                                        (currentLayout % el i % #image % _Just % #url) .= x
+                                    AddImage i x ->
+                                        (currentLayout % el i % #image) .= Just x
+                                    DeleteImage i ->
+                                        (currentLayout % el i % #image) .= Nothing
+                                    SetText i x ->
+                                        (currentLayout % el i % #text % _Just % #text) .= x
+                                    AddText i x ->
+                                        (currentLayout % el i % #text) .= Just x
+                                    DeleteText i ->
+                                        (currentLayout % el i % #text) .= Nothing
+                                    SetLayout l ->
+                                        currentLayout .= l
+                                    SwitchLayout i ->
+                                        #layout .= i
+                                    HideElement i ->
+                                        (currentLayout % el i % #hidden) .= True
+                                    ShowElement i ->
+                                        (currentLayout % el i % #hidden) .= False
+                                    AddElement x ->
+                                        (currentLayout % #elements) %= (x :)
+                                    RemoveElement i ->
+                                        (currentLayout % #elements) %= filter ((/= i) . view #name)
+                                    SetBackgroundColour x ->
+                                        (currentLayout % #backgroundColour) .= x
+                                    SetIndicatorHollowness i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #hollowness) .= x
+                                    SetIndicatorArcStart i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #arcStart) .= x
+                                    SetIndicatorArcEnd i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #arcEnd) .= x
+                                    SetIndicatorShape i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #shape) .= x
+                                    SetIndicatorCentre i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #centre) .= x
+                                    SetIndicatorColour i x ->
+                                        (currentLayout % el i % #element % #_Indicator % #colour) .= x
+                                    SetSliderPosition{} -> mempty
+                                    SetButtonColour i x ->
+                                        (currentLayout % el i % #element % #_Button % #colour) .= x
+                                    SetButtonPressed{} -> mempty
+                                    ResetLayout x -> case x of
+                                        StateReset -> mempty -- this only affects the frontend
+                                        FullReset -> do
+                                            i <- gets $ view #layout
+                                            l <- asks $ maybe currentLayoutError fst . Map.lookup i
+                                                . view #initialLayouts
+                                            currentLayout .= l
+                                ClientUpdate _ -> mempty
+                            onUpdate u
+                      where
+                        -- traverse all elements whose names match
+                        el :: ElementID -> Traversal' (Layout a b) (FullElement a b)
+                        el i = #elements % traversed % elMaybe i % _Just
+                        elMaybe i = lens
+                            (\x -> guard (view #name x == i) $> x)
+                            (\x my -> fromMaybe x $ guard (view #name x == i) >> my)
+                        sus = us & mapMaybe \case
+                            ServerUpdate s -> Just s
+                            ClientUpdate _ -> Nothing
+            WS.withPingThread conn pingFrequency onPing
+                . (=<<)
+                    ( either
+                        ( \err -> do
+                            onDroppedConnection err clientId e
+                            atomically $ modifyTVar clients.connected $ Set.delete clientId
+                        )
+                        pure
+                    )
+                . runMonpad layouts clientId e s0
+                . SP.drain
+                . SP.mapM (handleUpdates <=< either throwError pure)
+                . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
+                $ allUpdates
+          where
+            sendUpdates conn = liftIO . WS.sendTextData conn . encode
+            getUpdate conn =
+                (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
+                    <$> liftIO (try $ WS.receiveData conn)
+  where
+    rejectAndLog err = do
+        T.putStrLn $ "Rejecting WS connection: " <> err
+        WS.rejectRequest pending $ encodeUtf8 err
+    -- attempt to move client from the waiting set to the connected set
+    registerConnection clientId = atomically do
+        success <- stateTVar clients.waiting $ setDelete' clientId
+        when success do
+            isNew <- stateTVar clients.connected $ setInsert' clientId
+            unless isNew $ error $ "logic error - username in waiting and connected set: " <> show clientId
+        pure success
 
 --TODO colours
 warn :: MonadIO m => Text -> m ()

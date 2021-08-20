@@ -142,15 +142,15 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
 'Set.size' is O(1), so this is quicker than checking membership first.
 --TODO add to `containers`? https://github.com/haskell/containers/issues/31
 -}
-setInsert' :: Ord a => a -> Set a -> (Set a, Bool)
-setInsert' x s = (s', Set.size s /= Set.size s')
+setInsert' :: Ord a => a -> Set a -> (Bool, Set a)
+setInsert' x s = (Set.size s /= Set.size s', s')
   where
     s' = Set.insert x s
 
 {- | Returns 'True' iff element was present.
 'Set.size' is O(1), so this is quicker than checking membership first.
 -}
-setDelete' :: Ord a => a -> Set a -> (Set a, Bool)
-setDelete' x s = (s', Set.size s /= Set.size s')
+setDelete' :: Ord a => a -> Set a -> (Bool, Set a)
+setDelete' x s = (Set.size s /= Set.size s', s')
   where
     s' = Set.delete x s

@@ -320,7 +320,7 @@ httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
                     Just Clients{waiting, connected} -> do
                         alreadyConnected <- lift $ Set.member u <$> readTVar connected
                         when alreadyConnected $ throwError $ DuplicateUsername True u
-                        isNew <- lift $ stateTVar waiting $ swap . setInsert' u
+                        isNew <- lift $ stateTVar waiting $ setInsert' u
                         unless isNew $ throwError $ DuplicateUsername False u
                     Nothing -> pure ()
     assets :: Server AssetsApi
@@ -455,9 +455,9 @@ websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = lift
         WS.rejectRequest pending $ encodeUtf8 err
     -- attempt to move client from the waiting set to the connected set
     registerConnection clientId = atomically do
-        success <- stateTVar clients.waiting $ swap . setDelete' clientId
+        success <- stateTVar clients.waiting $ setDelete' clientId
         when success do
-            isNew <- stateTVar clients.connected $ swap . setInsert' clientId
+            isNew <- stateTVar clients.connected $ setInsert' clientId
             unless isNew $ error $ "logic error - username in waiting and connected set: " <> show clientId
         pure success
 

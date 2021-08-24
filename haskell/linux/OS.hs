@@ -35,7 +35,7 @@ conf :: ServerConfig E S A B
 conf = ServerConfig
     { onNewConnection = \(fmap fst -> layouts) (ClientID clientId) -> do
         layoutInfos <- for layouts \layout -> do
-            let meta = mkLayoutMeta . Map.elems $ layout ^. #elements % coerced
+            let meta = mkLayoutMeta $ layout ^. #elements
                 (axes, keys) = allAxesAndButs meta
                 (absAxes, relAxes) = partitionEithers $ axes <&> \case
                     AxisInfo{axis = Abs a, ..} -> Left
@@ -133,6 +133,7 @@ mkLayoutMeta = foldl' (flip insert) $ LayoutMeta mempty mempty mempty
         Slider x -> over #sliderMap $ Map.insert (e ^. #name) (x ^. #sliderData)
         Button x -> over #buttonMap $ Map.insert (e ^. #name) (x ^. #buttonData)
         Indicator _ -> id
+        Input _ -> id
         Empty -> id
 
 allAxesAndButs :: LayoutMeta -> ([A], [B])

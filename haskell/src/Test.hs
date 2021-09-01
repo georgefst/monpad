@@ -31,7 +31,7 @@ test ps ls = do
             (Just "../dist/assets")
             layouts
 
--- NB: this cover all plugins except 'Logger', which is always in use here.
+-- NB: this covers all plugins except 'Logger', which is always in use here.
 data P
     = WL
     | QR FilePath

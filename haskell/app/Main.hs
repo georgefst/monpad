@@ -135,7 +135,7 @@ main = do
             Just layouts -> layouts
             Nothing -> pure $ defaultDhall ()
     case externalWS of
-        Just wsPort -> serverExtWs @() @() (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
+        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin path) $ flip onStart url

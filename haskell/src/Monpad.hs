@@ -163,14 +163,14 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
-mainHtml :: Layouts a b -> Port -> Html ()
+mainHtml :: Layouts () () -> Port -> Html ()
 mainHtml layouts wsPort = doctypehtml_ $ mconcat
     [ style_ (commonCSS ())
     , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
-        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ biVoid . fst <$> layouts
+        , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "wsPort" $ showT wsPort
         ]
         (jsJS ())
@@ -284,7 +284,7 @@ server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerce
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir layouts (Just clients)
+        httpServer port loginImage assetsDir (first biVoid <$> layouts) (Just clients)
             :<|> websocketServer pingFrequency layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
@@ -297,7 +297,7 @@ serverExtWs ::
     Port ->
     Maybe Text ->
     Maybe FilePath ->
-    Layouts a b ->
+    Layouts () () ->
     IO ()
 serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
     onStart =<< serverAddress httpPort
@@ -306,7 +306,7 @@ serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> Maybe Clients -> Server HttpApi
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts () () -> Maybe Clients -> Server HttpApi
 httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
   where
     core :: Server CoreApi

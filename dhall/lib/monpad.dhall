@@ -57,7 +57,7 @@ let Indicator =
       , shape : Shape
       }
 
-let InputType = < CheckBox | Number | Text >
+let InputType = < CheckBox | Number : TextStyle | Text : TextStyle >
 
 let Input = { width : Natural, height : Natural, inputType : InputType }
 

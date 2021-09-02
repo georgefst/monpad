@@ -424,16 +424,16 @@ viewInput name inp =
             , style "height" "100%"
             , H.map List.singleton <| onSubmit <| ClientUpdate <| SubmitInput name
             ]
-            [ input
+            [ input (
                 [ H.type_ <|
                     case inp.inputType of
                         InputType.CheckBox ->
                             "checkbox"
 
-                        InputType.Number ->
+                        InputType.Number _ ->
                             "number"
 
-                        InputType.Text ->
+                        InputType.Text _ ->
                             "text"
                 , style "flex" "auto"
                 , H.map List.singleton <|
@@ -441,7 +441,7 @@ viewInput name inp =
                         InputType.CheckBox ->
                             onCheck (ClientUpdate << InputBool name)
 
-                        InputType.Number ->
+                        InputType.Number _ ->
                             onInput <|
                                 \s ->
                                     case String.toFloat s of
@@ -451,9 +451,16 @@ viewInput name inp =
                                         Nothing ->
                                             ConsoleLog <| "Failed to decode number input: " ++ s
 
-                        InputType.Text ->
+                        InputType.Text _ ->
                             onInput (ClientUpdate << InputText name)
-                ]
+                ] ++
+                    case inp.inputType of
+                        InputType.CheckBox -> []
+
+                        InputType.Number style -> textStyle style
+
+                        InputType.Text style -> textStyle style
+                )
                 []
             ]
 

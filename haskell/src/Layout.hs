@@ -114,8 +114,8 @@ data Input = Input'
     deriving (ToJSON) via CustomJSON Opts.JSON Input
 data InputType
     = CheckBox
-    | Number
-    | Text
+    | Number TextStyle
+    | Text TextStyle
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON InputType
 

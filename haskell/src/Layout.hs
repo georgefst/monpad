@@ -113,7 +113,7 @@ data Input = Input'
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON Input
 data InputType
-    = CheckBox
+    = CheckBox () --TODO this dummy field works around a bug in my PR: https://github.com/folq/haskell-to-elm/pull/18
     | Number TextStyle
     | Text TextStyle
     deriving (Show, Generic, FromDhall)

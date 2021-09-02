@@ -9,14 +9,15 @@ import Json.Decode.Pipeline
 
 
 type InputType 
-    = CheckBox 
+    = CheckBox ()
     | Number Auto.TextStyle.TextStyle
     | Text Auto.TextStyle.TextStyle
 
 
 decode : Json.Decode.Decoder InputType
 decode =
-    Json.Decode.oneOf [ Json.Decode.succeed CheckBox
+    Json.Decode.oneOf [ Json.Decode.succeed CheckBox |>
+    Json.Decode.Pipeline.required "CheckBox" (Json.Decode.succeed ())
     , Json.Decode.succeed Number |>
     Json.Decode.Pipeline.required "Number" Auto.TextStyle.decode
     , Json.Decode.succeed Text |>

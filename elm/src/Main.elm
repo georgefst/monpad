@@ -427,7 +427,7 @@ viewInput name inp =
             [ input
                 ([ H.type_ <|
                     case inp.inputType of
-                        InputType.CheckBox ->
+                        InputType.CheckBox () ->
                             "checkbox"
 
                         InputType.Number _ ->
@@ -438,7 +438,7 @@ viewInput name inp =
                  , style "flex" "auto"
                  , H.map List.singleton <|
                     case inp.inputType of
-                        InputType.CheckBox ->
+                        InputType.CheckBox () ->
                             onCheck (ClientUpdate << InputBool name)
 
                         InputType.Number _ ->
@@ -455,7 +455,7 @@ viewInput name inp =
                             onInput (ClientUpdate << InputText name)
                  ]
                     ++ (case inp.inputType of
-                            InputType.CheckBox ->
+                            InputType.CheckBox () ->
                                 []
 
                             InputType.Number style ->

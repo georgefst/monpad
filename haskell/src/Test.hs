@@ -46,5 +46,6 @@ plugin = \case
 
 testExt :: IO ()
 testExt = do
+    setLocaleEncoding utf8
     Just layouts <- layoutsFromDhall $ pure defaultSimple
     serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") layouts

@@ -1,10 +1,11 @@
 module OS (conf, keyUnknown) where
 
 import Control.Monad.Reader
-import Control.Monad.State
 import Data.Either
 import Data.Foldable
 import Data.Int
+import Data.List.Extra hiding (insert, (!?))
+import Data.Maybe
 import Data.Traversable
 import Optics hiding (Empty)
 
@@ -13,6 +14,8 @@ import Data.Coerce (coerce)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
+import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
 import GHC.Generics (Generic)
@@ -27,7 +30,7 @@ import Monpad
 import Orphans.Evdev ()
 
 type E = Map LayoutID (Device, LayoutMeta)
-type S = (Device, LayoutMeta)
+type S = ((Device, LayoutMeta), Text)
 type A = AxisInfo
 type B = Key
 
@@ -69,14 +72,14 @@ conf = ServerConfig
                 )
         pure
             ( Map.fromList $ toList layoutInfos
-            , snd $ NE.head layoutInfos
+            , (snd $ NE.head layoutInfos, "")
             , []
             )
     , onUpdate = \case
         ServerUpdate (SwitchLayout l) -> do
             ls <- asks (^. #extra)
             case ls !? l of
-                Just x -> #extra .= x
+                Just x -> #extra % _1 .= x
                 Nothing -> warn $ "no evdev device found for layout: " <> coerce l
             mempty
         ClientUpdate (ButtonUp i) ->
@@ -87,6 +90,18 @@ conf = ServerConfig
             lookup' #stickMap i \(x', y') -> onAxis x x' <> onAxis y y'
         ClientUpdate (SliderMove i x) ->
             lookup' #sliderMap i . onAxis $ x * 2 - 1
+        ClientUpdate (InputText _ t) -> do
+            (#extra % _2) .= t
+            mempty
+        ClientUpdate (SubmitInput _) -> do
+            dev <- use $ #extra % _1 % _1
+            liftIO . writeBatch dev
+                . concatMap (\k -> [KeyEvent k Pressed, KeyEvent k Released])
+                . (++ [KeyEnter])
+                . mapMaybe charToKey
+                . T.unpack
+                =<< use (#extra % _2)
+            mempty
         _ -> mempty
     , onStart = mempty
     , onDroppedConnection = mempty
@@ -101,7 +116,7 @@ conf = ServerConfig
         (a -> Device -> Monpad E S A B ()) ->
         Monpad E S A B m
     lookup' l i f = do
-        (device, info) <- gets (^. #extra)
+        (device, info) <- use $ #extra % _1
         case (info ^. l) !? i of
             Just a -> f a device
             Nothing -> warn $ "element id not found: " <> coerce i
@@ -159,3 +174,55 @@ data Axis
 
 keyUnknown :: Key
 keyUnknown = KeyUnknown
+
+charToKey :: Char -> Maybe Key
+charToKey = \case
+    '0' -> Just Key0
+    '1' -> Just Key1
+    '2' -> Just Key2
+    '3' -> Just Key3
+    '4' -> Just Key4
+    '5' -> Just Key5
+    '6' -> Just Key6
+    '7' -> Just Key7
+    '8' -> Just Key8
+    '9' -> Just Key9
+    'a' -> Just KeyA
+    'b' -> Just KeyB
+    'c' -> Just KeyC
+    'd' -> Just KeyD
+    'e' -> Just KeyE
+    'f' -> Just KeyF
+    'g' -> Just KeyG
+    'h' -> Just KeyH
+    'i' -> Just KeyI
+    'j' -> Just KeyJ
+    'k' -> Just KeyK
+    'l' -> Just KeyL
+    'm' -> Just KeyM
+    'n' -> Just KeyN
+    'o' -> Just KeyO
+    'p' -> Just KeyP
+    'q' -> Just KeyQ
+    'r' -> Just KeyR
+    's' -> Just KeyS
+    't' -> Just KeyT
+    'u' -> Just KeyU
+    'v' -> Just KeyV
+    'w' -> Just KeyW
+    'x' -> Just KeyX
+    'y' -> Just KeyY
+    'z' -> Just KeyZ
+    '\'' -> Just KeyApostrophe
+    '\\' -> Just KeyBackslash
+    ',' -> Just KeyComma
+    '.' -> Just KeyDot
+    '=' -> Just KeyEqual
+    '`' -> Just KeyGrave
+    '{' -> Just KeyLeftbrace
+    '-' -> Just KeyMinus
+    '}' -> Just KeyRightbrace
+    ';' -> Just KeySemicolon
+    '/' -> Just KeySlash
+    ' ' -> Just KeySpace
+    _ -> Nothing

@@ -444,10 +444,11 @@ viewIndicator _ ind =
 viewInput : String -> Input -> Collage Msgs
 viewInput name inp =
     html (both toFloat ( inp.width, inp.height )) [] <|
-        div
+        form
             [ style "display" "flex"
             , style "width" "100%"
             , style "height" "100%"
+            , H.map List.singleton <| onSubmit <| ClientUpdate <| SubmitInput name
             ]
             [ input
                 [ H.type_ <|
@@ -654,6 +655,9 @@ update msg model =
                             model
 
                         InputText _ _ ->
+                            model
+
+                        SubmitInput _ ->
                             model
             in
             ( model1, sendUpdate u )

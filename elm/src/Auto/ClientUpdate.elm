@@ -16,6 +16,7 @@ type ClientUpdate
     | InputBool String Bool
     | InputNumber String Float
     | InputText String String
+    | SubmitInput String
 
 
 encode : ClientUpdate -> Json.Encode.Value
@@ -46,3 +47,6 @@ encode a =
         InputText b c ->
             Json.Encode.object [ ("InputText" , Json.Encode.list identity [ Json.Encode.string b
             , Json.Encode.string c ]) ]
+
+        SubmitInput b ->
+            Json.Encode.object [("SubmitInput" , Json.Encode.string b)]

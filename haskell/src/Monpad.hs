@@ -117,7 +117,7 @@ data ClientUpdate
     | InputBool ElementID Bool
     | InputNumber ElementID Double
     | InputText ElementID Text
-    | SubmitInput ElementID -- for number and text inputs
+    | SubmitInput ElementID Text -- for number and text inputs
     deriving (Eq, Ord, Show, Generic)
     deriving (FromJSON) via CustomJSON Opts.JSON ClientUpdate
 

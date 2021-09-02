@@ -224,7 +224,9 @@ viewElement model element =
                 viewIndicator element.name x
 
             Element.Input x ->
-                viewInput element.name x
+                viewInput element.name x <|
+                    withDefault "" <|
+                        Dict.get element.name model.layout.texts
 
             Element.Empty ->
                 stack []
@@ -415,14 +417,14 @@ viewIndicator _ ind =
         |> styled1 ind.colour
 
 
-viewInput : String -> Input -> Collage Msgs
-viewInput name inp =
+viewInput : String -> Input -> String -> Collage Msgs
+viewInput name inp val =
     html (both toFloat ( inp.width, inp.height )) [] <|
         form
             [ style "display" "flex"
             , style "width" "100%"
             , style "height" "100%"
-            , H.map List.singleton <| onSubmit <| ClientUpdate <| SubmitInput name
+            , onSubmit [ ClientUpdate <| SubmitInput name val, TextSet name "" ]
             ]
             [ input
                 ([ H.type_ <|
@@ -436,6 +438,7 @@ viewInput name inp =
                         InputType.Text _ ->
                             "text"
                  , style "flex" "auto"
+                 , onInput <| List.singleton << TextSet name
                  , H.map List.singleton <|
                     case inp.inputType of
                         InputType.CheckBox () ->
@@ -463,6 +466,12 @@ viewInput name inp =
 
                             InputType.Text style ->
                                 textStyle style
+                       )
+                    ++ (if val == "" then
+                            [ H.value val ]
+
+                        else
+                            []
                        )
                 )
                 []
@@ -539,6 +548,7 @@ type alias LayoutState =
     , stickPos : Dict String Vec2
     , sliderPos : Dict String Float
     , pointerCallbacks : Dict Int PointerCallbacks -- keys are the ids of the pointers currently held down
+    , texts : Dict String String
     }
 
 
@@ -555,6 +565,7 @@ type Msg
     | GoFullscreen
     | FullscreenChange Bool
     | ConsoleLog String
+    | TextSet String String
 
 
 type alias PointerCallbacks =
@@ -607,6 +618,7 @@ loadLayout layout =
     , pointerCallbacks = Dict.empty
     , pressed = Set.empty
     , sliderPos = Dict.empty
+    , texts = Dict.empty
     }
 
 
@@ -642,7 +654,7 @@ update msg model =
                         InputText _ _ ->
                             model
 
-                        SubmitInput _ ->
+                        SubmitInput _ _ ->
                             model
             in
             ( model1, sendUpdate u )
@@ -678,6 +690,9 @@ update msg model =
 
         ConsoleLog s ->
             ( model, consoleLog s )
+
+        TextSet name s ->
+            ( { model | layout = { layoutState | texts = Dict.insert name s layoutState.texts } }, Cmd.none )
 
 
 serverUpdate : ServerUpdate -> Model -> ( Model, Cmd Msgs )

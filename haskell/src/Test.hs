@@ -16,7 +16,7 @@ import Monpad
 import Monpad.Plugins
 
 defaultSimple :: Text
-defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"
+defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/textinput.dhall"
 
 -- NB: this covers all plugins except 'Logger', which is always in use here.
 data P

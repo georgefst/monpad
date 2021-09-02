@@ -39,7 +39,13 @@ conf = ServerConfig
     { onNewConnection = \(fmap fst -> layouts) (ClientID clientId) -> do
         layoutInfos <- for layouts \layout -> do
             let meta = mkLayoutMeta $ layout ^. #elements
-                (axes, keys) = allAxesAndButs meta
+                (axes, keys0) = allAxesAndButs meta
+                isTextInput = \case
+                    FullElement{element = Input Input'{inputType = Text _}} -> True
+                    _ -> False
+                keys = if any isTextInput $ layout ^. #elements
+                    then keys0 <> filter (isJust . keyToChar) enumerate
+                    else keys0
                 (absAxes, relAxes) = partitionEithers $ axes <&> \case
                     AxisInfo{axis = Abs a, ..} -> Left
                         ( a
@@ -225,4 +231,56 @@ charToKey = \case
     ';' -> Just KeySemicolon
     '/' -> Just KeySlash
     ' ' -> Just KeySpace
+    _ -> Nothing
+
+keyToChar :: Key -> Maybe Char
+keyToChar = \case
+    Key0 ->  Just '0'
+    Key1 ->  Just '1'
+    Key2 ->  Just '2'
+    Key3 ->  Just '3'
+    Key4 ->  Just '4'
+    Key5 ->  Just '5'
+    Key6 ->  Just '6'
+    Key7 ->  Just '7'
+    Key8 ->  Just '8'
+    Key9 ->  Just '9'
+    KeyA ->  Just 'a'
+    KeyB ->  Just 'b'
+    KeyC ->  Just 'c'
+    KeyD ->  Just 'd'
+    KeyE ->  Just 'e'
+    KeyF ->  Just 'f'
+    KeyG ->  Just 'g'
+    KeyH ->  Just 'h'
+    KeyI ->  Just 'i'
+    KeyJ ->  Just 'j'
+    KeyK ->  Just 'k'
+    KeyL ->  Just 'l'
+    KeyM ->  Just 'm'
+    KeyN ->  Just 'n'
+    KeyO ->  Just 'o'
+    KeyP ->  Just 'p'
+    KeyQ ->  Just 'q'
+    KeyR ->  Just 'r'
+    KeyS ->  Just 's'
+    KeyT ->  Just 't'
+    KeyU ->  Just 'u'
+    KeyV ->  Just 'v'
+    KeyW ->  Just 'w'
+    KeyX ->  Just 'x'
+    KeyY ->  Just 'y'
+    KeyZ ->  Just 'z'
+    KeyApostrophe ->  Just '\''
+    KeyBackslash ->  Just '\\'
+    KeyComma ->  Just ','
+    KeyDot ->  Just '.'
+    KeyEqual ->  Just '='
+    KeyGrave ->  Just '`'
+    KeyLeftbrace ->  Just '{'
+    KeyMinus ->  Just '-'
+    KeyRightbrace ->  Just '}'
+    KeySemicolon ->  Just ';'
+    KeySlash ->  Just '/'
+    KeySpace ->  Just ' '
     _ -> Nothing

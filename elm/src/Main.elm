@@ -424,8 +424,8 @@ viewInput name inp =
             , style "height" "100%"
             , H.map List.singleton <| onSubmit <| ClientUpdate <| SubmitInput name
             ]
-            [ input (
-                [ H.type_ <|
+            [ input
+                ([ H.type_ <|
                     case inp.inputType of
                         InputType.CheckBox ->
                             "checkbox"
@@ -435,8 +435,8 @@ viewInput name inp =
 
                         InputType.Text _ ->
                             "text"
-                , style "flex" "auto"
-                , H.map List.singleton <|
+                 , style "flex" "auto"
+                 , H.map List.singleton <|
                     case inp.inputType of
                         InputType.CheckBox ->
                             onCheck (ClientUpdate << InputBool name)
@@ -453,13 +453,17 @@ viewInput name inp =
 
                         InputType.Text _ ->
                             onInput (ClientUpdate << InputText name)
-                ] ++
-                    case inp.inputType of
-                        InputType.CheckBox -> []
+                 ]
+                    ++ (case inp.inputType of
+                            InputType.CheckBox ->
+                                []
 
-                        InputType.Number style -> textStyle style
+                            InputType.Number style ->
+                                textStyle style
 
-                        InputType.Text style -> textStyle style
+                            InputType.Text style ->
+                                textStyle style
+                       )
                 )
                 []
             ]

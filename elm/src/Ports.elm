@@ -3,17 +3,17 @@ port module Ports exposing
     , fullscreenChanges
     , goFullscreen
     , playAudio
-    , vibrate
     , receiveUpdates
     , sendInit
     , sendUpdate
+    , vibrate
     )
 
 {-| Provide safe interfaces to any ports
 -}
 
-import Auto.ServerUpdate exposing (ServerUpdate)
 import Auto.ClientUpdate exposing (ClientUpdate)
+import Auto.ServerUpdate exposing (ServerUpdate)
 import Json.Decode as JD
 import Json.Encode as JE
 

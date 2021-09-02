@@ -18,19 +18,6 @@ import Monpad.Plugins
 defaultSimple :: Text
 defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/default.dhall"
 
-test :: [P] -> [Text] -> IO ()
-test ps ls = do
-    setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ defaultSimple :| ls
-    withPlugin
-        (plugins $ Logger.plugin T.putStrLn Logger.Loud : map plugin ps)
-        $ server
-            30
-            8000
-            Nothing
-            (Just "../dist/assets")
-            layouts
-
 -- NB: this covers all plugins except 'Logger', which is always in use here.
 data P
     = WL
@@ -44,8 +31,27 @@ plugin = \case
     LS -> LayoutSwitcher.plugin ()
     PI -> PingIndicator.plugin
 
+test :: [P] -> [Text] -> IO ()
+test ps ls = do
+    setLocaleEncoding utf8
+    Just layouts <- layoutsFromDhall $ defaultSimple :| ls
+    withPlugin
+        (plugins $ Logger.plugin T.putStrLn Logger.Loud : map plugin ps)
+        $ server
+            30
+            8000
+            Nothing
+            (Just "../dist/assets")
+            layouts
+
 testExt :: IO ()
 testExt = do
     setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ pure defaultSimple
-    serverExtWs mempty 8000 8001 Nothing (Just "../dist/assets") layouts
+    Just layouts <- layoutsFromDhall $ defaultSimple :| []
+    serverExtWs
+        mempty
+        8000
+        8001
+        Nothing
+        (Just "../dist/assets")
+        layouts

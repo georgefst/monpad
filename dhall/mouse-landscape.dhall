@@ -33,6 +33,7 @@ let rotate =
                                         }
                                     )
                             , Indicator = monpad.Element.Indicator
+                            , Input = monpad.Element.Input
                             , Empty = monpad.Element.Empty
                             }
                             fe.element

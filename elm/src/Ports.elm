@@ -4,6 +4,7 @@ port module Ports exposing
     , goFullscreen
     , playAudio
     , receiveUpdates
+    , resetForm
     , sendInit
     , sendUpdate
     , vibrate
@@ -104,3 +105,11 @@ vibrate =
 port vibratePort :
     List Int
     -> Cmd msg
+
+
+resetForm : String -> Cmd msg
+resetForm =
+    resetFormPort
+
+
+port resetFormPort : String -> Cmd msg

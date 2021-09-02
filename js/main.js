@@ -47,6 +47,9 @@ ws.onopen = _event => {
         }
     })
 
+    // reset form
+    app.ports.resetFormPort.subscribe(id => document.getElementById(id).reset())
+
     // audio
     app.ports.audioPort.subscribe(url => {
         audio = new Audio(url)

@@ -417,12 +417,21 @@ viewIndicator _ ind =
 
 viewInput : String -> Input -> Collage Msgs
 viewInput name inp =
+    let
+        {- TODO
+           this is a bit of a hack, to allow us to reset the form
+           do we really have to go by ID - can't Elm give us a handle to the element?
+        -}
+        id =
+            "form-" ++ name
+    in
     html (both toFloat ( inp.width, inp.height )) [] <|
         form
             [ style "display" "flex"
             , style "width" "100%"
             , style "height" "100%"
-            , H.map List.singleton <| onSubmit <| ClientUpdate <| SubmitInput name
+            , onSubmit [ ClientUpdate <| SubmitInput name, ResetForm id ]
+            , H.id id
             ]
             [ input
                 ([ H.type_ <|
@@ -554,6 +563,7 @@ type Msg
     | Resized IntVec2
     | GoFullscreen
     | FullscreenChange Bool
+    | ResetForm String
     | ConsoleLog String
 
 
@@ -675,6 +685,9 @@ update msg model =
 
         FullscreenChange b ->
             ( { model | fullscreen = b }, Cmd.none )
+
+        ResetForm id ->
+            ( model, resetForm id )
 
         ConsoleLog s ->
             ( model, consoleLog s )

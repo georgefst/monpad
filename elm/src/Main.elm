@@ -170,33 +170,7 @@ viewText vb x =
             , style "user-select" "none"
             ]
             [ pre
-                ([ style "font-size" <| String.fromInt x.style.size ++ "px"
-                 , style "font-weight" <| bool "normal" "bold" x.style.bold
-                 , style "font-style" <| bool "normal" "italic" x.style.italic
-                 , style "text-decoration" <| bool "none" "underline" x.style.underline
-                 , style "color" <| Color.toCssString <| fromRgba x.style.colour
-                 , style "font-family" x.style.font
-                 , style "text-align" "center"
-                 ]
-                    ++ (if List.isEmpty x.style.shadow then
-                            []
-
-                        else
-                            [ style "text-shadow" <|
-                                String.join ", " <|
-                                    List.map
-                                        (\shadow ->
-                                            String.join " "
-                                                [ String.fromInt shadow.offset.x ++ "px"
-                                                , String.fromInt -shadow.offset.y ++ "px"
-                                                , String.fromInt shadow.blur ++ "px"
-                                                , Color.toCssString <| fromRgba shadow.colour
-                                                ]
-                                        )
-                                        x.style.shadow
-                            ]
-                       )
-                )
+                (textStyle x.style)
                 [ Html.text x.text ]
             ]
 
@@ -962,3 +936,33 @@ onPointerDown f y =
                     ]
                 )
         )
+
+
+textStyle : TextStyle -> List (Attribute msg)
+textStyle s =
+    [ style "font-size" <| String.fromInt s.size ++ "px"
+    , style "font-weight" <| bool "normal" "bold" s.bold
+    , style "font-style" <| bool "normal" "italic" s.italic
+    , style "text-decoration" <| bool "none" "underline" s.underline
+    , style "color" <| Color.toCssString <| fromRgba s.colour
+    , style "font-family" s.font
+    , style "text-align" "center"
+    ]
+        ++ (if List.isEmpty s.shadow then
+                []
+
+            else
+                [ style "text-shadow" <|
+                    String.join ", " <|
+                        List.map
+                            (\shadow ->
+                                String.join " "
+                                    [ String.fromInt shadow.offset.x ++ "px"
+                                    , String.fromInt -shadow.offset.y ++ "px"
+                                    , String.fromInt shadow.blur ++ "px"
+                                    , Color.toCssString <| fromRgba shadow.colour
+                                    ]
+                            )
+                            s.shadow
+                ]
+           )

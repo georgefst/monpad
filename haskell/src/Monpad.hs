@@ -166,7 +166,8 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
 
 mainHtml :: Layouts () () -> Port -> Html ()
 mainHtml layouts wsPort = doctypehtml_ $ mconcat
-    [ style_ (commonCSS ())
+    [ meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
+    , style_ (commonCSS ())
     , style_ (appCSS ())
     , script_ [type_ jsScript] (elmJS ())
     , script_

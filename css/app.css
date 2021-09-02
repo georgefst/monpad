@@ -1,3 +1,4 @@
 body {
+    /*TODO this may be redundant (except on iOS?) since we also disable scaling via the `viewport` meta tag */
     touch-action: none
 }

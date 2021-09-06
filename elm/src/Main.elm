@@ -468,7 +468,7 @@ viewInput name inp =
                                 []
 
                             InputType.Number style ->
-                                textStyle style
+                                H.step "any" :: textStyle style
 
                             InputType.Text style ->
                                 textStyle style

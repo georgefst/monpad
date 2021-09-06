@@ -42,6 +42,7 @@ import Network.Socket (
     hostAddressToTuple,
  )
 import Streamly.Prelude qualified as SP
+import System.Directory (getHomeDirectory)
 import System.IO (hPrint, stderr)
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
@@ -96,11 +97,20 @@ type DhallExpr = D.Expr D.Src D.Import
 dhallImports :: MonadIO io => DhallExpr -> io [(FilePath, NonEmpty Text)]
 dhallImports e = do
     (_e', s) <- liftIO $ runStateT (D.loadWith e) $ D.emptyStatus ""
-    pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile . D.chainedImport . D.child) $ D._graph s
+    home <- liftIO getHomeDirectory
+    pure $ classifyOnFst $ nubOrd $ mapMaybe (importFile home . D.chainedImport . D.child) $ D._graph s
   where
-    importFile x = case D.importType $ D.importHashed x of
-        D.Local _ file -> Just (joinPath $ reverse $ map T.unpack $ D.components $ D.directory file, D.file file)
+    importFile home x = case D.importType $ D.importHashed x of
+        D.Local prefix file -> Just
+            ( filePrefix home prefix </> joinPath (reverse $ map T.unpack $ D.components $ D.directory file)
+            , D.file file
+            )
         _ -> Nothing
+    filePrefix home = \case
+        D.Absolute -> "/"
+        D.Here -> ""
+        D.Parent -> ".."
+        D.Home -> home
 
 {-TODO can we guarantee this is totally safe? and why doesn't the library provide it?
 https://github.com/dhall-lang/dhall-haskell/issues/2254

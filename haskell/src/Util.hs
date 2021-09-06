@@ -42,6 +42,7 @@ import Network.Socket (
     hostAddressToTuple,
  )
 import Streamly.Prelude qualified as SP
+import System.IO (hPrint, stderr)
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2
@@ -124,7 +125,7 @@ dhallToHs e = do
     D.Decoder{extract, expected} = D.auto
 
 printError :: Show e => Either e a -> MaybeT IO a
-printError = either (\e -> liftIO (print e) >> mzero) pure
+printError = either (\e -> liftIO (hPrint stderr e) >> mzero) pure
 
 -- | Ensure no two members have the same value for the provided 'Text' field, by appending numbers when necessary.
 uniqueNames :: Traversable t => Lens' a Text -> t a -> t a

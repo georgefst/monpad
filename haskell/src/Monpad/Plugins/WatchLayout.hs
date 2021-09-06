@@ -31,7 +31,7 @@ the issue (seemingly on all three platforms) is that we get too many events, whe
 -}
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => ServerConfig e s a b
 sendLayout = mempty
-    { updates = \env -> do
+    { updates = \env -> SP.fromAsync do
         let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
         flip foldMap exprs \(name, expr) -> do
             imports <- dhallImports expr

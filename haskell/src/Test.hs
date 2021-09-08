@@ -42,7 +42,7 @@ test ps ls = do
     setLocaleEncoding utf8
     Just layouts <- layoutsFromDhall $ defaultSimple :| ls
     withPlugin
-        (plugins $ Logger.plugin T.putStrLn Logger.Loud : map (plugin home) ps)
+        (plugins $ Logger.plugin T.putStrLn Logger.Normal : map (plugin home) ps)
         $ server
             1
             8000

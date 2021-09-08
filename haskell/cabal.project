@@ -15,4 +15,5 @@ source-repository-package
 constraints:
   elm-syntax == 0.3.1.0
 allow-newer:
-  haskell-to-elm:elm-syntax
+  haskell-to-elm:elm-syntax,
+  shelly:time,

@@ -1,7 +1,5 @@
 module Monpad.Plugins.PingIndicator (plugin) where
 
-import Util.Util
-
 import Data.Colour qualified
 import Data.Colour.RGBSpace (uncurryRGB)
 import Data.Colour.SRGB (sRGB, toSRGB)
@@ -9,6 +7,8 @@ import Data.Convertible (convert)
 import Data.List.NonEmpty qualified as NE
 import Data.Prizm.Color as Prizm
 import Data.Prizm.Color.CIE as CIE
+import Data.Text qualified as T
+import Data.Time (defaultTimeLocale, formatTime)
 
 import Monpad
 import Monpad.Plugins
@@ -29,7 +29,7 @@ showPing =
                 colour = fromPrizm 1 if goodness < 0.5
                     then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
                     else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
-            in  [ SetText elementId $ showT time
+            in  [ SetText elementId $ T.pack $ formatTime defaultTimeLocale "%04Ess" time
                 , SetIndicatorColour elementId colour
                 ]
         elementId = ElementID "_internal_ping_indicator"

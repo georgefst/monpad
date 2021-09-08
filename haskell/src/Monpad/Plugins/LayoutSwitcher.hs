@@ -4,11 +4,12 @@ module Monpad.Plugins.LayoutSwitcher (plugin) where
 
 import Control.Monad.State
 import Data.Tuple.Extra
+import Optics hiding ((:>))
+import Optics.State.Operators
 
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream ((:>)))
 import Data.Stream.Infinite qualified as Stream
-import Optics (over, view)
 
 import Monpad
 import Monpad.Plugins
@@ -52,8 +53,8 @@ switcher buttonData =
             pure [addButton l.name l.viewBox]
         onUpdateButtonUp = \case
             ClientUpdate (ButtonUp t) | t == elementId -> do
-                modify $ over #extra Stream.tail
-                (l, vb) :> _ <- gets $ view #extra
+                #extra %= Stream.tail
+                (l, vb) :> _ <- use #extra
                 pure [SwitchLayout l, addButton l vb]
             _ -> mempty
         onUpdate = onUpdateLayoutChange <> onUpdateButtonUp

@@ -5,6 +5,7 @@ import System.Directory.Extra
 import System.FilePath
 
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty.Extra qualified as NE
 import Data.Text (Text)
 import Data.Text.IO qualified as T
 import GHC.IO.Encoding (setLocaleEncoding)
@@ -19,8 +20,11 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Monpad
 import Monpad.Plugins
 
-defaultSimple :: Text
-defaultSimple = "(../dhall/lib/map-layout.dhall).void ../dhall/textinput.dhall"
+dhallLayoutDefault :: Text
+dhallLayoutDefault = "../dhall/textinput.dhall"
+
+dhallLayoutVoid :: Text -> Text
+dhallLayoutVoid = ("(../dhall/lib/map-layout.dhall).void " <>)
 
 -- NB: this covers all plugins except 'Logger', which is always in use here.
 data P
@@ -36,11 +40,11 @@ plugin home = \case
     LS -> LayoutSwitcher.plugin ()
     PI -> PingIndicator.plugin
 
-test :: [P] -> [Text] -> IO ()
-test ps ls = do
+test :: [P] -> [Text] -> [Text] -> IO ()
+test ps ls lsVoid = do
     home <- unsafeInterleaveIO getHomeDirectory
     setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ defaultSimple :| ls
+    Just layouts <- layoutsFromDhall $ NE.appendr lsVoid (dhallLayoutVoid <$> dhallLayoutDefault :| ls)
     withPlugin
         (plugins $ Logger.plugin T.putStrLn Logger.Normal : map (plugin home) ps)
         $ server
@@ -53,7 +57,7 @@ test ps ls = do
 testExt :: IO ()
 testExt = do
     setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ defaultSimple :| []
+    Just layouts <- layoutsFromDhall $ dhallLayoutVoid dhallLayoutDefault :| []
     serverExtWs
         mempty
         8000

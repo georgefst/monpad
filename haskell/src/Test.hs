@@ -44,7 +44,7 @@ test ps ls = do
     withPlugin
         (plugins $ Logger.plugin T.putStrLn Logger.Loud : map (plugin home) ps)
         $ server
-            30
+            1
             8000
             Nothing
             (Just "../dist/assets")

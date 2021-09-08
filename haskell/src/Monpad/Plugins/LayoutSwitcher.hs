@@ -54,8 +54,8 @@ switcher buttonData =
         onUpdateButtonUp = \case
             ClientUpdate (ButtonUp t) | t == elementId -> do
                 #extra %= Stream.tail
-                (l, vb) :> _ <- use #extra
-                pure [SwitchLayout l, addButton l vb]
+                (l, _) :> _ <- use #extra
+                pure [SwitchLayout l]
             _ -> mempty
         onUpdate = onUpdateLayoutChange <> onUpdateButtonUp
      in ServerConfig

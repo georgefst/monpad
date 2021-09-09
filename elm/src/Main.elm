@@ -424,6 +424,15 @@ viewInput name inp =
         -}
         id =
             "form-" ++ name
+
+        padding ts =
+            let
+                size =
+                    String.fromInt (ts.size // 2) ++ "px"
+            in
+            [ style "padding-left" size
+            , style "padding-right" size
+            ]
     in
     html (both toFloat ( inp.width, inp.height )) [] <|
         form
@@ -446,6 +455,8 @@ viewInput name inp =
                         InputType.Text _ ->
                             "text"
                  , style "flex" "auto"
+                 , style "width" "100%"
+                 , style "height" "100%"
                  , H.map List.singleton <|
                     case inp.inputType of
                         InputType.CheckBox () ->
@@ -470,10 +481,12 @@ viewInput name inp =
 
                             InputType.Number ts ->
                                 H.step "any"
-                                    :: textStyle ts
+                                    :: padding ts
+                                    ++ textStyle ts
 
                             InputType.Text ts ->
-                                textStyle ts
+                                padding ts
+                                    ++ textStyle ts
                        )
                 )
                 []

@@ -428,6 +428,7 @@ viewInput name inp =
     html (both toFloat ( inp.width, inp.height )) [] <|
         form
             [ style "display" "flex"
+            , style "justify-content" "center"
             , style "width" "100%"
             , style "height" "100%"
             , onSubmit [ ClientUpdate <| SubmitInput name, ResetForm id ]

@@ -467,11 +467,12 @@ viewInput name inp =
                             InputType.CheckBox () ->
                                 []
 
-                            InputType.Number style ->
-                                H.step "any" :: textStyle style
+                            InputType.Number ts ->
+                                H.step "any"
+                                    :: textStyle ts
 
-                            InputType.Text style ->
-                                textStyle style
+                            InputType.Text ts ->
+                                textStyle ts
                        )
                 )
                 []

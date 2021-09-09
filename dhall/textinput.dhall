@@ -13,7 +13,10 @@ in        basic
                         , height = 100
                         , inputType =
                             monpad.InputType.Text
-                              (monpad.noTextStyle // { size = 32 })
+                              { textStyle = monpad.noTextStyle // { size = 32 }
+                              , minLength = None Natural
+                              , maxLength = Some 16
+                              }
                         }
                   , location = { x = +0, y = +350 }
                   , name = "Text"

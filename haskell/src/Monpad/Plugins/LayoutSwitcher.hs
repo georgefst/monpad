@@ -11,7 +11,7 @@ import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream)
 import Data.Stream.Infinite qualified as Stream
 
-import Monpad
+import Monpad hiding (min) --TODO with GHC 9.2, we can remove this stupid hiding
 import Monpad.Plugins
 import Util
 

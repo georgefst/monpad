@@ -479,14 +479,18 @@ viewInput name inp =
                             InputType.CheckBox () ->
                                 []
 
-                            InputType.Number ts ->
-                                H.step "any"
-                                    :: padding ts
-                                    ++ textStyle ts
+                            InputType.Number opts ->
+                                H.step (Maybe.unwrap "any" String.fromFloat opts.step)
+                                    :: padding opts.textStyle
+                                    ++ textStyle opts.textStyle
+                                    ++ Maybe.unwrap [] (List.singleton << H.min << String.fromFloat) opts.min
+                                    ++ Maybe.unwrap [] (List.singleton << H.max << String.fromFloat) opts.max
 
-                            InputType.Text ts ->
-                                padding ts
-                                    ++ textStyle ts
+                            InputType.Text opts ->
+                                padding opts.textStyle
+                                    ++ textStyle opts.textStyle
+                                    ++ Maybe.unwrap [] (List.singleton << H.minlength) opts.minLength
+                                    ++ Maybe.unwrap [] (List.singleton << H.maxlength) opts.maxLength
                        )
                 )
                 []

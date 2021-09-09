@@ -10,7 +10,7 @@ import Data.Prizm.Color.CIE as CIE
 import Data.Text qualified as T
 import Data.Time (defaultTimeLocale, formatTime)
 
-import Monpad
+import Monpad hiding (min)
 import Monpad.Plugins
 
 plugin :: Plugin a b

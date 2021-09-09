@@ -114,10 +114,25 @@ data Input = Input'
     deriving (ToJSON) via CustomJSON Opts.JSON Input
 data InputType
     = CheckBox () --TODO this dummy field works around a bug in my PR: https://github.com/folq/haskell-to-elm/pull/18
-    | Number TextStyle
-    | Text TextStyle
+    | Number NumberInput
+    | Text TextInput
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON InputType
+data NumberInput = NumberInput'
+    { textStyle :: TextStyle
+    , min :: Maybe Double
+    , max :: Maybe Double
+    , step :: Maybe Double
+    }
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON NumberInput
+data TextInput = TextInput'
+    { textStyle :: TextStyle
+    , minLength :: Maybe Word
+    , maxLength :: Maybe Word
+    }
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON TextInput
 
 data Image = Image
     { width :: Word

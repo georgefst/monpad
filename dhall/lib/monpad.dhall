@@ -57,7 +57,20 @@ let Indicator =
       , shape : Shape
       }
 
-let InputType = < CheckBox | Number : TextStyle | Text : TextStyle >
+let TextInput =
+      { textStyle : TextStyle
+      , minLength : Optional Natural
+      , maxLength : Optional Natural
+      }
+
+let NumberInput =
+      { textStyle : TextStyle
+      , min : Optional Double
+      , max : Optional Double
+      , step : Optional Double
+      }
+
+let InputType = < CheckBox | Number : NumberInput | Text : TextInput >
 
 let Input = { width : Natural, height : Natural, inputType : InputType }
 
@@ -241,4 +254,6 @@ in  λ(a : Type) →
       , Indicator
       , Input
       , InputType
+      , NumberInput
+      , TextInput
       }

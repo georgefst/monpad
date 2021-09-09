@@ -23,6 +23,8 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Stream.Infinite (Stream)
+import Data.Stream.Infinite qualified as Stream
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Void (Void)
@@ -165,3 +167,7 @@ setDelete' :: Ord a => a -> Set a -> (Bool, Set a)
 setDelete' x s = (Set.size s /= Set.size s', s')
   where
     s' = Set.delete x s
+
+--TODO for some reason, there is no Stream.head: https://github.com/ekmett/streams/pull/19
+streamHead :: Stream a -> a
+streamHead = (Stream.!! 0)

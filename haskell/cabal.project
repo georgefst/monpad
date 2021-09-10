@@ -11,6 +11,12 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: 33d6076972b4aa753031299692c7ab631ddb780d
 
+--TODO https://github.com/jacobstanley/unix-compat/pull/47
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/unix-compat
+  tag: 154c3a63f154cb49c51d5f9d13488e8119631d8a
+
 --TODO deprecate previous versions? or give them all upper bounds on base?
 constraints:
   elm-syntax == 0.3.1.0

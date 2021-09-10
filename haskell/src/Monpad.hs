@@ -118,6 +118,8 @@ data ClientUpdate
     | InputNumber ElementID Double
     | InputText ElementID Text
     | SubmitInput ElementID -- for number and text inputs
+    | Pong Text
+    -- ^ See 'ServerUpdate.Ping'.
     deriving (Eq, Ord, Show, Generic)
     deriving (FromJSON) via CustomJSON Opts.JSON ClientUpdate
 
@@ -420,6 +422,7 @@ websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = lift
                                             l <- asks $ maybe currentLayoutError fst . Map.lookup i
                                                 . view #initialLayouts
                                             currentLayout .= l
+                                    Ping _ -> mempty
                                 ClientUpdate _ -> mempty
                             onUpdate u
                       where

@@ -42,6 +42,7 @@ type ServerUpdate
     | SetButtonColour String Auto.Colour.Colour
     | SetButtonPressed String Bool
     | ResetLayout Auto.ResetLayout.ResetLayout
+    | Ping String
 
 
 decode : Json.Decode.Decoder ServerUpdate
@@ -108,4 +109,6 @@ decode =
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
     , Json.Decode.succeed ResetLayout |>
-    Json.Decode.Pipeline.required "ResetLayout" Auto.ResetLayout.decode ]
+    Json.Decode.Pipeline.required "ResetLayout" Auto.ResetLayout.decode
+    , Json.Decode.succeed Ping |>
+    Json.Decode.Pipeline.required "Ping" Json.Decode.string ]

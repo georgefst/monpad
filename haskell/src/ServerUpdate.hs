@@ -40,6 +40,11 @@ data ServerUpdate a b
     | SetButtonColour ElementID Colour
     | SetButtonPressed ElementID Bool
     | ResetLayout ResetLayout
+    | Ping Text
+    -- ^ Send a ping with an identifier. Client will respond with a matching pong.
+    --
+    -- This is really designed for `--ext-ws` mode.
+    -- Otherwise we use the PingIndicator plugin, which just uses the ping functionality of websockets.
     deriving (Show, Generic, Functor)
     deriving (ToJSON) via CustomJSON Opts.JSON (ServerUpdate a b)
     deriving (Bifunctor) via GenericBifunctor ServerUpdate

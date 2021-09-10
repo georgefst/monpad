@@ -673,6 +673,9 @@ update msg model =
 
                         SubmitInput _ ->
                             model
+
+                        Pong _ ->
+                            model
             in
             ( model1, sendUpdate u )
 
@@ -944,6 +947,9 @@ serverUpdate u model =
                         Nothing ->
                             -- this really shouldn't happen, since we never remove anything from the dict
                             ( model, consoleLog <| "Not in initial layouts: " ++ layoutState.layout.name )
+
+        Ping t ->
+            ( model, performCmd [ ClientUpdate <| Pong t ] )
 
 
 

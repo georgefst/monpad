@@ -19,6 +19,7 @@ module Monpad (
     ElmFlags (..),
     defaultDhall,
     warn,
+    internalElementTag,
     module Layout,
     module ServerUpdate,
 ) where
@@ -469,6 +470,10 @@ websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = lift
 --TODO colours
 warn :: MonadIO m => Text -> m ()
 warn s = liftIO $ T.hPutStrLn stderr $ "Warning: " <> s
+
+--TODO come up with something more robust, and extensible
+internalElementTag :: Text
+internalElementTag = "_internal_"
 
 {- Util -}
 

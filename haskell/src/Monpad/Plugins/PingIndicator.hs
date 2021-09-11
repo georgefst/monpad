@@ -32,7 +32,7 @@ showPing scale =
             in  [ SetText elementId $ T.pack $ formatTime defaultTimeLocale "%04Ess" time
                 , SetIndicatorColour elementId colour
                 ]
-        elementId = ElementID "_internal_ping_indicator"
+        elementId = ElementID $ internalElementTag  <> "ping_indicator"
         addIndicator Layout{..} =
             let (location, width, height) =
                     let ViewBox{..} = viewBox

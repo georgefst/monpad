@@ -25,7 +25,7 @@ switcher scale buttonData =
             , Stream.cycle ls
             , pure . uncurry addButton $ NE.head ls
             )
-        elementId = ElementID "_internal_switcher_button"
+        elementId = ElementID $ internalElementTag  <> "switcher_button"
         addButton l vb =
             let ViewBox{..} = vb
                 s = round $ scale * fromIntegral (min w h) / 4

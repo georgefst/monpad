@@ -47,6 +47,7 @@ data Args = Args
     , qrPath :: Maybe FilePath
     , pingFrequency :: Int
     , displayPing :: Bool
+    , scale :: Double
     , loginImageUrl :: Maybe Text
     }
 
@@ -109,6 +110,15 @@ parser = do
         [ long "show-ping"
         , help "Indicate the user's current ping in the top-right of the screen."
         ]
+    scale <- option auto $ mconcat
+        [ long "scale"
+        , metavar "NUMBER"
+        , value 1
+        , showDefault
+        , help
+            "Scale UI elements \
+            \(this only affects those which aren't specified by the layout - e.g. the ping indicator)."
+        ]
     systemDevice <- fmap not $ switch $ mconcat
         [ long "no-system-device"
         , help "Don't create an OS-level virtual device."
@@ -146,9 +156,9 @@ main = do
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
-                $ applyWhen displayPing (PingIndicator.plugin :)
+                $ applyWhen displayPing (PingIndicator.plugin scale :)
                 $ applyWhen watchLayout (WatchLayout.plugin :)
-                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin unknown :)
+                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin scale unknown :)
                 $ maybe id ((:) . QR.plugin) qrPath
                 $ maybe id ((:) . Logger.plugin T.putStrLn) verbosity
                 []

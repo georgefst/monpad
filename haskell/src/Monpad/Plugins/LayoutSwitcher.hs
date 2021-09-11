@@ -15,11 +15,11 @@ import Monpad hiding (min) --TODO with GHC 9.2, we can remove this stupid hiding
 import Monpad.Plugins
 import Util
 
-plugin :: b -> Plugin a b
-plugin = Plugin . switcher @()
+plugin :: Double -> b -> Plugin a b
+plugin scale = Plugin . switcher @() scale
 
-switcher :: Monoid e => b -> ServerConfig e (Stream (LayoutID, ViewBox)) a b
-switcher buttonData =
+switcher :: Monoid e => Double -> b -> ServerConfig e (Stream (LayoutID, ViewBox)) a b
+switcher scale buttonData =
     let onNewConnection = \(fmap (((.name) &&& (.viewBox)) . fst) -> ls) _ -> pure
             ( mempty
             , Stream.cycle ls
@@ -28,9 +28,9 @@ switcher buttonData =
         elementId = ElementID "_internal_switcher_button"
         addButton l vb =
             let ViewBox{..} = vb
-                s = min w h `div` 4
+                s = round $ scale * fromIntegral (min w h) / 4
                 (location, size) =
-                    ( V2 (x + fromIntegral s `div` 2) (y + fromIntegral s `div` 2)
+                    ( V2 (x + s `div` 2) (y + s `div` 2)
                     , fromIntegral s
                     )
                 square = Rectangle $ V2 size size

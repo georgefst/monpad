@@ -13,11 +13,11 @@ import Data.Time (defaultTimeLocale, formatTime)
 import Monpad hiding (min)
 import Monpad.Plugins
 
-plugin :: Plugin a b
-plugin = Plugin $ showPing @() @()
+plugin :: Double -> Plugin a b
+plugin scale = Plugin $ showPing @() @() scale
 
-showPing :: (Monoid e, Monoid s) => ServerConfig e s a b
-showPing =
+showPing :: (Monoid e, Monoid s) => Double -> ServerConfig e s a b
+showPing scale =
     let onNewConnection = \layouts -> const $ pure (mempty, mempty, [addIndicator . fst $ NE.head layouts])
         onPong = \time _ _ -> pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
@@ -36,7 +36,7 @@ showPing =
         addIndicator Layout{..} =
             let (location, width, height) =
                     let ViewBox{..} = viewBox
-                        s = min w h `div` 4
+                        s = round $ scale * fromIntegral (min w h) / 4
                         h' = s `div` 4
                      in ( V2 (x + fromIntegral (w - s `div` 2)) (y + fromIntegral (h - h' `div` 2))
                         , fromIntegral s

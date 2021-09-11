@@ -37,8 +37,8 @@ plugin :: FilePath -> P -> Plugin () ()
 plugin home = \case
     WL -> WatchLayout.plugin
     QR -> QR.plugin $ home </> "Desktop"
-    LS -> LayoutSwitcher.plugin ()
-    PI -> PingIndicator.plugin
+    LS -> LayoutSwitcher.plugin 1 ()
+    PI -> PingIndicator.plugin 1
 
 test :: [P] -> [Text] -> [Text] -> IO ()
 test ps ls lsVoid = do

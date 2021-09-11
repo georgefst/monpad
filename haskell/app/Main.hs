@@ -9,6 +9,7 @@ import Data.Either.Extra
 import Data.Functor
 import Data.List
 import Data.List.Extra
+import Data.Maybe
 import Options.Applicative
 import System.Directory
 import System.Exit
@@ -129,11 +130,8 @@ parser = do
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    Args{layoutExprs = layoutExprs0, ..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    layoutExprs <- traverse windowsHack layoutExprs0
-    let dhallLayouts = case nonEmpty layoutExprs of
-            Just layouts -> layouts
-            Nothing -> pure $ defaultDhall ()
+    Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+    dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     case externalWS of
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts dhallLayouts

@@ -13,6 +13,7 @@ import Data.Coerce (coerce)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Dhall (FromDhall)
 import GHC.Generics (Generic)
@@ -104,7 +105,8 @@ conf = ServerConfig
         (device, info) <- gets (^. #extra)
         case (info ^. l) !? i of
             Just a -> f a device
-            Nothing -> warn $ "element id not found: " <> coerce i
+            Nothing -> unless (internalElementTag `T.isPrefixOf` coerce i)
+                $ warn $ "element id not found: " <> coerce i
         mempty
 
 -- | Expects input in range [-1, 1].

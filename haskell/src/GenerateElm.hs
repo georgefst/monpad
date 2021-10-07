@@ -14,8 +14,6 @@ import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
-import Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
-import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Deriving.Aeson (aesonOptions)
 import GHC.Generics (Generic)
 import Generics.SOP qualified as SOP
@@ -25,6 +23,8 @@ import Language.Elm.Name qualified as Name
 import Language.Elm.Pretty qualified as Pretty
 import Language.Elm.Simplification qualified as Simplify
 import Language.Elm.Type qualified as Type
+import Prettyprinter (defaultLayoutOptions, layoutPretty)
+import Prettyprinter.Render.Text (renderStrict)
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath (joinPath, (<.>), (</>))
 import Type.Reflection (Typeable)

@@ -54,8 +54,8 @@ in    { elements =
         , monpad.Elem::{
           , element =
               monpad.Element.Stick
-                { radius = 120
-                , range = 320
+                { radius = 130
+                , range = 340
                 , stickColour = monpad.cols.white
                 , backgroundColour = monpad.cols.grey
                 , stickDataX = axis Evdev.AbsAxis.AbsX +255

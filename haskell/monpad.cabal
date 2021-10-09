@@ -57,6 +57,7 @@ common common
         time ^>= {1.10, 1.11, 1.12},
         transformers ^>= 0.5.6,
         unordered-containers ^>= 0.2.10,
+        hinotify
     default-language: Haskell2010
     default-extensions:
         AllowAmbiguousTypes

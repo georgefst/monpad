@@ -125,6 +125,7 @@ library
         deriving-aeson ^>= 0.2.6.1,
         elm-syntax ^>= 0.3.0,
         exceptions ^>= 0.10.4,
+        fsnotify ^>= 0.3,
         generic-data ^>= 0.9.2,
         generic-functor ^>= 0.2,
         generics-sop ^>= 0.5.0,

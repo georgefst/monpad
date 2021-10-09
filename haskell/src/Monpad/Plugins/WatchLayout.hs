@@ -16,6 +16,7 @@ import Dhall.Core qualified as D
 import Dhall.Src qualified as D
 import Optics (view)
 import Streamly.Prelude qualified as SP
+import System.FSNotify (Debounce (Debounce), WatchConfig (confDebounce), defaultConfig)
 
 import Monpad
 import Monpad.Plugins
@@ -24,11 +25,6 @@ import Util
 plugin :: (FromDhall a, FromDhall b) => Plugin a b
 plugin = Plugin $ sendLayout @() @()
 
-{-TODO
-find a way to remove 'lastOfGroup' workaround
-the issue (seemingly on all three platforms) is that we get too many events, when all we care about is CLOSE_WRITE
-    but because 'fsnotify' is cross-platform, there may be no good way to filter
--}
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => ServerConfig e s a b
 sendLayout = mempty
     { updates = \env -> SP.fromAsync do
@@ -38,13 +34,14 @@ sendLayout = mempty
             evss <- for imports \(dir, toList -> files) -> liftIO do
                 let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
                 T.putStrLn $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                snd <$> watchDirectory dir (isModification `conj` isImport)
+                snd <$> watchDirectoryWith conf dir (isModification `conj` isImport)
             flip foldMap evss $ SP.fromSerial
                 . traceStream (const $ T.putStrLn "Sending new layout to client")
                 . SP.map (send name)
                 . SP.mapMaybeM (const $ getLayout expr)
-                . lastOfGroup 100_000
     }
+  where
+    conf = defaultConfig{confDebounce = Debounce 0.1}
 
 getLayout :: (FromDhall a, FromDhall b) => D.Expr D.Src D.Import -> IO (Maybe (Layout a b))
 getLayout e = runMaybeT do

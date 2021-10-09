@@ -1,15 +1,12 @@
 module Util where
 
-import Control.Concurrent
 import Control.Monad.Extra
 import Control.Monad.IO.Class
 import Control.Monad.Trans.State.Strict
 import Data.Foldable
-import Data.Functor
 import Data.List.Extra
 import Data.Maybe
 import Data.Monoid
-import Data.Time
 import Data.Traversable
 import Data.Tuple.Extra
 import Optics
@@ -76,22 +73,6 @@ getHostName' = f <$> getHostName
 -- | Attach an extra action to each element of the stream.
 traceStream :: (a -> IO ()) -> SP.Serial a -> SP.Serial a
 traceStream f = SP.mapM \x -> f x >> pure x
-
--- | Ignore events which are followed within a given number of microseconds.
-lastOfGroup :: Int -> SP.Async a -> SP.Serial a
-lastOfGroup interval = f2 . SP.adapt . f1
-  where
-    -- delay everything by `interval`, and insert 'Nothing' markers where the value first came in
-    f1 = SP.concatMapWith (<>) \x ->
-        SP.cons Nothing $ SP.fromEffect (threadDelay interval >> pure (Just x))
-    -- ignore any event which appears within `interval` of a 'Nothing'
-    f2 = SP.mapMaybe id . SP.map snd . flip SP.postscanlM' (pure (const False, error "lastOfGroup")) \(tooSoon, _) -> \case
-        Just x -> do
-            t <- getCurrentTime
-            pure (tooSoon, guard (not $ tooSoon t) $> x)
-        Nothing -> do
-            t <- getCurrentTime
-            pure (\t' -> diffUTCTime t' t < (realToFrac interval / 1_000_000), Nothing)
 
 type DhallExpr = D.Expr D.Src D.Import
 

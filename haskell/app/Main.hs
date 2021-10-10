@@ -3,6 +3,7 @@
 
 module Main (main) where
 
+import Control.Concurrent
 import Control.Monad
 import Data.Char
 import Data.Either.Extra
@@ -142,6 +143,8 @@ main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
+    stdoutMutex <- newMVar () -- to ensure atomicity of writes to `stdout`
+    let write t = takeMVar stdoutMutex >> T.putStrLn t >> putMVar stdoutMutex ()
     case externalWS of
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts write dhallLayouts
@@ -164,8 +167,6 @@ main = do
                 []
             runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
             runPlugin = server write pingFrequency port loginImageUrl assetsDir
-  where
-    write = T.putStrLn
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> NonEmpty Text -> IO (Layouts a b)

@@ -144,30 +144,32 @@ main = do
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     case externalWS of
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
-            =<< mkLayouts dhallLayouts
+            =<< mkLayouts write dhallLayouts
           where
-            writeQR path url = withPlugin (QR.plugin path) $ flip onStart url
+            writeQR path url = withPlugin (QR.plugin write path) $ flip onStart url
         Nothing -> if systemDevice
             --TODO with `ImpredicativeTypes`, we can remove the explicit lambdas here and go point-free
-            then mkLayouts dhallLayouts >>= \ls ->
+            then mkLayouts write dhallLayouts >>= \ls ->
                 withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) $ runPlugin ls
-            else mkLayouts dhallLayouts >>= \ls ->
+            else mkLayouts write dhallLayouts >>= \ls ->
                 withPlugin (plugin @() ()) $ runPlugin ls
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
                 $ applyWhen displayPing (PingIndicator.plugin scale :)
-                $ applyWhen watchLayout (WatchLayout.plugin :)
+                $ applyWhen watchLayout (WatchLayout.plugin write :)
                 $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin scale unknown :)
-                $ maybe id ((:) . QR.plugin) qrPath
-                $ maybe id ((:) . Logger.plugin T.putStrLn) verbosity
+                $ maybe id ((:) . QR.plugin write) qrPath
+                $ maybe id ((:) . Logger.plugin write) verbosity
                 []
             runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
-            runPlugin = server pingFrequency port loginImageUrl assetsDir
+            runPlugin = server write pingFrequency port loginImageUrl assetsDir
+  where
+    write = T.putStrLn
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
-mkLayouts :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Layouts a b)
-mkLayouts = maybe exitFailure pure <=< layoutsFromDhall
+mkLayouts :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> NonEmpty Text -> IO (Layouts a b)
+mkLayouts write = maybe exitFailure pure <=< layoutsFromDhall write
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\
 -- see: https://github.com/dhall-lang/dhall-lang/issues/1153

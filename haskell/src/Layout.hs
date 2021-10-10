@@ -23,10 +23,10 @@ import Util
 
 -- | A (non-empty) list of 'Layout's.
 type Layouts a b = NonEmpty (Layout a b, Maybe DhallExpr)
-layoutsFromDhall :: (FromDhall a, FromDhall b) => NonEmpty Text -> IO (Maybe (Layouts a b))
-layoutsFromDhall = runMaybeT . traverse \t -> do
-    e <- dhallExprFromText t
-    (l, _) <- dhallToHs e
+layoutsFromDhall :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> NonEmpty Text -> IO (Maybe (Layouts a b))
+layoutsFromDhall write = runMaybeT . traverse \t -> do
+    e <- dhallExprFromText write t
+    (l, _) <- dhallToHs write e
     pure (l, Just e)
 
 newtype LayoutID = LayoutID {unwrap :: Text}

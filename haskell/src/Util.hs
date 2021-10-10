@@ -42,7 +42,6 @@ import Network.Socket (
  )
 import Streamly.Prelude qualified as SP
 import System.Directory (getHomeDirectory)
-import System.IO (hPrint, stderr)
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2
@@ -102,23 +101,23 @@ https://github.com/dhall-lang/dhall-haskell/issues/2254
 dhallLoadSafe :: DhallExpr -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
 dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load
 
-dhallExprFromText :: Text -> MaybeT IO DhallExpr
-dhallExprFromText = printError . D.exprFromText ""
+dhallExprFromText :: (Text -> IO ()) -> Text -> MaybeT IO DhallExpr
+dhallExprFromText write = writeError write . D.exprFromText ""
 
 -- | Get a Haskell value from a Dhall expression, and return the hash.
-dhallToHs :: FromDhall a => DhallExpr -> MaybeT IO (a, Text)
-dhallToHs e = do
-    e0 <- printError =<< liftIO (dhallLoadSafe e)
-    expectedType <- printError $ validationToEither expected
-    _ <- printError . D.typeOf $ D.Annot e0 expectedType
+dhallToHs :: FromDhall a => (Text -> IO ()) -> DhallExpr -> MaybeT IO (a, Text)
+dhallToHs write e = do
+    e0 <- writeError write =<< liftIO (dhallLoadSafe e)
+    expectedType <- writeError write $ validationToEither expected
+    _ <- writeError write . D.typeOf $ D.Annot e0 expectedType
     let e' = D.normalize e0
-    x <- printError . D.toMonadic . extract $ D.renote e'
+    x <- writeError write . D.toMonadic . extract $ D.renote e'
     pure (x, D.hashExpressionToCode e')
   where
     D.Decoder{extract, expected} = D.auto
 
-printError :: Show e => Either e a -> MaybeT IO a
-printError = either (\e -> liftIO (hPrint stderr e) >> mzero) pure
+writeError :: Show e => (Text -> IO ()) -> Either e a -> MaybeT IO a
+writeError write = either (\e -> liftIO (write $ showT e) >> mzero) pure
 
 -- | Ensure no two members have the same value for the provided 'Text' field, by appending numbers when necessary.
 uniqueNames :: Traversable t => Lens' a Text -> t a -> t a

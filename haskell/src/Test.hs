@@ -35,8 +35,8 @@ data P
     deriving (Eq, Enum, Bounded)
 plugin :: FilePath -> P -> Plugin () ()
 plugin home = \case
-    WL -> WatchLayout.plugin
-    QR -> QR.plugin $ home </> "Desktop"
+    WL -> WatchLayout.plugin write
+    QR -> QR.plugin write $ home </> "Desktop"
     LS -> LayoutSwitcher.plugin 1 ()
     PI -> PingIndicator.plugin 1
 
@@ -44,10 +44,11 @@ test :: [P] -> [Text] -> [Text] -> IO ()
 test ps ls lsVoid = do
     home <- unsafeInterleaveIO getHomeDirectory
     setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ NE.appendr lsVoid (dhallLayoutVoid <$> dhallLayoutDefault :| ls)
+    Just layouts <- layoutsFromDhall write $ NE.appendr lsVoid (dhallLayoutVoid <$> dhallLayoutDefault :| ls)
     withPlugin
-        (plugins $ Logger.plugin T.putStrLn Logger.Normal : map (plugin home) ps)
+        (plugins $ Logger.plugin write Logger.Normal : map (plugin home) ps)
         $ server
+            write
             1
             8000
             Nothing
@@ -57,7 +58,7 @@ test ps ls lsVoid = do
 testExt :: IO ()
 testExt = do
     setLocaleEncoding utf8
-    Just layouts <- layoutsFromDhall $ dhallLayoutVoid dhallLayoutDefault :| []
+    Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
     serverExtWs
         mempty
         8000
@@ -65,3 +66,6 @@ testExt = do
         Nothing
         (Just "../dist/assets")
         layouts
+
+write :: Text -> IO ()
+write = T.putStrLn

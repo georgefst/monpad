@@ -17,20 +17,20 @@ data Settings
     deriving (Show, Enum, Bounded)
 
 plugin :: (Show a, Show b) => (Text -> IO ()) -> Settings -> Plugin a b
-plugin f settings = Plugin @() @() $ logUpdates settings f <> logImportantStuff f <> logPong settings f
+plugin write settings = Plugin @() @() $ logUpdates settings write <> logImportantStuff write <> logPong settings write
 
 logImportantStuff :: (Monoid e, Monoid s) => (Text -> IO ()) -> ServerConfig e s a b
-logImportantStuff f = mempty
-    { onStart = \url -> f $ "Monpad server started at " <> url
+logImportantStuff write = mempty
+    { onStart = \url -> write $ "Monpad server started at " <> url
     , onNewConnection = \_ (ClientID i) -> do
-        f $ "New client: " <> i
+        write $ "New client: " <> i
         mempty
     , onDroppedConnection = \_ (ClientID i) _ ->
-        f $ "Client disconnected: " <> i
+        write $ "Client disconnected: " <> i
     }
 
 logUpdates :: (Monoid e, Monoid s, Show a, Show b) => Settings -> (Text -> IO ()) -> ServerConfig e s a b
-logUpdates settings f = mempty
+logUpdates settings write = mempty
     { onUpdate = \u -> do
         ClientID c <- asks $ view #client
         let (pc, ps) = case settings of
@@ -44,22 +44,22 @@ logUpdates settings f = mempty
     }
   where
     printClientUpdate c u = do
-        liftIO $ f $ "Message received from client: " <> c
-        pLogIndented f u
+        liftIO $ write $ "Message received from client: " <> c
+        pLogIndented write u
     printServerUpdate c u = do
-        liftIO $ f $ "Message sent to client: " <> c
-        pLogIndented f u
+        liftIO $ write $ "Message sent to client: " <> c
+        pLogIndented write u
 
 logPong :: (Monoid e, Monoid s) => Settings -> (Text -> IO ()) -> ServerConfig e s a b
-logPong settings f = case settings of
+logPong settings write = case settings of
     Normal -> mempty
     Quiet -> mempty
     Loud -> mempty
         { onPong = \t (ClientID c) _ -> do
-            liftIO $ f $ "Pong: " <> c
-            pLogIndented f t
+            liftIO $ write $ "Pong: " <> c
+            pLogIndented write t
             mempty
         }
 
 pLogIndented :: (Show x, MonadIO m) => (Text -> IO ()) -> x -> m ()
-pLogIndented f = liftIO . f . TL.toStrict . pShowOpt defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}
+pLogIndented write = liftIO . write . TL.toStrict . pShowOpt defaultOutputOptionsDarkBg{outputOptionsInitialIndent = 4}

@@ -284,13 +284,21 @@ combineConfs sc1 sc2 = ServerConfig
         (ry, s2) <- runStateT (runReaderT y $ over #extra snd e) $ over #extra (const . snd $ view #extra s0) s1
         pure (rx <> ry, over #extra (view #extra s1,) s2)
 
-server :: Int -> Port -> Maybe Text -> Maybe FilePath -> Layouts a b -> ServerConfig e s a b -> IO ()
-server pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server ::
+    (Text -> IO ()) ->
+    Int ->
+    Port ->
+    Maybe Text ->
+    Maybe FilePath ->
+    Layouts a b ->
+    ServerConfig e s a b ->
+    IO ()
+server write pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     onStart conf =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port loginImage assetsDir (first biVoid <$> layouts) (Just clients)
-            :<|> websocketServer pingFrequency layouts conf clients
+            :<|> websocketServer write pingFrequency layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -334,8 +342,15 @@ httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
         serveDirectoryWebApp
         assetsDir
 
-websocketServer :: forall e s a b. Int -> Layouts a b -> ServerConfig e s a b -> Clients -> Server WsApi
-websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = liftIO case mu of
+websocketServer ::
+    forall e s a b.
+    (Text -> IO ()) ->
+    Int ->
+    Layouts a b ->
+    ServerConfig e s a b ->
+    Clients ->
+    Server WsApi
+websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending = liftIO case mu of
     Nothing -> rejectAndLog "no username parameter"
     Just clientId -> registerConnection clientId >>= \case
         False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
@@ -457,7 +472,7 @@ websocketServer pingFrequency layouts ServerConfig{..} clients mu pending = lift
                     <$> liftIO (try $ WS.receiveData conn)
   where
     rejectAndLog err = do
-        T.putStrLn $ "Rejecting WS connection: " <> err
+        write $ "Rejecting WS connection: " <> err
         WS.rejectRequest pending $ encodeUtf8 err
     -- attempt to move client from the waiting set to the connected set
     registerConnection clientId = atomically do

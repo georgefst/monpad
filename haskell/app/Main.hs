@@ -3,7 +3,6 @@
 
 module Main (main) where
 
-import Control.Concurrent
 import Control.Monad
 import Data.Char
 import Data.Either.Extra
@@ -19,6 +18,7 @@ import System.Info.Extra
 import Text.Read
 import Util.Util
 
+import Control.Concurrent.Lock qualified as Lock
 import Data.List.NonEmpty (nonEmpty, NonEmpty)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -143,8 +143,8 @@ main = do
     setLocaleEncoding utf8
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
-    stdoutMutex <- newMVar () -- to ensure atomicity of writes to `stdout`
-    let write t = takeMVar stdoutMutex >> T.putStrLn t >> putMVar stdoutMutex ()
+    stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
+    let write t = Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
     case externalWS of
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts write dhallLayouts

@@ -15,6 +15,7 @@ import System.Directory
 import System.Exit
 import System.FilePath
 import System.Info.Extra
+import System.IO
 import Text.Read
 import Util.Util
 
@@ -24,7 +25,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Dhall (FromDhall)
-import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import GHC.IO.Encoding (setLocaleEncoding)
 
 import Monpad
 import Monpad.Plugins
@@ -34,6 +35,7 @@ import Monpad.Plugins.PingIndicator qualified as PingIndicator
 import Monpad.Plugins.QR qualified as QR
 import Monpad.Plugins.WatchLayout qualified as WatchLayout
 import OS qualified
+import Util
 
 type Port = Int
 
@@ -144,7 +146,10 @@ main = do
     Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
-    let write t = Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
+    let write = Logger
+            { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
+            , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
+            }
     case externalWS of
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts write dhallLayouts
@@ -169,7 +174,7 @@ main = do
             runPlugin = server write pingFrequency port loginImageUrl assetsDir
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
-mkLayouts :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> NonEmpty Text -> IO (Layouts a b)
+mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)
 mkLayouts write = maybe exitFailure pure <=< layoutsFromDhall write
 
 --TODO this is a pretty egregious workaround for Dhall's inability to parse paths beginning with C:\

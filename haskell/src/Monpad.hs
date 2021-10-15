@@ -285,7 +285,7 @@ combineConfs sc1 sc2 = ServerConfig
         pure (rx <> ry, over #extra (view #extra s1,) s2)
 
 server ::
-    (Text -> IO ()) ->
+    Logger ->
     Int ->
     Port ->
     Maybe Text ->
@@ -344,7 +344,7 @@ httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
 
 websocketServer ::
     forall e s a b.
-    (Text -> IO ()) ->
+    Logger ->
     Int ->
     Layouts a b ->
     ServerConfig e s a b ->
@@ -472,7 +472,7 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                     <$> liftIO (try $ WS.receiveData conn)
   where
     rejectAndLog err = do
-        write $ "Rejecting WS connection: " <> err
+        write.log $ "Rejecting WS connection: " <> err
         WS.rejectRequest pending $ encodeUtf8 err
     -- attempt to move client from the waiting set to the connected set
     registerConnection clientId = atomically do

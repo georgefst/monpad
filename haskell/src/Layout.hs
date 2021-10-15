@@ -23,7 +23,7 @@ import Util
 
 -- | A (non-empty) list of 'Layout's.
 type Layouts a b = NonEmpty (Layout a b, Maybe DhallExpr)
-layoutsFromDhall :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> NonEmpty Text -> IO (Maybe (Layouts a b))
+layoutsFromDhall :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Maybe (Layouts a b))
 layoutsFromDhall write = runMaybeT . traverse \t -> do
     e <- dhallExprFromText write t
     (l, _) <- dhallToHs write e

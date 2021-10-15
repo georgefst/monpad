@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 module Monpad.Plugins.WatchLayout (plugin) where
 
 import Data.Bifunctor
@@ -9,7 +10,6 @@ import System.FilePath
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (runMaybeT)
-import Data.Text (Text)
 import Data.Text qualified as T
 import Dhall (FromDhall)
 import Dhall.Core qualified as D
@@ -22,10 +22,10 @@ import Monpad
 import Monpad.Plugins
 import Util
 
-plugin :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> Plugin a b
+plugin :: (FromDhall a, FromDhall b) => Logger -> Plugin a b
 plugin = Plugin . sendLayout @() @()
 
-sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => (Text -> IO ()) -> ServerConfig e s a b
+sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
     { updates = \env -> SP.fromAsync do
         let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
@@ -33,20 +33,20 @@ sendLayout write = mempty
             imports <- dhallImports expr
             evss <- for imports \(dir, toList -> files) -> liftIO do
                 let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
-                write $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
+                write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
                 snd <$> watchDirectoryWith conf dir (isModification `conj` isImport)
             flip foldMap evss $ SP.fromSerial
-                . traceStream (const $ write "Sending new layout to client")
+                . traceStream (const $ write.log "Sending new layout to client")
                 . SP.map (send name)
                 . SP.mapMaybeM (const $ getLayout write expr)
     }
   where
-    conf = defaultConfig{confDebounce = Debounce 0.1}
+    conf = defaultConfig {confDebounce = Debounce 0.1}
 
-getLayout :: (FromDhall a, FromDhall b) => (Text -> IO ()) -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))
+getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))
 getLayout write e = runMaybeT do
     (l, h) <- dhallToHs write e
-    liftIO $ write $ "Parsed Dhall expression: " <> h
+    liftIO $ write.log $ "Parsed Dhall expression: " <> h
     pure l
 
 send :: LayoutID -> Layout a b -> [ServerUpdate a b]

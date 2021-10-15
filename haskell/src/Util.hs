@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 module Util where
 
 import Control.Monad.Extra
@@ -42,6 +43,11 @@ import Network.Socket (
  )
 import Streamly.Prelude qualified as SP
 import System.Directory (getHomeDirectory)
+
+data Logger = Logger
+  { log :: Text -> IO ()
+  , logError :: Text -> IO ()
+  }
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2
@@ -101,11 +107,11 @@ https://github.com/dhall-lang/dhall-haskell/issues/2254
 dhallLoadSafe :: DhallExpr -> IO (Either (D.SourcedException D.MissingImports) (D.Expr D.Src Void))
 dhallLoadSafe = try @(D.SourcedException D.MissingImports) . D.load
 
-dhallExprFromText :: (Text -> IO ()) -> Text -> MaybeT IO DhallExpr
+dhallExprFromText :: Logger -> Text -> MaybeT IO DhallExpr
 dhallExprFromText write = writeError write . D.exprFromText ""
 
 -- | Get a Haskell value from a Dhall expression, and return the hash.
-dhallToHs :: FromDhall a => (Text -> IO ()) -> DhallExpr -> MaybeT IO (a, Text)
+dhallToHs :: FromDhall a => Logger -> DhallExpr -> MaybeT IO (a, Text)
 dhallToHs write e = do
     e0 <- writeError write =<< liftIO (dhallLoadSafe e)
     expectedType <- writeError write $ validationToEither expected
@@ -116,8 +122,8 @@ dhallToHs write e = do
   where
     D.Decoder{extract, expected} = D.auto
 
-writeError :: Show e => (Text -> IO ()) -> Either e a -> MaybeT IO a
-writeError write = either (\e -> liftIO (write $ showT e) >> mzero) pure
+writeError :: Show e => Logger -> Either e a -> MaybeT IO a
+writeError write = either (\e -> liftIO (write.logError $ showT e) >> mzero) pure
 
 -- | Ensure no two members have the same value for the provided 'Text' field, by appending numbers when necessary.
 uniqueNames :: Traversable t => Lens' a Text -> t a -> t a

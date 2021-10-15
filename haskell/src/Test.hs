@@ -1,6 +1,7 @@
 -- | Stuff for quickly playing around in GHCI. Call 'runghc Build.hs assets' before using these.
 module Test where
 
+import Control.Monad
 import System.Directory.Extra
 import System.FilePath
 
@@ -19,6 +20,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 
 import Monpad
 import Monpad.Plugins
+import Util
 
 dhallLayoutDefault :: Text
 dhallLayoutDefault = "../dhall/textinput.dhall"
@@ -67,5 +69,5 @@ testExt = do
         (Just "../dist/assets")
         layouts
 
-write :: Text -> IO ()
-write = T.putStrLn
+write :: Logger
+write = join Logger T.putStrLn

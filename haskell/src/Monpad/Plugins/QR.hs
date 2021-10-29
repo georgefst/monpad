@@ -12,7 +12,6 @@ import Data.Text qualified as T
 
 import Monpad
 import Monpad.Plugins
-import Util
 
 plugin :: Logger -> FilePath -> Plugin a b
 plugin path = Plugin . writeQR @() @() path

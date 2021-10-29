@@ -35,7 +35,6 @@ import Monpad.Plugins.PingIndicator qualified as PingIndicator
 import Monpad.Plugins.QR qualified as QR
 import Monpad.Plugins.WatchLayout qualified as WatchLayout
 import OS qualified
-import Util
 
 type Port = Int
 

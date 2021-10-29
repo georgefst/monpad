@@ -7,6 +7,7 @@ module Monpad (
     runMonpad,
     MonpadEnv (..),
     MonpadState (..),
+    Logger (..),
     getCurrentLayout,
     ServerConfig (..),
     combineConfs,

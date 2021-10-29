@@ -9,7 +9,6 @@ import qualified Data.Text.Lazy as TL
 
 import Monpad
 import Monpad.Plugins
-import Util
 
 data Settings
     = Normal

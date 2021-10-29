@@ -20,7 +20,6 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 
 import Monpad
 import Monpad.Plugins
-import Util
 
 dhallLayoutDefault :: Text
 dhallLayoutDefault = "../dhall/textinput.dhall"

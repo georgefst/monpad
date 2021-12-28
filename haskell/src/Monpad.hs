@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
-
+{-# LANGUAGE UndecidableInstances #-}
 module Monpad (
     server,
     serverExtWs,

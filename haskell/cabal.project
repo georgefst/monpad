@@ -30,9 +30,9 @@ source-repository-package
   subdir: basement
   tag: 0bb195e1fea06d144dafc5af9a0ff79af0a5f4a0
 
---TODO deprecate previous versions? or give them all upper bounds on base?
 constraints:
-  elm-syntax == 0.3.1.0
+  --TODO deprecate previous versions? or give them all upper bounds on base?
+  elm-syntax == 0.3.1.0,
 allow-newer:
   haskell-to-elm:elm-syntax,
   shelly:time,

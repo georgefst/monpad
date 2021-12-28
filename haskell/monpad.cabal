@@ -119,7 +119,7 @@ library
     if flag(release)
         build-depends: file-embed ^>= 0.0.11.2
     build-depends:
-        aeson ^>= 1.5,
+        aeson ^>= {1.5, 2.0},
         bifunctors ^>= 5.5.7,
         colour ^>= 2.3.5,
         convertible ^>= 1.1.1,

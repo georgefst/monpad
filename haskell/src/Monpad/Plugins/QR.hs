@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 module Monpad.Plugins.QR (plugin) where
 
 import Codec.Picture

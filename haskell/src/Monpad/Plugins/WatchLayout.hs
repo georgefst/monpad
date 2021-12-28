@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 module Monpad.Plugins.WatchLayout (plugin) where
 
 import Data.Bifunctor

@@ -1,5 +1,4 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 
 module Main (main) where
 
@@ -153,7 +152,7 @@ main = do
         Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
             =<< mkLayouts write dhallLayouts
           where
-            writeQR path url = withPlugin (QR.plugin write path) $ flip onStart url
+            writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
         Nothing -> if systemDevice
             --TODO with `ImpredicativeTypes`, we can remove the explicit lambdas here and go point-free
             then mkLayouts write dhallLayouts >>= \ls ->

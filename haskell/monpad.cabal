@@ -29,11 +29,9 @@ common common
     ghc-options:
         -Wall
         -threaded
-    build-tool-depends:
-        record-dot-preprocessor:record-dot-preprocessor ^>= 0.2.5,
     build-depends:
         georgefst-utils,
-        base >= 4.14,
+        base >= 4.16,
         bytestring ^>= {0.10.8, 0.11},
         composition ^>= 1.0.2.1,
         concurrent-extra ^>= 0.7.0.12,
@@ -50,7 +48,6 @@ common common
         optics-extra ^>= 0.4,
         pretty-simple ^>= 4.0,
         random ^>= 1.2.0,
-        record-hasfield ^>= 1.0,
         safe ^>= 0.3.19,
         streamly ^>= 0.8,
         streams ^>= 3.3,
@@ -69,6 +66,7 @@ common common
         DeriveGeneric
         DerivingStrategies
         DerivingVia
+        DuplicateRecordFields
         EmptyCase
         FlexibleContexts
         FlexibleInstances
@@ -78,8 +76,10 @@ common common
         LambdaCase
         MultiParamTypeClasses
         NamedFieldPuns
+        NoFieldSelectors
         NumericUnderscores
         OverloadedLabels
+        OverloadedRecordDot
         OverloadedStrings
         PartialTypeSignatures
         PolyKinds

@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
-
 module Monpad.Plugins.LayoutSwitcher (plugin) where
 
 import Control.Monad.State
@@ -11,7 +9,7 @@ import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream)
 import Data.Stream.Infinite qualified as Stream
 
-import Monpad hiding (min) --TODO with GHC 9.2, we can remove this stupid hiding
+import Monpad
 import Monpad.Plugins
 import Util
 

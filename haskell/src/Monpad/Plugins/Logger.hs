@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 module Monpad.Plugins.Logger (plugin, Settings (..)) where
 
 import Control.Monad.Reader

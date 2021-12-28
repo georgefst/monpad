@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
-
 module Layout where
 
 import Control.Monad.Trans.Maybe (runMaybeT)

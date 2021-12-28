@@ -186,7 +186,7 @@ mainHtml layouts wsPort = doctypehtml_ $ mconcat
 --TODO expose a cleaner interface, rather than requiring use of overloaded-labels lenses?
 -- | The Monpad monad
 newtype Monpad e s a b x = Monpad
-    { unMonpad ::
+    { unwrap ::
         ReaderT
             (MonpadEnv e a b)
             (StateT
@@ -227,7 +227,7 @@ getCurrentLayout = gets $ fromMaybe currentLayoutError . view currentLayoutMaybe
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
-        (unMonpad mon)
+        mon.unwrap
         (MonpadEnv c layoutMap e)
     )
     (MonpadState (fst <$> layoutMap) (fst $ NE.head ls).name s)
@@ -295,7 +295,7 @@ server ::
     IO ()
 server write pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
-    onStart conf =<< serverAddress port
+    conf.onStart =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
         httpServer port loginImage assetsDir (first biVoid <$> layouts) (Just clients)
             :<|> websocketServer write pingFrequency layouts conf clients

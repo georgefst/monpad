@@ -63,6 +63,7 @@ rules = do
                     [ "exe:" <> exeName
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
+                    , "--with-ghc=ghc-9.2"
                     ]
             cmd_
                 (Cwd hsDir)

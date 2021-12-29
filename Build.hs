@@ -59,17 +59,20 @@ rules = do
     let haskell exeName path flags = do
             need assets
             needDirExcept hsBuildDir hsDir
+            let args =
+                    [ "exe:" <> exeName
+                    , "--flags=" <> flags
+                    , "--builddir=" <> (".." </> hsBuildDir)
+                    ]
             cmd_
                 (Cwd hsDir)
                 "cabal build"
-                ("exe:" <> exeName)
-                ("--flags=" <> flags)
-                ("--builddir=" <> (".." </> hsBuildDir))
             bins <-
                 lines . fromStdout
                     <$> cmd
                         (Cwd hsDir)
-                        "cabal list-bin ."
+                        "cabal list-bin"
+                        args
             case bins of
                 [] -> error "No matches"
                 [path'] -> copyFileChanged path' path

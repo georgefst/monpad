@@ -65,7 +65,12 @@ rules = do
                 ("exe:" <> exeName)
                 ("--flags=" <> flags)
                 ("--builddir=" <> (".." </> hsBuildDir))
-            getDirectoryFiles "" [hsBuildDir <//> exeName <.> exe] >>= \case
+            bins <-
+                lines . fromStdout
+                    <$> cmd
+                        (Cwd hsDir)
+                        "cabal list-bin ."
+            case bins of
                 [] -> error "No matches"
                 [path'] -> copyFileChanged path' path
                 fs -> error $ "Multiple matches: " <> intercalate ", " fs

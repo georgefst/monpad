@@ -68,6 +68,7 @@ rules = do
             cmd_
                 (Cwd hsDir)
                 "cabal build"
+                args
             bins <-
                 lines . fromStdout
                     <$> cmd

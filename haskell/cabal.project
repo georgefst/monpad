@@ -66,6 +66,11 @@ source-repository-package
   subdir: sop-core
   tag: 58d7f2eab3a4f603fee50db27b2ad2f224881c9f
 
+--TODO https://github.com/cdepillabout/pretty-simple/issues/82#issuecomment-921094150
+source-repository-package
+    type: git
+    location: https://github.com/georgefst/pretty-simple
+    tag: 33c26718312572746792969c8502fde46e47fa9b
 
 constraints:
   --TODO deprecate previous versions? or give them all upper bounds on base?

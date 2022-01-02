@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wall #-}
 
 {- cabal:
@@ -26,7 +27,9 @@ import Data.List
 import System.IO.Error
 import System.Info.Extra
 
+import Data.List.Extra (split)
 import Data.Text (Text, pack)
+import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Text.Lazy.IO qualified as TL
 import Dhall.Core qualified as Dhall
@@ -59,12 +62,29 @@ rules = do
     let haskell exeName path flags = do
             need assets
             needDirExcept hsBuildDir hsDir
-            let args =
+            let args0 =
                     [ "exe:" <> exeName
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
                     , "--with-ghc=ghc-9.2"
                     ]
+            --TODO this is a hack due to https://github.com/haskell/cabal/issues/7083
+            args <-
+                if isWindows
+                    then liftIO do
+                        let badPkgs = map T.pack ["rawfilepath"]
+                            bad = any \(T.strip -> t) ->
+                                T.pack "location" `T.isPrefixOf` t && any (`T.isSuffixOf` t) badPkgs
+                        out <- (</> "cabal.project.windows.monpad") <$> Dir.getTemporaryDirectory
+                        T.writeFile out
+                            . T.unlines
+                            . map T.unlines
+                            . filter (not . bad)
+                            . split T.null
+                            . T.lines
+                            =<< T.readFile (hsDir </> "cabal.project")
+                        pure $ args0 ++ ["--project-file=" <> out]
+                    else pure args0
             cmd_
                 (Cwd hsDir)
                 "cabal build"

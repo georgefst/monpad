@@ -75,7 +75,7 @@ rules = do
                         let badPkgs = map T.pack ["rawfilepath"]
                             bad = any \(T.strip -> t) ->
                                 T.pack "location" `T.isPrefixOf` t && any (`T.isSuffixOf` t) badPkgs
-                        out <- (</> "cabal.project.windows.monpad") <$> Dir.getTemporaryDirectory
+                            out = hsDir </> "cabal.project.local.windows"
                         T.writeFile out
                             . T.unlines
                             . map T.unlines

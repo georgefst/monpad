@@ -75,15 +75,15 @@ rules = do
                         let badPkgs = map T.pack ["rawfilepath"]
                             bad = any \(T.strip -> t) ->
                                 T.pack "location" `T.isPrefixOf` t && any (`T.isSuffixOf` t) badPkgs
-                            out = hsDir </> "cabal.project.local.windows"
-                        T.writeFile out
+                            cabProj = "cabal.project.local.windows"
+                        T.writeFile (hsDir </> cabProj)
                             . T.unlines
                             . map T.unlines
                             . filter (not . bad)
                             . split T.null
                             . T.lines
                             =<< T.readFile (hsDir </> "cabal.project")
-                        pure $ args0 ++ ["--project-file=" <> out]
+                        pure $ args0 ++ ["--project-file=" <> cabProj]
                     else pure args0
             cmd_
                 (Cwd hsDir)

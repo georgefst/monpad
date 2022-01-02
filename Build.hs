@@ -75,7 +75,7 @@ rules = do
                         let badPkgs = map T.pack ["rawfilepath"]
                             bad = any \(T.strip -> t) ->
                                 T.pack "location" `T.isPrefixOf` t && any (`T.isSuffixOf` t) badPkgs
-                            cabProj = "cabal.project.local.windows"
+                            cabProj = "cabal.project.patched"
                         T.writeFile (hsDir </> cabProj)
                             . T.unlines
                             . map T.unlines

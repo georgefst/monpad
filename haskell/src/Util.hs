@@ -44,9 +44,9 @@ import Streamly.Prelude qualified as SP
 import System.Directory (getHomeDirectory)
 
 data Logger = Logger
-  { log :: Text -> IO ()
-  , logError :: Text -> IO ()
-  }
+    { log :: Text -> IO ()
+    , logError :: Text -> IO ()
+    }
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2

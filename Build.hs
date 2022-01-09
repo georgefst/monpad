@@ -1,3 +1,5 @@
+#!/usr/bin/env cabal
+
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}

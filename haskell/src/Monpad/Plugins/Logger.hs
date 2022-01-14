@@ -8,7 +8,7 @@ import System.Console.ANSI
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
-import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShowOpt)
+import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShow, pShowOpt)
 
 import Monpad
 import Monpad.Plugins
@@ -64,12 +64,12 @@ logUpdates settings write = mempty
   where
     printClientUpdate c u = do
         liftIO $ write.log $ T.intercalate "\n"
-            [ "Message received from client: " <> c
+            [ "Message received from client: " <> TL.toStrict (pShow c)
             , pShowIndented u
             ]
     printServerUpdate c u = do
         liftIO $ write.log $ T.intercalate "\n"
-            [ "Message sent to client: " <> c
+            [ "Message sent to client: " <> TL.toStrict (pShow c)
             , pShowIndented u
             ]
 

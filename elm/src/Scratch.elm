@@ -106,6 +106,7 @@ sub cycleLength tickMs model f =
 flags : ElmFlags
 flags =
     { username = "GT"
+    , supportsFullscreen = False
     , layouts =
         [ { elements =
                 [ { location = { x = -600, y = 0 }

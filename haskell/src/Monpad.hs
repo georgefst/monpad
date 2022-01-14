@@ -128,6 +128,7 @@ data ClientUpdate
 data ElmFlags = ElmFlags
     { layouts :: NonEmpty (Layout () ())
     , username :: Text
+    , supportsFullscreen :: Bool
     }
     deriving (Show, Generic)
     deriving (ToJSON) via CustomJSON Opts.JSON ElmFlags

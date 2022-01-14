@@ -142,7 +142,7 @@ view model =
             ]
           <|
             (List.map (viewElement model) model.layout.layout.elements
-                |> applyWhen (not model.fullscreen)
+                |> applyWhen (not model.fullscreen && model.supportsFullscreen)
                     (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
                 |> stack
             )
@@ -555,6 +555,7 @@ type alias Model =
     { username : String
     , windowSize : IntVec2
     , fullscreen : Bool
+    , supportsFullscreen : Bool
     , startTime : Posix
     , layout : LayoutState -- the active layout
     , initialLayouts : Dict String Layout
@@ -620,6 +621,7 @@ load flags =
                                           , layout = loadLayout layout
                                           , windowSize = viewport
                                           , fullscreen = False
+                                          , supportsFullscreen = flags.supportsFullscreen
                                           , startTime = startTime
                                           , initialLayouts = layouts |> Dict.map (always <| \x -> x.layout)
                                           , layouts = layouts

@@ -15,7 +15,10 @@ ws.onopen = _event => {
     // Elm
     elmInitialised = false
     const app = Elm.Main.init({
-        flags: { username, layouts }
+        flags: {
+            username, layouts,
+            supportsFullscreen: document.documentElement.requestFullscreen != null
+        }
     })
     //TODO this (waiting for an initialisation message)
     // is all just a workaround for the fact that Elm has no built-in way of signalling that 'init' has finished

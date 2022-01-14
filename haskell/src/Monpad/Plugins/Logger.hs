@@ -1,12 +1,14 @@
 module Monpad.Plugins.Logger (plugin, Settings (..)) where
 
 import Control.Monad.Reader
+import Data.Time
 import Optics
-import Text.Pretty.Simple
+import System.Console.ANSI
 
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
+import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShowOpt)
 
 import Monpad
 import Monpad.Plugins
@@ -18,7 +20,23 @@ data Settings
     deriving (Show, Enum, Bounded)
 
 plugin :: (Show a, Show b) => Logger -> Settings -> Plugin a b
-plugin write settings = Plugin @() @() $ logUpdates settings write <> logImportantStuff write <> logPong settings write
+plugin write0 settings = Plugin @() @() $ logUpdates settings write <> logImportantStuff write <> logPong settings write
+  where
+    write = write0
+        { log = write0.log <=< \s -> do
+            t <- formatTime defaultTimeLocale "%H:%M:%S" <$> getCurrentTime
+            pure $ mconcat
+                [ T.pack $ setSGRCode
+                    [ SetColor Background Dull Green
+                    , SetColor Foreground Dull Black
+                    , SetConsoleIntensity BoldIntensity
+                    ]
+                , T.pack t
+                , T.pack $ setSGRCode [Reset]
+                , " "
+                , s
+                ]
+        }
 
 logImportantStuff :: (Monoid e, Monoid s) => Logger -> ServerConfig e s a b
 logImportantStuff write = mempty

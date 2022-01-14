@@ -142,7 +142,8 @@ view model =
             ]
           <|
             (List.map (viewElement model) model.layout.layout.elements
-                |> applyWhen (not model.fullscreen) (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
+                |> applyWhen (not model.fullscreen)
+                    (\es -> viewFullscreenButton model.layout.layout.viewBox :: es)
                 |> stack
             )
         ]

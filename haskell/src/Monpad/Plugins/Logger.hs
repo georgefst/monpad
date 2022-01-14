@@ -4,6 +4,8 @@ import Control.Monad.Reader
 import Optics
 import Text.Pretty.Simple
 
+import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 
 import Monpad
@@ -43,11 +45,15 @@ logUpdates settings write = mempty
     }
   where
     printClientUpdate c u = do
-        liftIO $ write.log $ "Message received from client: " <> c
-        pLogIndented write u
+        liftIO $ write.log $ T.intercalate "\n"
+            [ "Message received from client: " <> c
+            , pShowIndented u
+            ]
     printServerUpdate c u = do
-        liftIO $ write.log $ "Message sent to client: " <> c
-        pLogIndented write u
+        liftIO $ write.log $ T.intercalate "\n"
+            [ "Message sent to client: " <> c
+            , pShowIndented u
+            ]
 
 logPong :: (Monoid e, Monoid s) => Settings -> Logger -> ServerConfig e s a b
 logPong settings write = case settings of
@@ -55,11 +61,12 @@ logPong settings write = case settings of
     Quiet -> mempty
     Loud -> mempty
         { onPong = \t (ClientID c) _ -> do
-            liftIO $ write.log $ "Pong: " <> c
-            pLogIndented write t
+            liftIO $ write.log $ T.intercalate "\n"
+                [ "Pong: " <> c
+                , pShowIndented t
+                ]
             mempty
         }
 
-pLogIndented :: (Show x, MonadIO m) => Logger -> x -> m ()
-pLogIndented write = liftIO . write.log . TL.toStrict
-    . pShowOpt defaultOutputOptionsDarkBg {outputOptionsInitialIndent = 4}
+pShowIndented :: Show a => a -> Text
+pShowIndented = TL.toStrict . pShowOpt defaultOutputOptionsDarkBg {outputOptionsInitialIndent = 4}

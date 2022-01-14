@@ -4,7 +4,7 @@ import Control.Monad.Reader
 import Optics
 import Text.Pretty.Simple
 
-import qualified Data.Text.Lazy as TL
+import Data.Text.Lazy qualified as TL
 
 import Monpad
 import Monpad.Plugins

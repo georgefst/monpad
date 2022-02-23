@@ -110,7 +110,7 @@ rules = do
             needDirExcept elmBuildDir elmDir
             cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> elmJS) opts
             liftIO $ minifyFileJS elmJS
-    elmJS %> \_ -> elm "--optimize"
+    elmJS %> \_ -> elm ""
 
     distDir </> "dhall" </> "*" %> \out -> do
         let in' = "dhall" </> takeFileName out

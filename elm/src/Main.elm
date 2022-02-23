@@ -88,7 +88,7 @@ app =
         always <|
             Sub.batch
                 [ receiveUpdates
-                    |> subLogErrors "update message" (List.map ServerUpdate)
+                    |> subLogErrors "update message" (List.map (\x -> ServerUpdate <| Debug.log "update" x))
                 , fullscreenChanges
                     |> subLogErrors "fullscreen change" (singleton << FullscreenChange)
                 , onResize (\w h -> [ Resized { x = w, y = h } ])

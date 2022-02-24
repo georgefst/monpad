@@ -21,6 +21,13 @@ data ServerUpdate a b
     | DeleteImage ElementID
     | SetText ElementID Text
     | SetTextStyle ElementID TextStyle
+    | SetTextSize ElementID Word
+    | SetTextColour ElementID Colour
+    | SetTextBold ElementID Bool
+    | SetTextItalic ElementID Bool
+    | SetTextUnderline ElementID Bool
+    | SetTextShadow ElementID [TextShadow]
+    | SetTextFont ElementID Text
     | AddText ElementID TextBox
     | DeleteText ElementID
     | SetLayout (Layout a b)

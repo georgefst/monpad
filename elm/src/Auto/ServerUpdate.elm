@@ -10,6 +10,7 @@ import Auto.Layout
 import Auto.ResetLayout
 import Auto.Shape
 import Auto.TextBox
+import Auto.TextShadow
 import Auto.TextStyle
 import Json.Decode
 import Json.Decode.Pipeline
@@ -25,6 +26,13 @@ type ServerUpdate
     | DeleteImage String
     | SetText String String
     | SetTextStyle String Auto.TextStyle.TextStyle
+    | SetTextSize String Int
+    | SetTextColour String Auto.Colour.Colour
+    | SetTextBold String Bool
+    | SetTextItalic String Bool
+    | SetTextUnderline String Bool
+    | SetTextShadow String (List Auto.TextShadow.TextShadow)
+    | SetTextFont String String
     | AddText String Auto.TextBox.TextBox
     | DeleteText String
     | SetLayout Auto.Layout.Layout
@@ -67,6 +75,27 @@ decode =
     , Json.Decode.field "SetTextStyle" (Json.Decode.succeed SetTextStyle |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextStyle.decode))
+    , Json.Decode.field "SetTextSize" (Json.Decode.succeed SetTextSize |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.int))
+    , Json.Decode.field "SetTextColour" (Json.Decode.succeed SetTextColour |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.Colour.decode))
+    , Json.Decode.field "SetTextBold" (Json.Decode.succeed SetTextBold |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
+    , Json.Decode.field "SetTextItalic" (Json.Decode.succeed SetTextItalic |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
+    , Json.Decode.field "SetTextUnderline" (Json.Decode.succeed SetTextUnderline |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.bool))
+    , Json.Decode.field "SetTextShadow" (Json.Decode.succeed SetTextShadow |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 (Json.Decode.list Auto.TextShadow.decode)))
+    , Json.Decode.field "SetTextFont" (Json.Decode.succeed SetTextFont |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
     , Json.Decode.field "AddText" (Json.Decode.succeed AddText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextBox.decode))

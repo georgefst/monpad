@@ -400,6 +400,20 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                                         (currentLayout % el i % #text % _Just % #text) .= x
                                     SetTextStyle i x ->
                                         (currentLayout % el i % #text % _Just % #style) .= x
+                                    SetTextSize i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #size) .= x
+                                    SetTextColour i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #colour) .= x
+                                    SetTextBold i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #bold) .= x
+                                    SetTextItalic i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #italic) .= x
+                                    SetTextUnderline i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #underline) .= x
+                                    SetTextShadow i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #shadow) .= x
+                                    SetTextFont i x ->
+                                        (currentLayout % el i % #text % _Just % #style % #font) .= x
                                     AddText i x ->
                                         (currentLayout % el i % #text) .= Just x
                                     DeleteText i ->

@@ -770,6 +770,11 @@ serverUpdate u model =
 
                         _ ->
                             e
+
+        updateTextStyle name f =
+            updateElementFull name <|
+                \e ->
+                    { e | text = e.text |> Maybe.map (\x -> { x | style = f x.style }) }
     in
     case u of
         PlayAudioURL url ->
@@ -814,6 +819,41 @@ serverUpdate u model =
             ( updateElementFull name <|
                 \e ->
                     { e | text = e.text |> Maybe.map (\x -> { x | style = style }) }
+            , Cmd.none
+            )
+
+        SetTextSize name size ->
+            ( updateTextStyle name <| \s -> { s | size = size }
+            , Cmd.none
+            )
+
+        SetTextColour name colour ->
+            ( updateTextStyle name <| \s -> { s | colour = colour }
+            , Cmd.none
+            )
+
+        SetTextBold name bold ->
+            ( updateTextStyle name <| \s -> { s | bold = bold }
+            , Cmd.none
+            )
+
+        SetTextItalic name italic ->
+            ( updateTextStyle name <| \s -> { s | italic = italic }
+            , Cmd.none
+            )
+
+        SetTextUnderline name underline ->
+            ( updateTextStyle name <| \s -> { s | underline = underline }
+            , Cmd.none
+            )
+
+        SetTextShadow name shadow ->
+            ( updateTextStyle name <| \s -> { s | shadow = shadow }
+            , Cmd.none
+            )
+
+        SetTextFont name font ->
+            ( updateTextStyle name <| \s -> { s | font = font }
             , Cmd.none
             )
 

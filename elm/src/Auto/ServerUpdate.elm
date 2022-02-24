@@ -10,6 +10,7 @@ import Auto.Layout
 import Auto.ResetLayout
 import Auto.Shape
 import Auto.TextBox
+import Auto.TextStyle
 import Json.Decode
 import Json.Decode.Pipeline
 import Math.Vector2
@@ -23,6 +24,7 @@ type ServerUpdate
     | AddImage String Auto.Image.Image
     | DeleteImage String
     | SetText String String
+    | SetTextStyle String Auto.TextStyle.TextStyle
     | AddText String Auto.TextBox.TextBox
     | DeleteText String
     | SetLayout Auto.Layout.Layout
@@ -62,6 +64,9 @@ decode =
     , Json.Decode.field "SetText" (Json.Decode.succeed SetText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Json.Decode.string))
+    , Json.Decode.field "SetTextStyle" (Json.Decode.succeed SetTextStyle |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
+    Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextStyle.decode))
     , Json.Decode.field "AddText" (Json.Decode.succeed AddText |>
     Json.Decode.Pipeline.custom (Json.Decode.index 0 Json.Decode.string) |>
     Json.Decode.Pipeline.custom (Json.Decode.index 1 Auto.TextBox.decode))

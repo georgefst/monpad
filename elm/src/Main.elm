@@ -810,6 +810,13 @@ serverUpdate u model =
             , Cmd.none
             )
 
+        SetTextStyle name style ->
+            ( updateElementFull name <|
+                \e ->
+                    { e | text = e.text |> Maybe.map (\x -> { x | style = style }) }
+            , Cmd.none
+            )
+
         AddText name x ->
             ( updateElementFull name <|
                 \e ->

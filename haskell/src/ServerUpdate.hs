@@ -20,6 +20,7 @@ data ServerUpdate a b
     | AddImage ElementID Image
     | DeleteImage ElementID
     | SetText ElementID Text
+    | SetTextStyle ElementID TextStyle
     | AddText ElementID TextBox
     | DeleteText ElementID
     | SetLayout (Layout a b)

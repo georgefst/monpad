@@ -398,6 +398,8 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                                         (currentLayout % el i % #image) .= Nothing
                                     SetText i x ->
                                         (currentLayout % el i % #text % _Just % #text) .= x
+                                    SetTextStyle i x ->
+                                        (currentLayout % el i % #text % _Just % #style) .= x
                                     AddText i x ->
                                         (currentLayout % el i % #text) .= Just x
                                     DeleteText i ->

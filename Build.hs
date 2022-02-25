@@ -14,7 +14,7 @@ build-depends:
     pretty-simple ^>= 4.0,
     shake ^>= 0.19.1,
     shake-dhall ^>= 0.1.0.0,
-    text ^>= 1.2.3.2,
+    text ^>= {1.2.3, 1.3, 1.4, 1.5, 2.0},
 -}
 
 module Main (main) where

@@ -1,4 +1,4 @@
-packages: .
+optional-packages: .
 
 source-repository-package
   type: git

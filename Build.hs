@@ -1,5 +1,3 @@
-#!/usr/bin/env cabal
-
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -70,7 +68,7 @@ rules = do
                     , "--builddir=" <> (".." </> hsBuildDir)
                     , "--with-ghc=ghc-9.2"
                     ]
-            --TODO this is a hack due to https://github.com/haskell/cabal/issues/7083
+            -- TODO this is a hack due to https://github.com/haskell/cabal/issues/7083
             args <-
                 if isWindows
                     then liftIO do
@@ -121,7 +119,7 @@ rules = do
             expr <-
                 Dhall.throws . Dhall.exprFromText in' $
                     pack "(./lib/map-layout.dhall).to" <> osName <> pack " " <> bracketed c
-            --TODO huge due to https://github.com/dhall-lang/dhall-haskell/issues/2116
+            -- TODO huge due to https://github.com/dhall-lang/dhall-haskell/issues/2116
             resolvedExpression <- Dhall.loadRelativeTo (takeDirectory in') Dhall.UseSemanticCache expr
             _ <- Dhall.throws $ Dhall.typeOf resolvedExpression
             T.writeFile out $ Dhall.pretty resolvedExpression

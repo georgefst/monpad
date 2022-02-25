@@ -48,11 +48,11 @@ source-repository-package
   location: https://github.com/tfausak/hs-memory
   tag: 3cf661a8a9a8ac028df77daa88e8d65c55a3347a
 
---TODO https://github.com/haskell-crypto/cryptonite/pull/354
+--TODO https://github.com/haskell-crypto/cryptonite/pull/354#issuecomment-1050863634
 source-repository-package
   type: git
-  location: https://github.com/josephcsible/cryptonite
-  tag: 3b081e3ad027b0550fc87f171dffecbb20dedafe
+  location: https://github.com/georgefst/cryptonite
+  tag: fb412f1b7797d5f8b64281d915543eb9f1135006
 
 --TODO https://github.com/xtendo-org/rawfilepath/pull/5
 source-repository-package

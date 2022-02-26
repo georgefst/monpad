@@ -16,8 +16,8 @@ Some example configurations:
 Prerequisites:
 
 - [Haskell](https://www.haskell.org/):
-    - `cabal` ≥ 3.4
-    - `ghc` ≥ 8.10
+    - `cabal` ≥ 3.6
+    - `ghc` ≥ 9.2
 - [Elm](https://elm-lang.org/):
     - `elm` ≥ 0.19.1
 - `libevdev` headers:

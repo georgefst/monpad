@@ -66,7 +66,6 @@ rules = do
                     [ "exe:" <> exeName
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
-                    , "--with-ghc=ghc-9.2"
                     ]
             -- TODO this is a hack due to https://github.com/haskell/cabal/issues/7083
             args <-

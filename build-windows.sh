@@ -1,7 +1,5 @@
 #!/bin/sh
 
-cp haskell/cabal.project haskell/cabal.project.patched
-
 for i in 'ghc 9.2' 'cabal 3.6' 'elm 0.19' ; do
     s=( $i )
     PROG=${s[0]}
@@ -14,6 +12,8 @@ for i in 'ghc 9.2' 'cabal 3.6' 'elm 0.19' ; do
         exit 1
     fi
 done
+
+ghc --run windows-cabal-project-hack.hs
 
 if ghc -fno-code Build.hs 2> /dev/null ; then
     ghc --run Build.hs

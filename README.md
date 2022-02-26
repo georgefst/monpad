@@ -25,7 +25,7 @@ Prerequisites:
 
 If you haven't done so before, run `cabal update` to grab the latest package index from [Hackage](https://hackage.haskell.org/).
 
-Run `./build.sh` to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
+Run `./build.sh` (`.\build.ps1` on Windows) to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
 
 # Run
 

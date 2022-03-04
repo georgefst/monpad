@@ -25,7 +25,9 @@ Prerequisites:
 
 If you haven't done so before, run `cabal update` to grab the latest package index from [Hackage](https://hackage.haskell.org/).
 
-Run `./build.sh` (`.\build.ps1` on Windows) to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
+Run `./build.sh`* to build. The first time you run this, it could take a while, as `cabal` will need to download and build all dependencies.
+
+\* On Windows, it's `.\build.ps1`. Though you may need `powershell.exe -executionpolicy bypass -file .\build.ps1` due to permissions issues. I don't personally know a thing about Windows permissions, so if anyone has a better idea please let me know.
 
 # Run
 

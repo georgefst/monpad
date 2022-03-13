@@ -9,7 +9,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/georgefst/haskell-to-elm
-  tag: 33d6076972b4aa753031299692c7ab631ddb780d
+  tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
 
 --TODO https://github.com/haskell-servant/servant/pull/1482
 source-repository-package
@@ -31,7 +31,6 @@ source-repository-package
 
 --TODO bump all these upstream
 allow-newer:
-  haskell-to-elm:elm-syntax,
   -- GHC 9.2
   qrcode-core:bytestring,
   qrcode-juicypixels:bytestring,

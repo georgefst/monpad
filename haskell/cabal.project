@@ -29,8 +29,7 @@ source-repository-package
   location: https://github.com/georgefst/rawfilepath
   tag: f609f22e82de36e0e62a9fc6b1368b50614bf3d1
 
---TODO bump all these upstream
 allow-newer:
-  -- GHC 9.2
+  --TODO https://github.com/alexkazik/qrcode/issues/3
   qrcode-core:bytestring,
   qrcode-juicypixels:bytestring,

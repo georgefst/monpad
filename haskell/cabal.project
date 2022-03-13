@@ -29,9 +29,6 @@ source-repository-package
   location: https://github.com/georgefst/rawfilepath
   tag: f609f22e82de36e0e62a9fc6b1368b50614bf3d1
 
-constraints:
-  --TODO deprecate previous versions? or give them all upper bounds on base?
-  elm-syntax == 0.3.1.0,
 --TODO bump all these upstream
 allow-newer:
   haskell-to-elm:elm-syntax,

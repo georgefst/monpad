@@ -28,8 +28,3 @@ source-repository-package
   type: git
   location: https://github.com/georgefst/rawfilepath
   tag: f609f22e82de36e0e62a9fc6b1368b50614bf3d1
-
-allow-newer:
-  --TODO https://github.com/alexkazik/qrcode/issues/3
-  qrcode-core:bytestring,
-  qrcode-juicypixels:bytestring,

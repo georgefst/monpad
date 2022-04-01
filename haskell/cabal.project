@@ -11,18 +11,6 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
 
---TODO https://github.com/haskell-servant/servant/pull/1482
-source-repository-package
-  type: git
-  location: https://github.com/brandon-leapyear/servant
-  subdir: servant
-  tag: 4f77f12f8da1a1a19429548d8707a5e3fbc876e6
-source-repository-package
-  type: git
-  location: https://github.com/brandon-leapyear/servant
-  subdir: servant-server
-  tag: 4f77f12f8da1a1a19429548d8707a5e3fbc876e6
-
 --TODO https://github.com/xtendo-org/rawfilepath/pull/5
 source-repository-package
   type: git

@@ -47,7 +47,7 @@ common common
         mtl ^>= 2.2.2,
         optics ^>= 0.4,
         optics-extra ^>= 0.4,
-        pretty-simple ^>= 4.0,
+        pretty-simple ^>= 4.1,
         random ^>= 1.2.0,
         safe ^>= 0.3.19,
         streamly ^>= 0.8,

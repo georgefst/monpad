@@ -43,8 +43,8 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
+import Data.Monoid
 import Data.Proxy
-import Data.Semigroup.Monad
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.String (fromString)
@@ -208,7 +208,7 @@ newtype Monpad e s a b x = Monpad
         , MonadState (MonpadState s a b)
         , MonadError MonpadException
         )
-    deriving (Semigroup, Monoid) via Mon (Monpad e s a b) x
+    deriving (Semigroup, Monoid) via Ap (Monpad e s a b) x
 data MonpadEnv e a b = MonpadEnv
     { client :: ClientID
     , initialLayouts :: Map LayoutID (Layout a b, Maybe DhallExpr)

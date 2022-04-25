@@ -208,8 +208,7 @@ newtype Monpad e s a b x = Monpad
         , MonadState (MonpadState s a b)
         , MonadError MonpadException
         )
-deriving via Mon (Monpad e s a b) x instance Semigroup x => (Semigroup (Monpad e s a b x))
-deriving via Mon (Monpad e s a b) x instance Monoid x => (Monoid (Monpad e s a b x))
+    deriving (Semigroup, Monoid) via Mon (Monpad e s a b) x
 data MonpadEnv e a b = MonpadEnv
     { client :: ClientID
     , initialLayouts :: Map LayoutID (Layout a b, Maybe DhallExpr)

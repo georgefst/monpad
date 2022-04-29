@@ -26,7 +26,7 @@ plugin = Plugin . sendLayout @() @()
 
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
-    { updates = \env -> SP.fromAsync do
+    { updates = \env -> do
         let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
         flip foldMap exprs \(name, expr) -> do
             imports <- dhallImports expr

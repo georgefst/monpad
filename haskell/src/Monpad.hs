@@ -59,7 +59,7 @@ import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
 import Deriving.Aeson (CustomJSON (CustomJSON))
 import GHC.Generics (Generic)
-import Generic.Data (Generically (..))
+import GHC.Records (HasField (getField))
 import Linear (V2 (..))
 import Lucid hiding (for_)
 import Lucid qualified as Html
@@ -236,9 +236,6 @@ runMonpad ls c e s mon = runExceptT $ evalStateT
 data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
     deriving (Eq, Show)
 
-{-TODO impredicative types should allow us to use a forall for the stream type
-getting rid of some 'asyncly', 'serially' boilerplate
--}
 -- | `e` is a fixed environment. 's' is an updateable state.
 data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO ()
@@ -247,12 +244,29 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: MonpadException -> ClientID -> e -> IO ()
     , onPong :: NominalDiffTime -> ClientID -> e -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: MonpadEnv e a b -> SP.Serial [ServerUpdate a b]
+    , updates :: forall m. (SP.IsStream m, MonadIO (m IO)) => MonpadEnv e a b -> m IO [ServerUpdate a b]
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
-    deriving Generic
-    deriving (Semigroup, Monoid) via Generically (ServerConfig e s a b)
+--TODO find some way to remove this boilerplate (we can't derive Generic because of the higher-rank type of `updates`)
+instance (Semigroup e, Semigroup s) => Semigroup (ServerConfig e s a b) where
+    sc1 <> sc2 = ServerConfig
+        { onStart = sc1.onStart <> sc2.onStart
+        , onNewConnection = sc1.onNewConnection <> sc2.onNewConnection
+        , onDroppedConnection = sc1.onDroppedConnection <> sc2.onDroppedConnection
+        , onPong = sc1.onPong <> sc2.onPong
+        , updates = sc1.updates' <> sc2.updates'
+        , onUpdate = sc1.onUpdate <> sc2.onUpdate
+        }
+instance (Monoid e, Monoid s) => Monoid (ServerConfig e s a b) where
+    mempty = ServerConfig
+        { onStart = mempty
+        , onNewConnection = mempty
+        , onDroppedConnection = mempty
+        , onPong = mempty
+        , updates = mempty
+        , onUpdate = mempty
+        }
 
 -- | Run two `ServerConfig`s with different states and environments.
 combineConfs :: ServerConfig e1 s1 a b -> ServerConfig e2 s2 a b -> ServerConfig (e1, e2) (s1, s2) a b
@@ -270,9 +284,9 @@ combineConfs sc1 sc2 = ServerConfig
         <<*>> sc1.onPong
         <<*>> sc2.onPong
     , updates = \e ->
-        sc1.updates (over #extra fst e)
+        sc1.updates' (over #extra fst e)
             <>
-        sc2.updates (over #extra snd e)
+        sc2.updates' (over #extra snd e)
     , onUpdate = pure f
         <*> sc1.onUpdate
         <*> sc2.onUpdate
@@ -518,3 +532,9 @@ currentLayoutMaybe = lens
 
 currentLayoutError :: Layout a b
 currentLayoutError = error "current layout is not in map!"
+
+-- TODO we can't have instances for impredicative types: https://gitlab.haskell.org/ghc/ghc/-/issues/20188
+-- workaround from https://gitlab.haskell.org/ghc/ghc/-/wikis/Functional-dependencies-in-GHC/Key-examples#example-6-liberal-can-get-you-dysfunctional
+-- TODO we can't even use the name "updates": https://gitlab.haskell.org/ghc/ghc/-/issues/18776
+instance (SP.IsStream m, MonadIO (m IO), HasField "updates'" (ServerConfig e s a b) (MonpadEnv e a b -> m IO [ServerUpdate a b])) => HasField "updates'" (ServerConfig e s a b) (MonpadEnv e a b -> m IO [ServerUpdate a b]) where
+    getField ServerConfig{updates} = updates

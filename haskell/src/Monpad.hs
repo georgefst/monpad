@@ -385,7 +385,6 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                 See: https://github.com/composewell/streamly/issues/1203.
                 We instead use an ad-hoc, simpler, monad stack, and only lift to `Monpad` once we're back to `Serial`.
                 -}
-                allUpdates :: SP.SerialT (ReaderT (MonpadEnv e a b) IO) (Either MonpadException [Update a b])
                 allUpdates = SP.fromAsync $
                     (pure . ClientUpdate <<$>> clientUpdates)
                         <> (pure . map ServerUpdate <$> serverUpdates)

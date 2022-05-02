@@ -154,11 +154,10 @@ main = do
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
         Nothing -> if systemDevice
-            --TODO with `ImpredicativeTypes`, we can remove the explicit lambdas here and go point-free
-            then mkLayouts write dhallLayouts >>= \ls ->
-                withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) $ runPlugin ls
-            else mkLayouts write dhallLayouts >>= \ls ->
-                withPlugin (plugin @() ()) $ runPlugin ls
+            then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
+                =<< mkLayouts write dhallLayouts
+            else withPlugin (plugin @() ()) . runPlugin
+                =<< mkLayouts write dhallLayouts
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
@@ -168,8 +167,8 @@ main = do
                 $ maybe id ((:) . QR.plugin write) qrPath
                 $ maybe id ((:) . Logger.plugin write) verbosity
                 []
-            runPlugin :: Layouts a b -> ServerConfig e s a b -> IO ()
-            runPlugin = server write pingFrequency port loginImageUrl assetsDir
+            runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
+            runPlugin ls = server write pingFrequency port loginImageUrl assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

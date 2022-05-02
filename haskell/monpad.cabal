@@ -74,6 +74,7 @@ common common
         GADTs
         GeneralizedNewtypeDeriving
         ImportQualifiedPost
+        ImpredicativeTypes
         LambdaCase
         MultiParamTypeClasses
         NamedFieldPuns

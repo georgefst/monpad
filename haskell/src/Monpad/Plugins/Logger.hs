@@ -8,7 +8,7 @@ import System.Console.ANSI
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
-import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShow, pShowOpt)
+import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShow, pShowOpt, pPrint)
 
 import Monpad
 import Monpad.Plugins
@@ -44,7 +44,8 @@ logImportantStuff write = mempty
     , onNewConnection = \_ (ClientID i) -> do
         write.log $ "New client: " <> i
         mempty
-    , onDroppedConnection = \_ (ClientID i) _ ->
+    , onDroppedConnection = \e (ClientID i) _ -> do
+        pPrint e
         write.log $ "Client disconnected: " <> i
     }
 

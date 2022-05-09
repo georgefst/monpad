@@ -38,7 +38,7 @@ ws.onopen = _event => {
     }
 
     // update messages
-    app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
+    app.ports.sendUpdatePort.subscribe(message => ws.send(Uint8Array.from(message)))
     ws.addEventListener("message", event => {
         const send = () => app.ports.receiveUpdatePort.send(JSON.parse(event.data))
         if (elmInitialised) {

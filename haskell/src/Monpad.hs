@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveTraversable #-}
 module Monpad (
     server,
     serverExtWs,
@@ -11,8 +12,10 @@ module Monpad (
     ServerConfig (..),
     combineConfs,
     ClientID (..),
-    Update (..),
-    ClientUpdate (..),
+    Update,
+    Update' (..),
+    ClientUpdate,
+    ClientUpdate' (..),
     ServerUpdate (..),
     ResetLayout (..),
     V2 (..),
@@ -22,7 +25,7 @@ module Monpad (
     internalElementTag,
     module Layout,
     module ServerUpdate,
-) where
+ElementHash(..)) where
 
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -50,7 +53,7 @@ import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time
@@ -86,6 +89,17 @@ import Orphans.Generic ()
 import ServerUpdate
 import Util
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
+import Data.Word
+import Data.Either.Extra
+import Debug.Pretty.Simple (pTraceShowId, pTraceShow)
+import Data.Hash.Murmur
+import qualified Data.Binary.Get as B
+import qualified Data.ByteString.Lazy as BL
+import Text.Pretty.Simple
+import qualified Data.ByteString.Lazy as BSL
+
 newtype ClientID = ClientID {unwrap :: Text}
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
@@ -104,25 +118,57 @@ data Clients = Clients
     }
     deriving (Generic)
 
-data Update a b
-    = ClientUpdate ClientUpdate
+type Update a b = Update' a b ElementID
+
+data Update' a b i
+    = ClientUpdate (ClientUpdate' i)
     | ServerUpdate (ServerUpdate a b)
-    deriving (Show)
+    deriving (Show, Functor, Foldable, Traversable)
+
+type ClientUpdate = ClientUpdate' ElementID
 
 -- | A message sent by a client.
-data ClientUpdate
-    = ButtonUp ElementID
-    | ButtonDown ElementID
-    | StickMove ElementID (V2 Double) -- always a vector within the unit circle
-    | SliderMove ElementID Double -- between 0 and 1
-    | InputBool ElementID Bool
-    | InputNumber ElementID Double
-    | InputText ElementID Text
-    | SubmitInput ElementID -- for number and text inputs
+data ClientUpdate' i
+    = ButtonUp i
+    | ButtonDown i
+    | StickMove i (V2 Double) -- always a vector within the unit circle
+    | SliderMove i Double -- between 0 and 1
+    | InputBool i Bool
+    | InputNumber i Double
+    | InputText i Text
+    | SubmitInput i -- for number and text inputs
     | Pong Text
     -- ^ See 'ServerUpdate.Ping'.
-    deriving (Eq, Ord, Show, Generic)
-    deriving (FromJSON) via CustomJSON Opts.JSON ClientUpdate
+    deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+deriving via CustomJSON Opts.JSON ClientUpdate instance (ToJSON ClientUpdate)
+--TODO testing only - remove
+deriving via CustomJSON Opts.JSON ClientUpdate instance (FromJSON ClientUpdate)
+
+newtype ElementHash = ElementHash Word32
+    deriving (Eq, Ord, Show)
+hashElementID :: ElementID -> ElementHash
+hashElementID = ElementHash . fromIntegral . murmur3 0 . encodeUtf8 . (.unwrap)
+-- hashElementID = ElementHash . const 42
+
+--TODO use structured error type
+decodeUpdate :: BL.ByteString -> Either Text (ClientUpdate' ElementHash)
+decodeUpdate = bimap (TL.toStrict . pShow) thd3 . B.runGetOrFail do
+    B.getWord8 >>= \case
+        0 -> ButtonUp <$> getElemHash
+        1 -> ButtonDown <$> getElemHash
+        2 -> StickMove <$> getElemHash <*> getVec
+        3 -> SliderMove <$> getElemHash <*> B.getDoublele
+        4 -> InputBool <$> getElemHash <*> getBool
+        5 -> InputNumber <$> getElemHash <*> B.getDoublele
+        6 -> InputText <$> getElemHash <*> getRemainingText
+        7 -> SubmitInput <$> getElemHash
+        8 -> Pong <$> getRemainingText
+        _ -> fail "unknown constructor"
+  where
+    getElemHash = ElementHash <$> B.getWord32le
+    getVec = V2 <$> B.getDoublele <*> B.getDoublele
+    getBool = (/= 0) <$> B.getWord8
+    getRemainingText = decodeUtf8 . BSL.toStrict <$> B.getRemainingLazyByteString
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
@@ -219,6 +265,7 @@ data MonpadState s a b = MonpadState
     { layouts :: Map LayoutID (Layout a b)
     , layout :: LayoutID
     -- ^ this is always a key in 'layouts'
+    , hashes :: Map LayoutID (Map ElementHash ElementID) --TODO use a HashSet rather than a Map? (need to ensure consistent hashes)
     , extra :: s
     }
     deriving (Show, Generic)
@@ -230,10 +277,12 @@ runMonpad ls c e s mon = runExceptT $ evalStateT
         mon.unwrap
         (MonpadEnv c layoutMap e)
     )
-    (MonpadState (fst <$> layoutMap) (fst $ NE.head ls).name s)
+    (MonpadState (fst <$> layoutMap) (fst $ NE.head ls).name hashes s)
   where
+    hashes = Map.fromList . NE.toList $ ls <&> \(l,_) ->
+        (l.name, Map.fromList $ l.elements <&> \el -> (hashElementID el.name, el.name))
     layoutMap = Map.fromList . NE.toList $ (((.name) . fst) &&& id) <$> ls
-data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
+data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException Text
     deriving (Eq, Show)
 
 -- | `e` is a fixed environment. 's' is an updateable state.
@@ -438,8 +487,9 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                                         (currentLayout % el i % #hidden) .= True
                                     ShowElement i ->
                                         (currentLayout % el i % #hidden) .= False
-                                    AddElement x ->
+                                    AddElement x -> do
                                         (currentLayout % #elements) %= (x :)
+                                        currentLayout' %= Map.insert (hashElementID x.name) x.name
                                     RemoveElement i ->
                                         (currentLayout % #elements) %= filter ((/= i) . view #name)
                                     SetBackgroundColour x ->
@@ -491,13 +541,21 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                     )
                 . runMonpad layouts clientId e s0
                 . SP.drain
-                . SP.mapM (handleUpdates <=< either throwError pure)
+                . SP.mapM handleUpdates
+                . SP.mapM
+                    ( traverse \u -> do
+                        hs <- use #hashes
+                        l <- use #layout
+                        let r = for u \h -> Map.lookup h =<< Map.lookup l hs
+                        maybe (throwError $ UpdateDecodeException "lookup failed") pure r
+                    )
+                . SP.mapM (either throwError pure)
                 . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
                 $ allUpdates
           where
             sendUpdates conn = liftIO . WS.sendTextData conn . encode
             getUpdate conn =
-                (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
+                (first UpdateDecodeException . decodeUpdate <=< first WebSocketException)
                     <$> liftIO (try $ WS.receiveData conn)
   where
     rejectAndLog err = do
@@ -528,6 +586,14 @@ currentLayoutMaybe :: Lens' (MonpadState s a b) (Maybe (Layout a b))
 currentLayoutMaybe = lens
     (\s -> view #layouts s !? view #layout s)
     (\s l -> s & over #layouts (maybe id (Map.insert $ view #layout s) l))
+
+currentLayout' :: AffineTraversal' (MonpadState s a b) (Map ElementHash ElementID)
+currentLayout' = currentLayoutMaybe' % _Just
+
+currentLayoutMaybe' :: Lens' (MonpadState s a b) (Maybe (Map ElementHash ElementID))
+currentLayoutMaybe' = lens
+    (\s -> view #hashes s !? view #layout s)
+    (\s l -> s & over #hashes (maybe id (Map.insert $ view #layout s) l))
 
 currentLayoutError :: Layout a b
 currentLayoutError = error "current layout is not in map!"

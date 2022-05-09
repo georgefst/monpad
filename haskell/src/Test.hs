@@ -21,6 +21,13 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Monpad
 import Monpad.Plugins
 
+import Data.Aeson
+import Data.ByteString.Lazy qualified as BS
+import Text.Pretty.Simple
+import Data.Hash.Murmur (murmur3)
+import Data.Word (Word8)
+import Numeric (showHex)
+
 dhallLayoutDefault :: Text
 dhallLayoutDefault = "../dhall/textinput.dhall"
 
@@ -70,3 +77,33 @@ testExt = do
 
 write :: Logger
 write = join Logger T.putStrLn
+
+main :: IO ()
+main = do
+    -- let x = encode $ ButtonUp (ElementID "e1")
+    let x = encode $ StickMove (ElementID "somelongishname") $ V2 (1 / 7) (1 / 9)
+    pPrintForceColor $ fromIntegral @_ @Double (BS.length x) * 30 * 10 / 1000
+    pPrintForceColor x
+
+    let y = encode $ StickMove (ElementID "somelongishname") $ V2 (1 / 7) (1 / 9)
+    pPrintForceColor $ fromIntegral @_ @Double (BS.length y) * 30 * 10 / 1000
+    pPrintForceColor y
+    -- pPrintForceColor (fromIntegral $ murmur3 0 "Stick" :: Word8)
+
+    -- collision
+    -- pPrintForceColor (fromIntegral $ murmur3 0 "Stick" :: Word8)
+    -- pPrintForceColor (fromIntegral $ murmur3 0 "Menu" :: Word8)
+    -- pPrintForceColor (murmur3 0 "Stick")
+    -- pPrintForceColor (murmur3 0 "Menu")
+    -- pPrintForceColor (fromIntegral $ murmur3 0 "Blue" :: Word8)
+
+    -- pPrintForceColor $ flip showHex "" $ murmur3 0 "Blue"
+    -- pPrintForceColor $ map (flip showHex "")
+    --     [ 0
+    --     , 186
+    --     , 26
+    --     , 145
+    --     , 226
+    --     ]
+
+    pure ()

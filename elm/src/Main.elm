@@ -274,7 +274,12 @@ viewStick name stick toOffset stickPos =
                 length =
                     min range <| Vec2.length v0
             in
-            Vec2.normalize v0 |> Vec2.scale (length / range)
+            if length == 0 then
+                vec2 0 0
+                -- (== v0)
+
+            else
+                Vec2.normalize v0 |> Vec2.scale (length / range)
 
         big =
             circle range |> styled1 stick.backgroundColour

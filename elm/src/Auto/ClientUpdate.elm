@@ -14,7 +14,7 @@ type ClientUpdate
     | StickMove String Math.Vector2.Vec2
     | SliderMove String Float
     | InputBool String Bool
-    | InputNumber String Float
+    | InputNumber String Int
     | InputText String String
     | SubmitInput String
     | Pong String
@@ -43,7 +43,7 @@ encode a =
 
         InputNumber b c ->
             Json.Encode.object [ ("InputNumber" , Json.Encode.list identity [ Json.Encode.string b
-            , Json.Encode.float c ]) ]
+            , Json.Encode.int c ]) ]
 
         InputText b c ->
             Json.Encode.object [ ("InputText" , Json.Encode.list identity [ Json.Encode.string b

@@ -471,7 +471,7 @@ viewInput name inp =
                         InputType.Number _ ->
                             onInput <|
                                 \s ->
-                                    case String.toFloat s of
+                                    case String.toInt s of
                                         Just f ->
                                             ClientUpdate <| InputNumber name f
 

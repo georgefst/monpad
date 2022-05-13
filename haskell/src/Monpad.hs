@@ -116,7 +116,7 @@ data ClientUpdate
     | StickMove ElementID (V2 Double) -- always a vector within the unit circle
     | SliderMove ElementID Double -- between 0 and 1
     | InputBool ElementID Bool
-    | InputNumber ElementID Double
+    | InputNumber ElementID Int
     | InputText ElementID Text
     | SubmitInput ElementID -- for number and text inputs
     | Pong Text

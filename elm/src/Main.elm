@@ -5,6 +5,7 @@ import Auto.ClientUpdate exposing (..)
 import Auto.Colour exposing (..)
 import Auto.Element as Element
 import Auto.ElmFlags exposing (..)
+import Auto.Encoding exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.Image exposing (..)
 import Auto.Indicator exposing (..)
@@ -560,6 +561,7 @@ type alias Model =
     { username : String
     , windowSize : IntVec2
     , fullscreen : Bool
+    , encoding : Encoding
     , supportsFullscreen : Bool
     , startTime : Posix
     , layout : LayoutState -- the active layout
@@ -626,6 +628,7 @@ load flags =
                                           , layout = loadLayout layout
                                           , windowSize = viewport
                                           , fullscreen = False
+                                          , encoding = flags.encoding
                                           , supportsFullscreen = flags.supportsFullscreen
                                           , startTime = startTime
                                           , initialLayouts = layouts |> Dict.map (always <| \x -> x.layout)
@@ -685,7 +688,7 @@ update msg model =
                         Pong _ ->
                             model
             in
-            ( model1, sendUpdate u )
+            ( model1, sendUpdate model.encoding u )
 
         ServerUpdate u ->
             serverUpdate u model

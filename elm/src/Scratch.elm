@@ -5,6 +5,7 @@ module Scratch exposing (..)
 
 import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
+import Auto.Encoding exposing (..)
 import Auto.FullElement exposing (..)
 import Auto.ResetLayout exposing (..)
 import Auto.ServerUpdate exposing (..)
@@ -106,6 +107,7 @@ sub cycleLength tickMs model f =
 flags : ElmFlags
 flags =
     { username = "GT"
+    , encoding = JSONEncoding
     , supportsFullscreen = False
     , layouts =
         [ { elements =

@@ -14,9 +14,13 @@ port module Ports exposing
 -}
 
 import Auto.ClientUpdate exposing (ClientUpdate)
+import Auto.Encoding exposing (Encoding(..))
 import Auto.ServerUpdate exposing (ServerUpdate)
+import Binary
+import Bytes.Encode as BE
 import Json.Decode as JD
 import Json.Encode as JE
+import Util.EncodeBytes
 
 
 goFullscreen : Cmd msg
@@ -38,12 +42,22 @@ port fullscreenChangePort :
     -> Sub msg
 
 
-sendUpdate : ClientUpdate -> Cmd msg
-sendUpdate =
-    sendUpdatePort << Auto.ClientUpdate.encode
+sendUpdate : Encoding -> ClientUpdate -> Cmd msg
+sendUpdate enc =
+    case enc of
+        JSONEncoding ->
+            sendUpdatePortJSON << Auto.ClientUpdate.encode
+
+        BinaryEncoding ->
+            sendUpdatePortBinary << Util.EncodeBytes.bytesToList << BE.encode << Binary.clientUpdateEncoder
 
 
-port sendUpdatePort :
+port sendUpdatePortBinary :
+    List Int
+    -> Cmd msg
+
+
+port sendUpdatePortJSON :
     JE.Value
     -> Cmd msg
 

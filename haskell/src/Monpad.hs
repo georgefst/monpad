@@ -7,12 +7,16 @@ module Monpad (
     MonpadEnv (..),
     MonpadState (..),
     Logger (..),
+    Encoding (..),
     getCurrentLayout,
     ServerConfig (..),
     combineConfs,
     ClientID (..),
-    Update (..),
-    ClientUpdate (..),
+    ElementHash(..),
+    Update,
+    Update' (..),
+    ClientUpdate,
+    ClientUpdate' (..),
     ServerUpdate (..),
     ResetLayout (..),
     V2 (..),
@@ -36,8 +40,12 @@ import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.Binary.Get qualified as B
+import Data.ByteString.Lazy qualified as BSL
 import Data.Functor
+import Data.Hash.Murmur
 import Data.IORef
+import Data.Int
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
@@ -50,13 +58,14 @@ import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (decodeUtf8', encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
+import Data.Word
 import Deriving.Aeson (CustomJSON (CustomJSON))
 import GHC.Generics (Generic)
 import GHC.Records (HasField (getField))
@@ -104,30 +113,64 @@ data Clients = Clients
     }
     deriving (Generic)
 
-data Update a b
-    = ClientUpdate ClientUpdate
+type Update a b = Update' a b ElementID
+data Update' a b i
+    = ClientUpdate (ClientUpdate' i)
     | ServerUpdate (ServerUpdate a b)
-    deriving (Show)
+    deriving (Show, Functor, Foldable, Traversable)
 
 -- | A message sent by a client.
-data ClientUpdate
-    = ButtonUp ElementID
-    | ButtonDown ElementID
-    | StickMove ElementID (V2 Double) -- always a vector within the unit circle
-    | SliderMove ElementID Double -- between 0 and 1
-    | InputBool ElementID Bool
-    | InputNumber ElementID Int
-    | InputText ElementID Text
-    | SubmitInput ElementID -- for number and text inputs
+type ClientUpdate = ClientUpdate' ElementID
+data ClientUpdate' m
+    = ButtonUp m
+    | ButtonDown m
+    | StickMove m (V2 Double) -- always a vector within the unit circle
+    | SliderMove m Double -- between 0 and 1
+    | InputBool m Bool
+    | InputNumber m Int32
+    | InputText m Text
+    | SubmitInput m -- for number and text inputs
     | Pong Text
     -- ^ See 'ServerUpdate.Ping'.
+    deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+    deriving (FromJSON) via CustomJSON Opts.JSON (ClientUpdate' m)
+
+data Encoding
+    = JSONEncoding
+    | BinaryEncoding
+    deriving (Show, Generic)
+    deriving (ToJSON) via CustomJSON Opts.JSON Encoding
+
+newtype ElementHash = ElementHash Word32
     deriving (Eq, Ord, Show, Generic)
-    deriving (FromJSON) via CustomJSON Opts.JSON ClientUpdate
+    deriving (FromJSON) via CustomJSON Opts.JSON ElementHash
+hashElementID :: ElementID -> ElementHash
+hashElementID = ElementHash . fromIntegral . murmur3 0 . encodeUtf8 . (.unwrap)
+
+decodeUpdate :: BSL.ByteString -> Either (BSL.ByteString, B.ByteOffset, String) (ClientUpdate' ElementHash)
+decodeUpdate = second thd3 . B.runGetOrFail do
+    B.getWord8 >>= \case
+        0 -> ButtonUp <$> getElemHash
+        1 -> ButtonDown <$> getElemHash
+        2 -> StickMove <$> getElemHash <*> getVec
+        3 -> SliderMove <$> getElemHash <*> B.getDoublele
+        4 -> InputBool <$> getElemHash <*> getBool
+        5 -> InputNumber <$> getElemHash <*> B.getInt32le
+        6 -> InputText <$> getElemHash <*> getRemainingText
+        7 -> SubmitInput <$> getElemHash
+        8 -> Pong <$> getRemainingText
+        _ -> fail "unknown constructor"
+  where
+    getElemHash = ElementHash <$> B.getWord32le
+    getVec = V2 <$> B.getDoublele <*> B.getDoublele
+    getBool = (/= 0) <$> B.getWord8
+    getRemainingText = either (fail . show) pure . decodeUtf8' . BSL.toStrict =<< B.getRemainingLazyByteString
 
 -- | The arguments with which the frontend is initialised.
 data ElmFlags = ElmFlags
     { layouts :: NonEmpty (Layout () ())
     , username :: Text
+    , encoding :: Encoding
     , supportsFullscreen :: Bool
     }
     deriving (Show, Generic)
@@ -168,8 +211,8 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
 
-mainHtml :: Layouts () () -> Port -> Html ()
-mainHtml layouts wsPort = doctypehtml_ $ mconcat
+mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
+mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
     [ meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     , style_ (commonCSS ())
     , style_ (appCSS ())
@@ -177,6 +220,7 @@ mainHtml layouts wsPort = doctypehtml_ $ mconcat
     , script_
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
+        , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
         , makeAttribute "wsPort" $ showT wsPort
         ]
         (jsJS ())
@@ -216,24 +260,28 @@ data MonpadEnv e a b = MonpadEnv
     }
     deriving (Show, Generic)
 data MonpadState s a b = MonpadState
-    { layouts :: Map LayoutID (Layout a b)
+    { layouts :: Map LayoutID (Layout a b, Map ElementHash ElementID)
     , layout :: LayoutID
     -- ^ this is always a key in 'layouts'
     , extra :: s
     }
     deriving (Show, Generic)
 getCurrentLayout :: Monpad e s a b (Layout a b)
-getCurrentLayout = gets $ fromMaybe currentLayoutError . view currentLayoutMaybe
+getCurrentLayout = gets $ fromMaybe currentLayoutError . fmap fst . view currentLayoutMaybe
 runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         mon.unwrap
-        (MonpadEnv c layoutMap e)
+        (MonpadEnv c ((fst3 &&& snd3) <$> layoutMap) e)
     )
-    (MonpadState (fst <$> layoutMap) (fst $ NE.head ls).name s)
+    (MonpadState ((fst3 &&& thd3) <$> layoutMap) (fst $ NE.head ls).name s)
   where
-    layoutMap = Map.fromList . NE.toList $ (((.name) . fst) &&& id) <$> ls
-data MonpadException = WebSocketException WS.ConnectionException | UpdateDecodeException String
+    layoutMap = Map.fromList . NE.toList $ ls <&> \(l, d) ->
+        (l.name, (l, d, Map.fromList $ ((hashElementID &&& id) . (.name)) <$> l.elements))
+data MonpadException
+    = WebSocketException WS.ConnectionException
+    | UpdateDecodeException BSL.ByteString B.ByteOffset String
+    | JSONUpdateDecodeException String
     deriving (Eq, Show)
 
 -- | `e` is a fixed environment. 's' is an updateable state.
@@ -301,23 +349,25 @@ combineConfs sc1 sc2 = ServerConfig
 server ::
     Logger ->
     Int ->
+    Encoding ->
     Port ->
     Maybe Text ->
     Maybe FilePath ->
     Layouts a b ->
     ServerConfig e s a b ->
     IO ()
-server write pingFrequency port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server write pingFrequency encoding port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir (first biVoid <$> layouts) (Just clients)
-            :<|> websocketServer write pingFrequency layouts conf clients
+        httpServer port loginImage assetsDir encoding (first biVoid <$> layouts) (Just clients)
+            :<|> websocketServer write pingFrequency encoding layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
     -- | Callback to handle server address
     (Text -> IO ()) ->
+    Encoding ->
     -- | HTTP port
     Port ->
     -- | WS port
@@ -326,22 +376,22 @@ serverExtWs ::
     Maybe FilePath ->
     Layouts () () ->
     IO ()
-serverExtWs onStart httpPort wsPort loginImage assetsDir layouts = do
+serverExtWs onStart encoding httpPort wsPort loginImage assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir layouts clients
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir encoding layouts clients
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Layouts () () -> Maybe Clients -> Server HttpApi
-httpServer wsPort loginImage assetsDir layouts mclients = core :<|> assets
+httpServer :: Port -> Maybe Text -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
+httpServer wsPort loginImage assetsDir encoding layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
         Nothing -> pure $ loginHtml Nothing loginImage
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml (Just err) loginImage) (\() -> mainHtml layouts wsPort) <$> runExceptT do
+            either (\err -> loginHtml (Just err) loginImage) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do
@@ -360,11 +410,12 @@ websocketServer ::
     forall e s a b.
     Logger ->
     Int ->
+    Encoding ->
     Layouts a b ->
     ServerConfig e s a b ->
     Clients ->
     Server WsApi
-websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending = liftIO case mu of
+websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu pending = liftIO case mu of
     Nothing -> rejectAndLog "no username parameter"
     Just clientId -> registerConnection clientId >>= \case
         False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
@@ -438,10 +489,12 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                                         (currentLayout % el i % #hidden) .= True
                                     ShowElement i ->
                                         (currentLayout % el i % #hidden) .= False
-                                    AddElement x ->
+                                    AddElement x -> do
                                         (currentLayout % #elements) %= (x :)
-                                    RemoveElement i ->
+                                        currentLayoutHashes %= Map.insert (hashElementID x.name) x.name
+                                    RemoveElement i -> do
                                         (currentLayout % #elements) %= filter ((/= i) . view #name)
+                                        currentLayoutHashes %= Map.delete (hashElementID i)
                                     SetBackgroundColour x ->
                                         (currentLayout % #backgroundColour) .= x
                                     SetIndicatorHollowness i x ->
@@ -491,13 +544,24 @@ websocketServer write pingFrequency layouts ServerConfig{..} clients mu pending 
                     )
                 . runMonpad layouts clientId e s0
                 . SP.drain
-                . SP.mapM (handleUpdates <=< either throwError pure)
+                . SP.mapM handleUpdates
+                . SP.mapM
+                    ( \us -> do
+                        l <- use #layout
+                        ls <- use #layouts
+                        let (!_, hashes) = fromMaybe (currentLayoutError, error "impossible") $ ls !? l
+                        pure $ either (fromMaybe (error "hash not found!") . (hashes !?)) id <<$>> us
+                    )
+                . SP.mapM (either throwError pure)
                 . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
                 $ allUpdates
           where
+            decode = case encoding of
+                BinaryEncoding -> bimap (uncurry3 UpdateDecodeException) (fmap Left) . decodeUpdate
+                JSONEncoding -> bimap JSONUpdateDecodeException (fmap Right) . eitherDecode
             sendUpdates conn = liftIO . WS.sendTextData conn . encode
             getUpdate conn =
-                (first UpdateDecodeException . eitherDecode <=< first WebSocketException)
+                (decode <=< first WebSocketException)
                     <$> liftIO (try $ WS.receiveData conn)
   where
     rejectAndLog err = do
@@ -522,9 +586,12 @@ internalElementTag = "_internal_"
 {- Util -}
 
 currentLayout :: AffineTraversal' (MonpadState s a b) (Layout a b)
-currentLayout = currentLayoutMaybe % _Just
+currentLayout = currentLayoutMaybe % _Just % _1
 
-currentLayoutMaybe :: Lens' (MonpadState s a b) (Maybe (Layout a b))
+currentLayoutHashes :: AffineTraversal' (MonpadState s a b) (Map ElementHash ElementID)
+currentLayoutHashes = currentLayoutMaybe % _Just % _2
+
+currentLayoutMaybe :: Lens' (MonpadState s a b) (Maybe (Layout a b, Map ElementHash ElementID))
 currentLayoutMaybe = lens
     (\s -> view #layouts s !? view #layout s)
     (\s l -> s & over #layouts (maybe id (Map.insert $ view #layout s) l))

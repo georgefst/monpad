@@ -51,6 +51,7 @@ test ps ls lsVoid = do
         $ server
             write
             1
+            JSONEncoding
             8000
             Nothing
             (Just "../dist/assets")
@@ -62,6 +63,7 @@ testExt = do
     Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
     serverExtWs
         mempty
+        JSONEncoding
         8000
         8001
         Nothing

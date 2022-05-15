@@ -64,6 +64,7 @@ elm pathToElm = writeDefs pathToElm $ mconcat
     , defAndDecoder @TextStyle
     , defAndDecoder @TextShadow
     , defAndDecoder @ResetLayout
+    , defAndDecoder @Encoding
     , defAndDecoder @ElmFlags
     , defAndDecoder @ViewBox
     , defAndDecoder @Colour
@@ -187,6 +188,11 @@ deriving instance SOP.Generic ResetLayout
 deriving instance SOP.HasDatatypeInfo ResetLayout
 deriving via Via ResetLayout instance HasElmType ResetLayout
 deriving via Via ResetLayout instance HasElmDecoder J.Value ResetLayout
+
+deriving instance SOP.Generic Encoding
+deriving instance SOP.HasDatatypeInfo Encoding
+deriving via Via Encoding instance HasElmType Encoding
+deriving via Via Encoding instance HasElmDecoder J.Value Encoding
 
 deriving instance SOP.Generic ElmFlags
 deriving instance SOP.HasDatatypeInfo ElmFlags

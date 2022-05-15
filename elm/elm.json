@@ -10,6 +10,7 @@
             "alex-tan/loadable": "3.1.2",
             "avh4/elm-color": "1.0.0",
             "elm/browser": "1.0.2",
+            "elm/bytes": "1.0.8",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
             "elm/json": "1.1.3",
@@ -20,10 +21,10 @@
             "elm-explorations/linear-algebra": "1.0.3",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "noahzgordon/elm-color-extra": "1.0.2",
+            "robinheghan/murmur3": "1.0.0",
             "timjs/elm-collage": "3.0.0"
         },
         "indirect": {
-            "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/regex": "1.0.0",
             "elm/svg": "1.0.1",

@@ -45,6 +45,7 @@ data Args = Args
     , assetsDir :: Maybe FilePath
     , layoutExprs :: [Text]
     , externalWS :: Maybe Port
+    , encoding :: Encoding
     , qrPath :: Maybe FilePath
     , pingFrequency :: Int
     , displayPing :: Bool
@@ -131,6 +132,10 @@ parser = do
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
             \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
         ]
+    encoding <- flag BinaryEncoding JSONEncoding $ mconcat
+        [ long "json"
+        , help "Send messages as JSON, instead of more compact binary encoding."
+        ]
     loginImageUrl <- optional . strOption $ mconcat
         [ long "login-image"
         , metavar "URL"
@@ -149,7 +154,7 @@ main = do
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             }
     case externalWS of
-        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) port wsPort loginImageUrl assetsDir
+        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) encoding port wsPort loginImageUrl assetsDir
             =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
@@ -168,7 +173,7 @@ main = do
                 $ maybe id ((:) . Logger.plugin write) verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write pingFrequency port loginImageUrl assetsDir ls
+            runPlugin ls = server write pingFrequency encoding port loginImageUrl assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

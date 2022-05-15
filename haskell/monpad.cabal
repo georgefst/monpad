@@ -33,6 +33,7 @@ common common
         georgefst-utils,
         base >= 4.16,
         ansi-terminal ^>= 0.11.1,
+        binary ^>= 0.8.9,
         bytestring ^>= {0.10.8, 0.11},
         composition ^>= 1.0.2.1,
         concurrent-extra ^>= 0.7.0.12,
@@ -45,6 +46,7 @@ common common
         linear ^>= 1.21,
         monad-loops ^>= 0.4.3,
         mtl ^>= 2.2.2,
+        murmur3 ^>= 1.0.5,
         optics ^>= 0.4,
         optics-extra ^>= 0.4,
         pretty-simple ^>= 4.1,
@@ -59,12 +61,14 @@ common common
     default-language: Haskell2010
     default-extensions:
         AllowAmbiguousTypes
+        BangPatterns
         BlockArguments
         ConstraintKinds
         DataKinds
         DeriveAnyClass
         DeriveFunctor
         DeriveGeneric
+        DeriveTraversable
         DerivingStrategies
         DerivingVia
         DuplicateRecordFields

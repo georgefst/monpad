@@ -10,13 +10,14 @@ ws.onclose = event => {
 }
 
 const layouts = JSON.parse(attr("layouts"))
+const encoding = JSON.parse(attr("encoding"))
 
 ws.onopen = _event => {
     // Elm
     elmInitialised = false
     const app = Elm.Main.init({
         flags: {
-            username, layouts,
+            username, layouts, encoding,
             supportsFullscreen: document.documentElement.requestFullscreen != null
         }
     })
@@ -38,7 +39,8 @@ ws.onopen = _event => {
     }
 
     // update messages
-    app.ports.sendUpdatePort.subscribe(message => ws.send(JSON.stringify(message)))
+    app.ports.sendUpdatePortJSON.subscribe(message => ws.send(JSON.stringify(message)))
+    app.ports.sendUpdatePortBinary.subscribe(message => ws.send(Uint8Array.from(message)))
     ws.addEventListener("message", event => {
         const send = () => app.ports.receiveUpdatePort.send(JSON.parse(event.data))
         if (elmInitialised) {

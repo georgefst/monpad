@@ -214,10 +214,11 @@ loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
                 EmptyUsername ->
                     "Empty usernames are not allowed!"
                 (DuplicateUsername fully (ClientID u)) ->
-                    "The username " <> fromString (T.unpack u) <> " is already in use!"
+                    "The username " <> fs u <> " is already in use!"
                         <> if fully then mempty else " (though not fully connected)"
             ]
   where
+    fs = fromString . T.unpack
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 

@@ -146,22 +146,29 @@ parser = do
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    Args{..} <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
+    args <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+    dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack args.layoutExprs
     stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
     let write = Logger
             { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             }
         loginOpts = LoginPageOpts
-            { imageUrl = loginImageUrl
+            { imageUrl = args.loginImageUrl
             }
-    case externalWS of
-        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) encoding port wsPort loginOpts assetsDir
-            =<< mkLayouts write dhallLayouts
+    case args.externalWS of
+        Just wsPort ->
+            serverExtWs
+                (maybe mempty writeQR args.qrPath)
+                args.encoding
+                args.port
+                wsPort
+                loginOpts
+                args.assetsDir
+                =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
-        Nothing -> if systemDevice
+        Nothing -> if args.systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
             else withPlugin (plugin @() ()) . runPlugin
@@ -169,14 +176,14 @@ main = do
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
-                $ applyWhen displayPing (PingIndicator.plugin scale :)
-                $ applyWhen watchLayout (WatchLayout.plugin write :)
-                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin scale unknown :)
-                $ maybe id ((:) . QR.plugin write) qrPath
-                $ maybe id ((:) . Logger.plugin write) verbosity
+                $ applyWhen args.displayPing (PingIndicator.plugin args.scale :)
+                $ applyWhen args.watchLayout (WatchLayout.plugin write :)
+                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin args.scale unknown :)
+                $ maybe id ((:) . QR.plugin write) args.qrPath
+                $ maybe id ((:) . Logger.plugin write) args.verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write pingFrequency encoding port loginOpts assetsDir ls
+            runPlugin ls = server write args.pingFrequency args.encoding args.port loginOpts args.assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

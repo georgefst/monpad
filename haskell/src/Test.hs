@@ -53,7 +53,7 @@ test ps ls lsVoid = do
             1
             JSONEncoding
             8000
-            Nothing
+            loginOpts
             (Just "../dist/assets")
             layouts
 
@@ -66,9 +66,15 @@ testExt = do
         JSONEncoding
         8000
         8001
-        Nothing
+        loginOpts
         (Just "../dist/assets")
         layouts
 
 write :: Logger
 write = join Logger T.putStrLn
+
+loginOpts :: LoginPageOpts
+loginOpts =
+    LoginPageOpts
+        { imageUrl = Nothing
+        }

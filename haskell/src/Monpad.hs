@@ -2,6 +2,7 @@
 module Monpad (
     server,
     serverExtWs,
+    LoginPageOpts(..),
     Monpad,
     runMonpad,
     MonpadEnv (..),
@@ -188,8 +189,12 @@ serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
     pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
-loginHtml :: Maybe UsernameError -> Maybe Text -> Html ()
-loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
+data LoginPageOpts = LoginPageOpts
+    { imageUrl :: Maybe Text
+    }
+
+loginHtml :: Maybe UsernameError -> LoginPageOpts -> Html ()
+loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ "monpad: login"
     , style_ (commonCSS ())
     , style_ (loginCSS ())
@@ -209,7 +214,7 @@ loginHtml err imageUrl = doctypehtml_ . body_ imageStyle . form_ [action_ $ symb
             ]
   where
     nameBoxId = "name"
-    imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) imageUrl
+    imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
 mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
@@ -351,16 +356,16 @@ server ::
     Int ->
     Encoding ->
     Port ->
-    Maybe Text ->
+    LoginPageOpts ->
     Maybe FilePath ->
     Layouts a b ->
     ServerConfig e s a b ->
     IO ()
-server write pingFrequency encoding port loginImage assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server write pingFrequency encoding port loginOpts assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginImage assetsDir encoding (first biVoid <$> layouts) (Just clients)
+        httpServer port loginOpts assetsDir encoding (first biVoid <$> layouts) (Just clients)
             :<|> websocketServer write pingFrequency encoding layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
@@ -372,26 +377,26 @@ serverExtWs ::
     Port ->
     -- | WS port
     Port ->
-    Maybe Text ->
+    LoginPageOpts ->
     Maybe FilePath ->
     Layouts () () ->
     IO ()
-serverExtWs onStart encoding httpPort wsPort loginImage assetsDir layouts = do
+serverExtWs onStart encoding httpPort wsPort loginOpts assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginImage assetsDir encoding layouts clients
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginOpts assetsDir encoding layouts clients
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
 
-httpServer :: Port -> Maybe Text -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
-httpServer wsPort loginImage assetsDir encoding layouts mclients = core :<|> assets
+httpServer :: Port -> LoginPageOpts -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
+httpServer wsPort loginOpts assetsDir encoding layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
-        Nothing -> pure $ loginHtml Nothing loginImage
+        Nothing -> pure $ loginHtml Nothing loginOpts
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml (Just err) loginImage) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
+            either (\err -> loginHtml (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do

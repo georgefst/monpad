@@ -153,8 +153,11 @@ main = do
             { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             }
+        loginOpts = LoginPageOpts
+            { imageUrl = loginImageUrl
+            }
     case externalWS of
-        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) encoding port wsPort loginImageUrl assetsDir
+        Just wsPort -> serverExtWs (maybe mempty writeQR qrPath) encoding port wsPort loginOpts assetsDir
             =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
@@ -173,7 +176,7 @@ main = do
                 $ maybe id ((:) . Logger.plugin write) verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write pingFrequency encoding port loginImageUrl assetsDir ls
+            runPlugin ls = server write pingFrequency encoding port loginOpts assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

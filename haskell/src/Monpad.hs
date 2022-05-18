@@ -3,6 +3,7 @@ module Monpad (
     server,
     serverExtWs,
     LoginPageOpts(..),
+    defaultLoginPageOpts,
     Monpad,
     runMonpad,
     MonpadEnv (..),
@@ -192,7 +193,11 @@ serverAddress port = do
 data LoginPageOpts = LoginPageOpts
     { imageUrl :: Maybe Text
     }
-
+    deriving (Generic)
+defaultLoginPageOpts :: LoginPageOpts
+defaultLoginPageOpts = LoginPageOpts
+    { imageUrl = Nothing
+    }
 loginHtml :: Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ "monpad: login"

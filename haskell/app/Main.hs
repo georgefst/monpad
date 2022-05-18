@@ -52,7 +52,10 @@ data Args = Args
     , pingFrequency :: Int
     , displayPing :: Bool
     , scale :: Double
+    , loginPageTitle :: Maybe Text
     , loginImageUrl :: Maybe Text
+    , loginUsernamePrompt :: Maybe Text
+    , loginSubmitButtonText :: Maybe Text
     }
 
 parser :: Parser Args
@@ -138,10 +141,25 @@ parser = do
         [ long "json"
         , help "Send messages as JSON, instead of more compact binary encoding."
         ]
+    loginPageTitle <- optional . strOption $ mconcat
+        [ long "login-title"
+        , metavar "STRING"
+        , help "Title for login page."
+        ]
     loginImageUrl <- optional . strOption $ mconcat
         [ long "login-image"
         , metavar "URL"
         , help "Background image for login page."
+        ]
+    loginUsernamePrompt <- optional . strOption $ mconcat
+        [ long "login-prompt"
+        , metavar "STRING"
+        , help "Username prompt for login page."
+        ]
+    loginSubmitButtonText <- optional . strOption $ mconcat
+        [ long "login-submit"
+        , metavar "STRING"
+        , help "Text on submit button for login page."
         ]
     pure Args{..}
 
@@ -156,7 +174,10 @@ main = do
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             }
         loginOpts = defaultLoginPageOpts
+            & maybe id (#pageTitle .~) args.loginPageTitle
             & maybe id (#imageUrl ?~) args.loginImageUrl
+            & maybe id (#usernamePrompt .~) args.loginUsernamePrompt
+            & maybe id (#submitButtonText .~) args.loginSubmitButtonText
     case args.externalWS of
         Just wsPort ->
             serverExtWs

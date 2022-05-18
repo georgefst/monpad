@@ -191,22 +191,28 @@ serverAddress port = do
     pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
 
 data LoginPageOpts = LoginPageOpts
-    { imageUrl :: Maybe Text
+    { pageTitle :: Text
+    , imageUrl :: Maybe Text
+    , usernamePrompt :: Text
+    , submitButtonText :: Text
     }
     deriving (Generic)
 defaultLoginPageOpts :: LoginPageOpts
 defaultLoginPageOpts = LoginPageOpts
-    { imageUrl = Nothing
+    { pageTitle = "monpad: login"
+    , imageUrl = Nothing
+    , usernamePrompt = "Username:"
+    , submitButtonText = "Go!"
     }
 loginHtml :: Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
-    [ title_ "monpad: login"
+    [ title_ $ fs opts.pageTitle
     , style_ (commonCSS ())
     , style_ (loginCSS ())
-    , label_ [Html.for_ nameBoxId] "Username:"
+    , label_ [Html.for_ nameBoxId] $ fs opts.usernamePrompt
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
-    , input_ [type_ "submit", value_ "Go!"]
+    , input_ [type_ "submit", value_ opts.submitButtonText]
     ] <> case err of
         Nothing -> []
         Just e ->

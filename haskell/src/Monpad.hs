@@ -196,7 +196,6 @@ data LoginPageOpts = LoginPageOpts
     , usernamePrompt :: Text
     , submitButtonText :: Text
     }
-    deriving (Generic)
 defaultLoginPageOpts :: LoginPageOpts
 defaultLoginPageOpts = LoginPageOpts
     { pageTitle = "monpad: login"

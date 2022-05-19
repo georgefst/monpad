@@ -173,11 +173,12 @@ main = do
             { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             }
-        loginOpts = defaultLoginPageOpts
-            & maybe id (#pageTitle .~) args.loginPageTitle
-            & maybe id (#imageUrl ?~) args.loginImageUrl
-            & maybe id (#usernamePrompt .~) args.loginUsernamePrompt
-            & maybe id (#submitButtonText .~) args.loginSubmitButtonText
+        loginOpts = LoginPageOpts
+            { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle
+            , imageUrl = args.loginImageUrl
+            , usernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt args.loginUsernamePrompt
+            , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText args.loginSubmitButtonText
+            }
     case args.externalWS of
         Just wsPort ->
             serverExtWs

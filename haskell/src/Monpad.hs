@@ -212,6 +212,8 @@ loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
     , input_ [type_ "submit", value_ opts.submitButtonText]
+    , br_ []
+    , input_ [type_ "color", name_ "colour"]
     ] <> case err of
         Nothing -> []
         Just e ->

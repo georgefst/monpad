@@ -5,12 +5,10 @@ module Main (main) where
 import Control.Monad
 import Data.Char
 import Data.Either.Extra
-import Data.Function
 import Data.Functor
 import Data.List
 import Data.List.Extra
 import Data.Maybe
-import Optics
 import Options.Applicative
 import System.Directory
 import System.Exit

@@ -13,6 +13,8 @@ module Monpad (
     getCurrentLayout,
     ServerConfig (..),
     combineConfs,
+    Client (..),
+    showClient,
     ClientID (..),
     ElementHash(..),
     Update,
@@ -44,6 +46,7 @@ import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Binary.Get qualified as B
 import Data.ByteString.Lazy qualified as BSL
+import Data.Colour qualified as Colour
 import Data.Functor
 import Data.Hash.Murmur
 import Data.IORef
@@ -86,6 +89,7 @@ import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
 import Streamly.Internal.Data.Stream.IsStream qualified as SP (hoist)
+import System.Console.ANSI
 import Streamly.Prelude qualified as SP
 import System.IO
 import Util.Util
@@ -94,12 +98,22 @@ import Embed
 import Layout
 import Opts qualified
 import Orphans.Generic ()
+import Orphans.Servant.Colour ()
 import ServerUpdate
 import Util
 
+data Client = Client
+    { id :: ClientID
+    , colour :: Maybe (Colour.Colour Float)
+    }
+    deriving (Eq, Show)
 newtype ClientID = ClientID {unwrap :: Text}
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
+showClient :: Bool -> Client -> Text
+showClient ansiColour client = applyWhen ansiColour (maybe id withTermCols client.colour) client.id.unwrap
+  where
+    withTermCols c = (<> T.pack (setSGRCode [])) . (T.pack (setSGRCode [SetRGBColor Background c]) <>)
 data UsernameError
     = EmptyUsername
     | DuplicateUsername
@@ -180,10 +194,11 @@ data ElmFlags = ElmFlags
 
 type Root = "monpad"
 type UsernameParam = "username"
+type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = Root :> (CoreApi :<|> AssetsApi)
-type WsApi = QueryParam UsernameParam ClientID :> WebSocketPending
+type WsApi = QueryParam UsernameParam ClientID :> QueryParam ColourParam (Colour.Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do
@@ -272,7 +287,7 @@ newtype Monpad e s a b x = Monpad
         )
     deriving (Semigroup, Monoid) via Ap (Monpad e s a b) x
 data MonpadEnv e a b = MonpadEnv
-    { client :: ClientID
+    { client :: Client
     , initialLayouts :: Map LayoutID (Layout a b, Maybe DhallExpr)
     , extra :: e
     }
@@ -286,7 +301,7 @@ data MonpadState s a b = MonpadState
     deriving (Show, Generic)
 getCurrentLayout :: Monpad e s a b (Layout a b)
 getCurrentLayout = gets $ fromMaybe currentLayoutError . fmap fst . view currentLayoutMaybe
-runMonpad :: Layouts a b -> ClientID -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
+runMonpad :: Layouts a b -> Client -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
         mon.unwrap
@@ -306,9 +321,9 @@ data MonpadException
 data ServerConfig e s a b = ServerConfig
     { onStart :: Text -> IO ()
     -- ^ do something with the URL, when the server starts
-    , onNewConnection :: Layouts a b -> ClientID -> IO (e, s, [ServerUpdate a b])
-    , onDroppedConnection :: MonpadException -> ClientID -> e -> IO ()
-    , onPong :: NominalDiffTime -> ClientID -> e -> IO [ServerUpdate a b]
+    , onNewConnection :: Layouts a b -> Client -> IO (e, s, [ServerUpdate a b])
+    , onDroppedConnection :: MonpadException -> Client -> e -> IO ()
+    , onPong :: NominalDiffTime -> Client -> e -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
     , updates :: forall m. (SP.IsStream m, MonadIO (m IO)) => MonpadEnv e a b -> m IO [ServerUpdate a b]
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
@@ -433,20 +448,21 @@ websocketServer ::
     ServerConfig e s a b ->
     Clients ->
     Server WsApi
-websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu pending = liftIO case mu of
+websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu colour pending = liftIO case mu of
     Nothing -> rejectAndLog "no username parameter"
     Just clientId -> registerConnection clientId >>= \case
         False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
         True -> do
+            let client = Client{id = clientId, colour}
             lastPing <- newIORef Nothing
-            (e, s0, u0) <- onNewConnection layouts clientId
+            (e, s0, u0) <- onNewConnection layouts client
             extraUpdates <- newEmptyMVar
             let onPing = writeIORef lastPing . Just =<< getPOSIXTime
                 onPong' = readIORef lastPing >>= \case
                     Nothing -> warn "pong before ping"
                     Just t0 -> do
                         t1 <- getPOSIXTime
-                        us <- onPong (t1 - t0) clientId e
+                        us <- onPong (t1 - t0) client e
                         putMVar extraUpdates us
             conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
             let {- We have to take care here not to attempt a parallel composition in a stateful monad.
@@ -555,12 +571,12 @@ websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu
                 . (=<<)
                     ( either
                         ( \err -> do
-                            onDroppedConnection err clientId e
+                            onDroppedConnection err client e
                             atomically $ modifyTVar clients.connected $ Set.delete clientId
                         )
                         pure
                     )
-                . runMonpad layouts clientId e s0
+                . runMonpad layouts client e s0
                 . SP.drain
                 . SP.mapM handleUpdates
                 . SP.mapM

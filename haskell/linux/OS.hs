@@ -34,7 +34,7 @@ type B = Key
 
 conf :: ServerConfig E S A B
 conf = ServerConfig
-    { onNewConnection = \(fmap fst -> layouts) (ClientID clientId) -> do
+    { onNewConnection = \(fmap fst -> layouts) client -> do
         layoutInfos <- for layouts \layout -> do
             let meta = mkLayoutMeta $ layout ^. #elements
                 (axes, keys) = allAxesAndButs meta
@@ -54,7 +54,7 @@ conf = ServerConfig
                 devName = BS.unwords
                     [ "Monpad:"
                     , encodeUtf8 $ layout ^. #name % coerced
-                    , "(" <> encodeUtf8 clientId <> ")"
+                    , "(" <> encodeUtf8 client.id.unwrap <> ")"
                     ]
             device <- newDevice devName defaultDeviceOpts
                 { keys

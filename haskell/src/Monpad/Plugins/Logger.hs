@@ -8,7 +8,7 @@ import System.Console.ANSI
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
-import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShow, pShowOpt)
+import Text.Pretty.Simple (OutputOptions (outputOptionsInitialIndent), defaultOutputOptionsDarkBg, pShowOpt)
 
 import Monpad
 import Monpad.Plugins
@@ -41,17 +41,17 @@ plugin write0 settings = Plugin @() @() $ logUpdates settings write <> logImport
 logImportantStuff :: (Monoid e, Monoid s) => Logger -> ServerConfig e s a b
 logImportantStuff write = mempty
     { onStart = \url -> write.log $ "Monpad server started at " <> url
-    , onNewConnection = \_ (ClientID i) -> do
-        write.log $ "New client: " <> i
+    , onNewConnection = \_ c -> do
+        write.log $ "New client: " <> showClient write.ansi c
         mempty
-    , onDroppedConnection = \_ (ClientID i) _ ->
-        write.log $ "Client disconnected: " <> i
+    , onDroppedConnection = \_ c _ ->
+        write.log $ "Client disconnected: " <> showClient write.ansi c
     }
 
 logUpdates :: (Monoid e, Monoid s, Show a, Show b) => Settings -> Logger -> ServerConfig e s a b
 logUpdates settings write = mempty
     { onUpdate = \u -> do
-        ClientID c <- asks $ view #client
+        c <- asks $ view #client
         let (pc, ps) = case settings of
                 Normal -> (printClientUpdate c, mempty)
                 Quiet -> mempty
@@ -64,12 +64,12 @@ logUpdates settings write = mempty
   where
     printClientUpdate c u = do
         liftIO $ write.log $ T.intercalate "\n"
-            [ "Message received from client: " <> TL.toStrict (pShow c)
+            [ "Message received from client: " <> showClient write.ansi c
             , pShowIndented u
             ]
     printServerUpdate c u = do
         liftIO $ write.log $ T.intercalate "\n"
-            [ "Message sent to client: " <> TL.toStrict (pShow c)
+            [ "Message sent to client: " <> showClient write.ansi c
             , pShowIndented u
             ]
 
@@ -78,9 +78,9 @@ logPong settings write = case settings of
     Normal -> mempty
     Quiet -> mempty
     Loud -> mempty
-        { onPong = \t (ClientID c) _ -> do
+        { onPong = \t c _ -> do
             liftIO $ write.log $ T.intercalate "\n"
-                [ "Pong: " <> c
+                [ "Pong: " <> showClient write.ansi c
                 , pShowIndented t
                 ]
             mempty

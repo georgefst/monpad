@@ -115,6 +115,7 @@ library
         GenerateElm
         Layout
         Opts
+        Orphans.Servant.Colour
         Orphans.Generic
         Orphans.V2
         ServerUpdate

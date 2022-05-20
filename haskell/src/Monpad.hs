@@ -49,6 +49,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Colour qualified as Colour
 import Data.Functor
 import Data.Hash.Murmur
+import Data.List.Extra (chunksOf)
 import Data.IORef
 import Data.Int
 import Data.List.NonEmpty (NonEmpty)
@@ -104,16 +105,18 @@ import Util
 
 data Client = Client
     { id :: ClientID
-    , colour :: Maybe (Colour.Colour Float)
+    , colour :: [Colour.Colour Float]
     }
     deriving (Eq, Show)
 newtype ClientID = ClientID {unwrap :: Text}
     deriving (Eq, Ord, Show)
     deriving newtype FromHttpApiData
 showClient :: Bool -> Client -> Text
-showClient ansiColour client = applyWhen ansiColour (maybe id withTermCols client.colour) client.id.unwrap
+showClient ansiColour client = applyWhen ansiColour (withTermCols client.colour) client.id.unwrap
   where
-    withTermCols c = (<> T.pack (setSGRCode [])) . (T.pack (setSGRCode [SetRGBColor Background c]) <>)
+    coloured c = (<> setSGRCode []) . (setSGRCode [SetRGBColor Background c] <>)
+    withTermCols cs =
+        T.pack . mconcat . map (concat . zipWith coloured cs . map pure) . chunksOf (length cs) . T.unpack
 data UsernameError
     = EmptyUsername
     | DuplicateUsername
@@ -198,7 +201,7 @@ type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = Root :> (CoreApi :<|> AssetsApi)
-type WsApi = QueryParam UsernameParam ClientID :> QueryParam ColourParam (Colour.Colour Float) :> WebSocketPending
+type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour.Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do
@@ -218,8 +221,8 @@ defaultLoginPageOpts = LoginPageOpts
     , usernamePrompt = "Username:"
     , submitButtonText = "Go!"
     }
-loginHtml :: Maybe UsernameError -> LoginPageOpts -> Html ()
-loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
+loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
+loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ $ fs opts.pageTitle
     , style_ (commonCSS ())
     , style_ (loginCSS ())
@@ -227,7 +230,8 @@ loginHtml err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolVa
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
     , input_ [type_ "submit", value_ opts.submitButtonText]
-    , br_ []
+    ] <> (mconcat . replicate nColours)
+    [ br_ []
     , input_ [type_ "color", name_ "colour"]
     ] <> case err of
         Nothing -> []
@@ -385,15 +389,16 @@ server ::
     Encoding ->
     Port ->
     LoginPageOpts ->
+    Int ->
     Maybe FilePath ->
     Layouts a b ->
     ServerConfig e s a b ->
     IO ()
-server write pingFrequency encoding port loginOpts assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server write pingFrequency encoding port loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
     run port . serve (Proxy @(HttpApi :<|> WsApi)) $
-        httpServer port loginOpts assetsDir encoding (first biVoid <$> layouts) (Just clients)
+        httpServer port loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
             :<|> websocketServer write pingFrequency encoding layouts conf clients
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
@@ -406,25 +411,26 @@ serverExtWs ::
     -- | WS port
     Port ->
     LoginPageOpts ->
+    Int ->
     Maybe FilePath ->
     Layouts () () ->
     IO ()
-serverExtWs onStart encoding httpPort wsPort loginOpts assetsDir layouts = do
+serverExtWs onStart encoding httpPort wsPort loginOpts nColours assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginOpts assetsDir encoding layouts clients
+    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginOpts nColours assetsDir encoding layouts clients
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
 
-httpServer :: Port -> LoginPageOpts -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
-httpServer wsPort loginOpts assetsDir encoding layouts mclients = core :<|> assets
+httpServer :: Port -> LoginPageOpts -> Int -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
+httpServer wsPort loginOpts nColours assetsDir encoding layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
-        Nothing -> pure $ loginHtml Nothing loginOpts
+        Nothing -> pure $ loginHtml nColours Nothing loginOpts
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
+            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do

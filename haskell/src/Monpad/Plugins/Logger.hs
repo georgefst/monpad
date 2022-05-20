@@ -44,8 +44,9 @@ logImportantStuff write = mempty
     , onNewConnection = \_ c -> do
         write.log $ "New client: " <> showClient write.ansi c
         mempty
-    , onDroppedConnection = \_ c _ ->
+    , onDroppedConnection = \e c _ -> do
         write.log $ "Client disconnected: " <> showClient write.ansi c
+        write.log $ pShowIndented e
     }
 
 logUpdates :: (Monoid e, Monoid s, Show a, Show b) => Settings -> Logger -> ServerConfig e s a b

@@ -52,6 +52,7 @@ data Args = Args
     , pingFrequency :: Int
     , displayPing :: Bool
     , scale :: Double
+    , nColours :: Int
     , loginPageTitle :: Maybe Text
     , loginImageUrl :: Maybe Text
     , loginUsernamePrompt :: Maybe Text
@@ -141,6 +142,12 @@ parser = do
         [ long "json"
         , help "Send messages as JSON, instead of more compact binary encoding."
         ]
+    nColours <- option auto $ mconcat
+        [ long "colours"
+        , metavar "INT"
+        , help "Number of colours associated with each user (default 1)."
+        , value 1
+        ]
     loginPageTitle <- optional . strOption $ mconcat
         [ long "login-title"
         , metavar "STRING"
@@ -188,6 +195,7 @@ main = do
                 args.port
                 wsPort
                 loginOpts
+                args.nColours
                 args.assetsDir
                 =<< mkLayouts write dhallLayouts
           where
@@ -207,7 +215,7 @@ main = do
                 $ maybe id ((:) . Logger.plugin write) args.verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write args.pingFrequency args.encoding args.port loginOpts args.assetsDir ls
+            runPlugin ls = server write args.pingFrequency args.encoding args.port loginOpts args.nColours args.assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

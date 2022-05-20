@@ -54,6 +54,7 @@ test ps ls lsVoid = do
             JSONEncoding
             8000
             defaultLoginPageOpts
+            nColours
             (Just "../dist/assets")
             layouts
 
@@ -67,8 +68,12 @@ testExt = do
         8000
         8001
         defaultLoginPageOpts
+        nColours
         (Just "../dist/assets")
         layouts
 
 write :: Logger
 write = join Logger T.putStrLn True
+
+nColours :: Int
+nColours = 3

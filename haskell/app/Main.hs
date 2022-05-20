@@ -172,6 +172,7 @@ main = do
     let write = Logger
             { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
+            , ansi = True
             }
         loginOpts = LoginPageOpts
             { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle

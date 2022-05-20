@@ -71,4 +71,4 @@ testExt = do
         layouts
 
 write :: Logger
-write = join Logger T.putStrLn
+write = join Logger T.putStrLn True

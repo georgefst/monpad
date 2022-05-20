@@ -46,6 +46,8 @@ import System.Directory (getHomeDirectory)
 data Logger = Logger
     { log :: Text -> IO ()
     , logError :: Text -> IO ()
+    , ansi :: Bool
+    -- ^ Can we use ANSI escape codes?
     }
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)

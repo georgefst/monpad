@@ -230,9 +230,12 @@ loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $
     , br_ []
     , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
     , input_ [type_ "submit", value_ opts.submitButtonText]
-    ] <> (mconcat . replicate nColours)
-    [ br_ []
-    , input_ [type_ "color", name_ "colour"]
+    , br_ []
+    ] <>
+    [ div_ [ class_ "colours" ]
+        $ (mconcat . mconcat . replicate nColours)
+        [ input_ [ class_ "colour", type_ "color", name_ "colour"]
+        ]
     ] <> case err of
         Nothing -> []
         Just e ->

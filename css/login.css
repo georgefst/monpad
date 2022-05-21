@@ -15,3 +15,14 @@ form {
 input {
     font-size: inherit;
 }
+
+.colours {
+    display: flex;
+    flex-direction: row;
+}
+
+.colour {
+    flex-grow: 1;
+    margin: 3vh;
+    height: 10vh;
+}

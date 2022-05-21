@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Orphans.Servant.Colour where
+module Orphans.Servant.Colour () where
 
 import Data.Bifunctor (first)
 import Data.Colour (Colour)

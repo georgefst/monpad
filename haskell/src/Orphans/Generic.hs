@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | These are mostly/entirely for the sake of using `generic-optics`.
-module Orphans.Generic where
+module Orphans.Generic () where
 
 import GHC.Generics (Generic)
 import Network.WebSockets.Connection qualified as WS

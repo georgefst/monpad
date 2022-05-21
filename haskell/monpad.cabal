@@ -113,6 +113,7 @@ library
         Test
         Embed
         GenerateElm
+        GenerateElm.Via
         Layout
         Opts
         Orphans.Generic

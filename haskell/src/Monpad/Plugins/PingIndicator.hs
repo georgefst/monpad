@@ -1,8 +1,10 @@
 module Monpad.Plugins.PingIndicator (plugin) where
 
+import Data.Colour (withOpacity)
 import Data.Colour qualified
+import Data.Colour.Names qualified as Colours
 import Data.Colour.RGBSpace (uncurryRGB)
-import Data.Colour.SRGB (sRGB, toSRGB)
+import Data.Colour.SRGB (Colour, sRGB, toSRGB)
 import Data.Convertible (convert)
 import Data.List.NonEmpty qualified as NE
 import Data.Prizm.Color as Prizm
@@ -26,7 +28,7 @@ showPing scale =
                 r = sRGB 0.85 0.28 0.28
                 y = sRGB 0.94 0.95 0.33
                 g = sRGB 0.2 0.72 0.2
-                colour = fromPrizm 1 if goodness < 0.5
+                colour = flip withOpacity 1 $ fromPrizm if goodness < 0.5
                     then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
                     else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
             in  [ SetText elementId $ T.pack $ formatTime defaultTimeLocale "%04Ess" time
@@ -48,7 +50,7 @@ showPing scale =
                     , name = elementId
                     , text = Just TextBox
                         { text = "Ping"
-                        , style = TextStyle (width `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
+                        , style = TextStyle (width `div` 5) (withOpacity Colours.black 1) False False False [] "sans-serif"
                         }
                     , image = Nothing
                     , element = Indicator Indicator'
@@ -56,7 +58,7 @@ showPing scale =
                         , arcStart = 0
                         , arcEnd = 1
                         , centre = 0
-                        , colour = Colour 1 1 1 1 -- white
+                        , colour = withOpacity Colours.white 1
                         , shape = square
                         }
                     , hidden = False
@@ -76,6 +78,6 @@ showPing scale =
 toPrizm :: Data.Colour.Colour Double -> CIE.LCH
 toPrizm = convert @Prizm.RGB . uncurryRGB mkRGB . fmap (round . (* 255)) . toSRGB
 
-fromPrizm :: Double -> CIE.LCH -> Monpad.Colour
-fromPrizm alpha = (\(ColorCoord (red, green, blue)) -> Colour{..}) .
+fromPrizm :: CIE.LCH -> Colour Double
+fromPrizm = (\(ColorCoord (red, green, blue)) -> sRGB red green blue) .
     fmap ((/ 255) . fromIntegral) . unRGB . convert @_ @Prizm.RGB

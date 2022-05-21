@@ -5,6 +5,7 @@ import Data.Aeson qualified as J
 import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Aeson.Types qualified as JSON
 import Data.Bifunctor (Bifunctor)
+import Data.Colour (AlphaColour)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Deriving.Aeson (CustomJSON (CustomJSON))
@@ -16,6 +17,7 @@ import Linear.V2 (V2)
 import Orphans.V2 ()
 import Util.ShowNewtype (ShowNewtypeWithoutRecord (ShowNewtypeWithoutRecord))
 
+import Orphans.Colour ()
 import Opts qualified
 import Util
 
@@ -34,7 +36,7 @@ newtype LayoutID = LayoutID {unwrap :: Text}
 data Layout a b = Layout
     { elements :: [FullElement a b]
     , viewBox :: ViewBox
-    , backgroundColour :: Colour
+    , backgroundColour :: AlphaColour Double
     , name :: LayoutID
     }
     deriving (Show, Functor, Generic, FromDhall)
@@ -72,8 +74,8 @@ data Element a b
 data Stick a = Stick'
     { radius :: Word
     , range :: Word
-    , stickColour :: Colour
-    , backgroundColour :: Colour
+    , stickColour :: AlphaColour Double
+    , backgroundColour :: AlphaColour Double
     , stickDataX :: a
     , stickDataY :: a
     }
@@ -82,7 +84,7 @@ data Stick a = Stick'
 
 data Button b = Button'
     { shape :: Shape
-    , colour :: Colour
+    , colour :: AlphaColour Double
     , buttonData :: b
     }
     deriving (Show, Functor, Generic, FromDhall)
@@ -96,8 +98,8 @@ data Slider a = Slider'
     , initialPosition :: Double
     -- ^ 0 (start) to 1 (end)
     , resetOnRelease :: Bool
-    , sliderColour :: Colour
-    , backgroundColour :: Colour
+    , sliderColour :: AlphaColour Double
+    , backgroundColour :: AlphaColour Double
     , sliderData :: a
     }
     deriving (Show, Functor, Generic, FromDhall)
@@ -156,7 +158,7 @@ data Indicator = Indicator'
     -- ^ [0, arcStart + 1)
     , centre :: V2 Double
     -- ^ x and y in [-1, 1]
-    , colour :: Colour
+    , colour :: AlphaColour Double
     , shape :: Shape
     }
     deriving (Show, Generic, FromDhall)
@@ -167,16 +169,6 @@ data Shape
     | Rectangle (V2 Word)
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON Shape
-
--- field names chosen to match 'elm-color's 'fromRgba'
-data Colour = Colour
-    { red :: Double
-    , green :: Double
-    , blue :: Double
-    , alpha :: Double
-    }
-    deriving (Show, Generic, FromDhall)
-    deriving (ToJSON) via CustomJSON Opts.JSON Colour
 
 data ViewBox = ViewBox
     { x :: Int
@@ -189,7 +181,7 @@ data ViewBox = ViewBox
 
 data TextStyle = TextStyle
     { size :: Word
-    , colour :: Colour
+    , colour :: AlphaColour Double
     , bold :: Bool
     , italic :: Bool
     , underline :: Bool
@@ -203,7 +195,7 @@ data TextStyle = TextStyle
 data TextShadow = TextShadow
     { offset :: V2 Int
     , blur :: Word
-    , colour :: Colour
+    , colour :: AlphaColour Double
     }
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON TextShadow

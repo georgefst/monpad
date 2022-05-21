@@ -116,6 +116,7 @@ library
         GenerateElm.Via
         Layout
         Opts
+        Orphans.Colour
         Orphans.Generic
         Orphans.Servant.Colour
         Orphans.V2

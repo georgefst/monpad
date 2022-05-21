@@ -7,6 +7,7 @@
 module GenerateElm (elm) where
 
 import Data.Aeson qualified as J
+import Data.Colour (AlphaColour)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Maybe (catMaybes)
@@ -29,6 +30,7 @@ import Util.Util (listDirectory')
 
 import GenerateElm.Via
 import Monpad
+import Orphans.Colour ()
 
 {- | Auto generate Elm datatypes, encoders/decoders etc.
 It's best to run this via GHCI or HLS.
@@ -62,7 +64,7 @@ elm pathToElm = writeDefs pathToElm $ mconcat
     , defAndDecoder @Encoding
     , defAndDecoder @ElmFlags
     , defAndDecoder @ViewBox
-    , defAndDecoder @Colour
+    , defAndDecoder @(AlphaColour Double)
     , defAndDecoder @Indicator
     , defAndDecoder @Shape
     , defAndDecoder @(V2 Int)
@@ -195,11 +197,6 @@ deriving instance SOP.Generic ViewBox
 deriving instance SOP.HasDatatypeInfo ViewBox
 deriving via Via ViewBox instance HasElmType ViewBox
 deriving via Via ViewBox instance HasElmDecoder J.Value ViewBox
-
-deriving instance SOP.Generic Colour
-deriving instance SOP.HasDatatypeInfo Colour
-deriving via Via Colour instance HasElmType Colour
-deriving via Via Colour instance HasElmDecoder J.Value Colour
 
 deriving instance SOP.Generic Indicator
 deriving instance SOP.HasDatatypeInfo Indicator

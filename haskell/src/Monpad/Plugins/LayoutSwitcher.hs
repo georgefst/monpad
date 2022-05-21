@@ -5,6 +5,8 @@ import Data.Tuple.Extra
 import Optics
 import Optics.State.Operators
 
+import Data.Colour (withOpacity)
+import Data.Colour.Names (black, white)
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream)
 import Data.Stream.Infinite qualified as Stream
@@ -36,13 +38,13 @@ switcher scale buttonData =
                     { location
                     , name = elementId
                     , element = Button Button'
-                        { colour = Colour 1 1 1 1
+                        { colour = withOpacity black 1
                         , shape = square
                         , buttonData
                         }
                     , text = Just TextBox
                         { text = l.unwrap
-                        , style = TextStyle (size `div` 5) (Colour 0 0 0 1) False False False [] "sans-serif"
+                        , style = TextStyle (size `div` 5) (withOpacity white 1) False False False [] "sans-serif"
                         }
                     , image = Nothing
                     , hidden = False

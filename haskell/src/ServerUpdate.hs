@@ -2,6 +2,7 @@ module ServerUpdate where
 
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (Bifunctor)
+import Data.Colour (AlphaColour)
 import Data.Text (Text)
 import Deriving.Aeson (CustomJSON (..))
 import GHC.Generics (Generic)
@@ -22,7 +23,7 @@ data ServerUpdate a b
     | SetText ElementID Text
     | SetTextStyle ElementID TextStyle
     | SetTextSize ElementID Word
-    | SetTextColour ElementID Colour
+    | SetTextColour ElementID (AlphaColour Double)
     | SetTextBold ElementID Bool
     | SetTextItalic ElementID Bool
     | SetTextUnderline ElementID Bool
@@ -37,15 +38,15 @@ data ServerUpdate a b
     -- ^ i.e. 'unhide'
     | AddElement (FullElement a b)
     | RemoveElement ElementID
-    | SetBackgroundColour Colour
+    | SetBackgroundColour (AlphaColour Double)
     | SetIndicatorHollowness ElementID Double
     | SetIndicatorArcStart ElementID Double
     | SetIndicatorArcEnd ElementID Double
     | SetIndicatorShape ElementID Shape
     | SetIndicatorCentre ElementID (V2 Double)
-    | SetIndicatorColour ElementID Colour
+    | SetIndicatorColour ElementID (AlphaColour Double)
     | SetSliderPosition ElementID Double
-    | SetButtonColour ElementID Colour
+    | SetButtonColour ElementID (AlphaColour Double)
     | SetButtonPressed ElementID Bool
     | ResetLayout ResetLayout
     | Ping Text

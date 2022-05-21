@@ -4,14 +4,18 @@ module Orphans.Colour () where
 
 import Data.Aeson (ToJSON (toJSON))
 import Data.Aeson qualified as J
-import Data.Colour (AlphaColour, alphaChannel, black, over, withOpacity)
-import Data.Colour.SRGB (RGB (channelBlue, channelGreen, channelRed), sRGB, toSRGB)
+import Data.Bifunctor (first)
+import Data.Colour (AlphaColour, Colour, alphaChannel, black, over, withOpacity)
+import Data.Colour.SRGB (RGB (channelBlue, channelGreen, channelRed), sRGB, sRGB24reads, toSRGB)
+import Data.Text qualified as T
 import Deriving.Aeson (CustomJSON (CustomJSON))
 import Dhall (FromDhall (autoWith), Generic)
 import GenerateElm.Via qualified as Elm
 import Generics.SOP qualified as SOP
 import Language.Haskell.To.Elm (HasElmDecoder (elmDecoderDefinition), HasElmType (elmDefinition))
 import Opts qualified
+import Servant (FromHttpApiData (parseUrlPiece))
+import Text.Read (readEither)
 
 instance ToJSON (AlphaColour Double) where
     toJSON =
@@ -41,3 +45,15 @@ data Colour' = Colour'
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON) via CustomJSON Opts.JSON Colour'
     deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Colour'
+
+instance FromHttpApiData (Colour Float) where
+    parseUrlPiece = first T.pack . readEither' . T.unpack
+
+{- TODO there should be a better way
+https://www.reddit.com/r/haskell/comments/ufrk6a/comment/i9c4sg9/?utm_source=share&utm_medium=web2x&context=3
+-}
+readEither' :: String -> Either String (Colour Float)
+readEither' = fmap (\(ReadWrapper c) -> c) . readEither @ReadWrapper
+newtype ReadWrapper = ReadWrapper (Colour Float)
+instance Read ReadWrapper where
+    readsPrec _ = map (first ReadWrapper) . sRGB24reads @Float

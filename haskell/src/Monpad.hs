@@ -98,8 +98,8 @@ import Util.Util
 import Embed
 import Layout
 import Opts qualified
+import Orphans.Colour ()
 import Orphans.Generic ()
-import Orphans.Servant.Colour ()
 import ServerUpdate
 import Util
 

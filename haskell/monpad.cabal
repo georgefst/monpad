@@ -118,7 +118,6 @@ library
         Opts
         Orphans.Colour
         Orphans.Generic
-        Orphans.Servant.Colour
         Orphans.V2
         ServerUpdate
         Util

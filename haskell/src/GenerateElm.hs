@@ -240,22 +240,16 @@ data DoubleVec2 = DoubleVec2
     }
     deriving (Generic, SOP.Generic, SOP.HasDatatypeInfo)
 
-deriving instance SOP.Generic (V2 Int)
-deriving instance SOP.HasDatatypeInfo (V2 Int)
 instance HasElmDecoder J.Value (V2 Int) where
     elmDecoderDefinition = elmDecoderDefinition @J.Value @IntVec2
 instance HasElmType (V2 Int) where
     elmDefinition = elmDefinition @IntVec2
 
-deriving instance SOP.Generic (V2 Word)
-deriving instance SOP.HasDatatypeInfo (V2 Word)
 instance HasElmDecoder J.Value (V2 Word) where
     elmDecoderDefinition = elmDecoderDefinition @J.Value @WordVec2
 instance HasElmType (V2 Word) where
     elmDefinition = elmDefinition @WordVec2
 
-deriving instance SOP.Generic (V2 Double)
-deriving instance SOP.HasDatatypeInfo (V2 Double)
 instance HasElmDecoder J.Value (V2 Double) where
     elmDecoder = Expr.Global $ Name.Qualified ["Util"] "decodeVec2"
 instance HasElmEncoder J.Value (V2 Double) where

@@ -115,8 +115,9 @@ showClient :: Bool -> Client -> Text
 showClient ansiColour client = applyWhen ansiColour (withTermCols client.colour) client.id.unwrap
   where
     coloured c = (<> setSGRCode []) . (setSGRCode [SetRGBColor Background c] <>)
-    withTermCols cs =
-        T.pack . mconcat . map (concat . zipWith coloured cs . map pure) . chunksOf (length cs) . T.unpack
+    withTermCols cs = if nCols == 0 then id else
+        T.pack . mconcat . map (concat . zipWith coloured cs . map pure) . chunksOf nCols . T.unpack
+      where nCols = length cs
 data UsernameError
     = EmptyUsername
     | DuplicateUsername

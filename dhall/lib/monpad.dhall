@@ -13,6 +13,7 @@ let TextStyle =
       , italic : Bool
       , underline : Bool
       , shadow : List TextShadow
+      , rotation : Double
       , font : Text
       }
 
@@ -210,6 +211,7 @@ let noTextStyle =
         , italic = False
         , underline = False
         , shadow = [] : List TextShadow
+        , rotation = 0.0
         , font = "sans-serif"
         }
       : TextStyle

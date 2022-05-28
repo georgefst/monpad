@@ -1054,6 +1054,7 @@ textStyle s =
     , style "color" <| Color.toCssString <| fromRgba s.colour
     , style "font-family" s.font
     , style "text-align" "center"
+    , style "transform" ("rotate(" ++ String.fromFloat s.rotation ++ "rad)")
     ]
         ++ (if List.isEmpty s.shadow then
                 []

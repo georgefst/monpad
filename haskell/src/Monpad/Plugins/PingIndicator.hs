@@ -50,7 +50,7 @@ showPing scale =
                     , name = elementId
                     , text = Just TextBox
                         { text = "Ping"
-                        , style = TextStyle (width `div` 5) (withOpacity Colours.black 1) False False False [] "sans-serif"
+                        , style = TextStyle (width `div` 5) (withOpacity Colours.black 1) False False False [] 0 "sans-serif"
                         }
                     , image = Nothing
                     , element = Indicator Indicator'

@@ -191,6 +191,7 @@ flags =
                                       , colour = toRgba black
                                       }
                                     ]
+                                , rotation = 0.1
                                 , font = "sans-serif"
                                 }
                             , text = "c'est un button"

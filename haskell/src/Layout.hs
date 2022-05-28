@@ -186,6 +186,7 @@ data TextStyle = TextStyle
     , italic :: Bool
     , underline :: Bool
     , shadow :: [TextShadow]
+    , rotation :: Double
     , font :: Text
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }

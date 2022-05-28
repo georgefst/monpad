@@ -16,6 +16,7 @@ type alias TextStyle  =
     , italic : Bool
     , underline : Bool
     , shadow : List Auto.TextShadow.TextShadow
+    , rotation : Float
     , font : String }
 
 
@@ -28,4 +29,5 @@ decode =
     Json.Decode.Pipeline.required "italic" Json.Decode.bool |>
     Json.Decode.Pipeline.required "underline" Json.Decode.bool |>
     Json.Decode.Pipeline.required "shadow" (Json.Decode.list Auto.TextShadow.decode) |>
+    Json.Decode.Pipeline.required "rotation" Json.Decode.float |>
     Json.Decode.Pipeline.required "font" Json.Decode.string

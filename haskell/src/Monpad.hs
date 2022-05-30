@@ -58,7 +58,6 @@ import Data.Map (Map, (!?))
 import Data.Map qualified as Map
 import Data.Maybe
 import Data.Monoid
-import Data.Proxy
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.String (fromString)
@@ -401,7 +400,7 @@ server ::
 server write pingFrequency encoding port loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
-    run port . serve (Proxy @(HttpApi :<|> WsApi)) $
+    run port . serve @(HttpApi :<|> WsApi) mempty $
         httpServer port loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
             :<|> websocketServer write pingFrequency encoding layouts conf clients
 
@@ -421,7 +420,7 @@ serverExtWs ::
     IO ()
 serverExtWs onStart encoding httpPort wsPort loginOpts nColours assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve (Proxy @HttpApi) $ httpServer wsPort loginOpts nColours assetsDir encoding layouts clients
+    run httpPort . serve @HttpApi mempty $ httpServer wsPort loginOpts nColours assetsDir encoding layouts clients
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing

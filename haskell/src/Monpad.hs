@@ -49,9 +49,9 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Colour qualified as Colour
 import Data.Functor
 import Data.Hash.Murmur
-import Data.List.Extra (chunksOf)
 import Data.IORef
 import Data.Int
+import Data.List.Extra (chunksOf)
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))

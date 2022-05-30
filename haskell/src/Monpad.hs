@@ -46,7 +46,7 @@ import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Binary.Get qualified as B
 import Data.ByteString.Lazy qualified as BSL
-import Data.Colour qualified as Colour
+import Data.Colour (Colour)
 import Data.Functor
 import Data.Hash.Murmur
 import Data.IORef
@@ -104,7 +104,7 @@ import Util
 
 data Client = Client
     { id :: ClientID
-    , colour :: [Colour.Colour Float]
+    , colour :: [Colour Float]
     }
     deriving (Eq, Show)
 newtype ClientID = ClientID {unwrap :: Text}
@@ -201,7 +201,7 @@ type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = Root :> (CoreApi :<|> AssetsApi)
-type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour.Colour Float) :> WebSocketPending
+type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do

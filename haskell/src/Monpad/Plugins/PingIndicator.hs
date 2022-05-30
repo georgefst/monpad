@@ -1,7 +1,6 @@
 module Monpad.Plugins.PingIndicator (plugin) where
 
 import Data.Colour (withOpacity)
-import Data.Colour qualified
 import Data.Colour.Names qualified as Colours
 import Data.Colour.RGBSpace (uncurryRGB)
 import Data.Colour.SRGB (Colour, sRGB, toSRGB)
@@ -75,7 +74,7 @@ showPing scale =
 
 {- Util -}
 
-toPrizm :: Data.Colour.Colour Double -> CIE.LCH
+toPrizm :: Colour Double -> CIE.LCH
 toPrizm = convert @Prizm.RGB . uncurryRGB mkRGB . fmap (round . (* 255)) . toSRGB
 
 fromPrizm :: CIE.LCH -> Colour Double

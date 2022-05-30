@@ -3,7 +3,7 @@ const attr = s => document.currentScript.attributes.getNamedItem(s).value
 const params = new URLSearchParams(window.location.search)
 const username = params.get("username")
 
-const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + params
+const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "/ws" + "?" + params
 const ws = new WebSocket(wsAddress)
 ws.onclose = event => {
     console.log(event)

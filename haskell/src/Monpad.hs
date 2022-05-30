@@ -195,18 +195,17 @@ data ElmFlags = ElmFlags
     deriving (Show, Generic)
     deriving (ToJSON) via CustomJSON Opts.JSON ElmFlags
 
-type Root = "monpad"
 type UsernameParam = "username"
 type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
-type HttpApi = Root :> (CoreApi :<|> AssetsApi)
-type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
+type HttpApi = (CoreApi :<|> AssetsApi)
+type WsApi = "ws" :> QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
-    pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
+    pure $ "http://" <> addr <> ":" <> showT port
 
 data LoginPageOpts = LoginPageOpts
     { pageTitle :: Text
@@ -222,7 +221,7 @@ defaultLoginPageOpts = LoginPageOpts
     , submitButtonText = "Go!"
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
-loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
+loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ . mconcat $
     [ title_ $ fs opts.pageTitle
     , style_ (commonCSS ())
     , style_ (loginCSS ())

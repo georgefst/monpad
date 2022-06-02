@@ -54,7 +54,10 @@ data Args = Args
     , loginPageTitle :: Maybe Text
     , loginImageUrl :: Maybe Text
     , loginUsernamePrompt :: Maybe Text
+    , loginUsernamePromptStyle :: Maybe Text
+    , loginSubmitButtonStyle :: Maybe Text
     , loginSubmitButtonText :: Maybe Text
+    , loginSubmitButtonTextStyle :: Maybe Text
     }
 
 parser :: Parser Args
@@ -149,22 +152,30 @@ parser = do
     loginPageTitle <- optional . strOption $ mconcat
         [ long "login-title"
         , metavar "STRING"
-        , help "Title for login page."
         ]
     loginImageUrl <- optional . strOption $ mconcat
         [ long "login-image"
         , metavar "URL"
-        , help "Background image for login page."
         ]
     loginUsernamePrompt <- optional . strOption $ mconcat
         [ long "login-prompt"
         , metavar "STRING"
-        , help "Username prompt for login page."
+        ]
+    loginUsernamePromptStyle <- optional . strOption $ mconcat
+        [ long "login-prompt-style"
+        , metavar "STRING"
         ]
     loginSubmitButtonText <- optional . strOption $ mconcat
         [ long "login-submit"
         , metavar "STRING"
-        , help "Text on submit button for login page."
+        ]
+    loginSubmitButtonStyle <- optional . strOption $ mconcat
+        [ long "login-submit-style"
+        , metavar "STRING"
+        ]
+    loginSubmitButtonTextStyle <- optional . strOption $ mconcat
+        [ long "login-submit-text-style"
+        , metavar "STRING"
         ]
     pure Args{..}
 
@@ -183,7 +194,10 @@ main = do
             { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle
             , imageUrl = args.loginImageUrl
             , usernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt args.loginUsernamePrompt
+            , usernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle args.loginUsernamePromptStyle
+            , submitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle args.loginSubmitButtonStyle
             , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText args.loginSubmitButtonText
+            , submitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle args.loginSubmitButtonTextStyle
             }
     case args.externalWS of
         Just wsPort ->

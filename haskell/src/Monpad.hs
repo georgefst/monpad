@@ -212,24 +212,30 @@ data LoginPageOpts = LoginPageOpts
     { pageTitle :: Text
     , imageUrl :: Maybe Text
     , usernamePrompt :: Text
+    , usernamePromptStyle :: Text
+    , submitButtonStyle :: Text
     , submitButtonText :: Text
+    , submitButtonTextStyle :: Text
     }
 defaultLoginPageOpts :: LoginPageOpts
 defaultLoginPageOpts = LoginPageOpts
     { pageTitle = "monpad: login"
     , imageUrl = Nothing
     , usernamePrompt = "Username:"
+    , usernamePromptStyle = ""
+    , submitButtonStyle = ""
     , submitButtonText = "Go!"
+    , submitButtonTextStyle = ""
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
     [ title_ $ fs opts.pageTitle
     , style_ (commonCSS ())
     , style_ (loginCSS ())
-    , label_ [Html.for_ nameBoxId] $ fs opts.usernamePrompt
+    , label_ [Html.for_ nameBoxId, style_ opts.usernamePromptStyle] $ fs opts.usernamePrompt
     , br_ []
-    , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam]
-    , input_ [type_ "submit", value_ opts.submitButtonText]
+    , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam, style_ opts.submitButtonStyle]
+    , input_ [type_ "submit", value_ opts.submitButtonText, style_ opts.submitButtonTextStyle]
     , br_ []
     ] <>
     [ div_ [ class_ "colours" ]

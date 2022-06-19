@@ -195,18 +195,17 @@ data ElmFlags = ElmFlags
     deriving (Show, Generic)
     deriving (ToJSON) via CustomJSON Opts.JSON ElmFlags
 
-type Root = "monpad"
 type UsernameParam = "username"
 type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
-type HttpApi = Root :> (CoreApi :<|> AssetsApi)
-type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
+type HttpApi = CoreApi :<|> AssetsApi
+type WsApi = "ws" :> QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do
     addr <- maybe "localhost" showHostAddress <$> getLocalIp
-    pure $ "http://" <> addr <> ":" <> showT port <> "/" <> symbolValT @Root
+    pure $ "http://" <> addr <> ":" <> showT port
 
 data LoginPageOpts = LoginPageOpts
     { pageTitle :: Text
@@ -228,7 +227,7 @@ defaultLoginPageOpts = LoginPageOpts
     , submitButtonTextStyle = ""
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
-loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ [action_ $ symbolValT @Root] . mconcat $
+loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ . mconcat $
     [ title_ $ fs opts.pageTitle
     , style_ (commonCSS ())
     , style_ (loginCSS ())
@@ -406,9 +405,9 @@ server ::
 server write pingFrequency encoding port loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
-    run port . serve @(HttpApi :<|> WsApi) mempty $
-        httpServer port loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
-            :<|> websocketServer write pingFrequency encoding layouts conf clients
+    run port . serve @(WsApi :<|> HttpApi) mempty $
+        websocketServer write pingFrequency encoding layouts conf clients
+            :<|> httpServer port loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::

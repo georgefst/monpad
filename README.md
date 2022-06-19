@@ -34,7 +34,7 @@ Run `./build.sh`* to build. The first time you run this, it could take a while, 
 Run `./dist/monpad` to start the server (you can pass the `-h` flag to see all options).
 
 Then connect from your web browser:
-- From the same device, you can navigate to eg. `http://localhost:8000/monpad`.
+- From the same device, you can navigate to eg. `http://localhost:8000`.
 - From another device on the same network, connect with your local ip, instead of `localhost`.
 - Allowing connections from an external or unsecured network is strongly discouraged, since no security features are yet implemented.
 

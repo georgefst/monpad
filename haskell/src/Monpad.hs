@@ -200,7 +200,7 @@ type ColourParam = "colour"
 type AssetsApi = Raw
 type CoreApi = QueryParam UsernameParam ClientID :> Get '[HTML] (Html ())
 type HttpApi = CoreApi :<|> AssetsApi
-type WsApi = "ws" :> QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
+type WsApi = QueryParam UsernameParam ClientID :> QueryParams ColourParam (Colour Float) :> WebSocketPending
 
 serverAddress :: Port -> IO Text
 serverAddress port = do

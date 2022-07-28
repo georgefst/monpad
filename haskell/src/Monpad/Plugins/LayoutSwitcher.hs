@@ -20,7 +20,7 @@ plugin scale = Plugin . switcher @() scale
 
 switcher :: Monoid e => Double -> b -> ServerConfig e (Stream (LayoutID, ViewBox)) a b
 switcher scale buttonData =
-    let onNewConnection = \(fmap (((.name) &&& (.viewBox)) . fst) -> ls) _ -> pure
+    let onNewConnection (fmap (((.name) &&& (.viewBox)) . fst) -> ls) _ = pure
             ( mempty
             , Stream.cycle ls
             , pure . uncurry addButton $ NE.head ls

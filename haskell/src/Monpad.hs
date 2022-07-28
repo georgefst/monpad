@@ -1,4 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use <$>" #-}
 module Monpad (
     server,
     serverExtWs,
@@ -312,7 +315,7 @@ data MonpadState s a b = MonpadState
     }
     deriving (Show, Generic)
 getCurrentLayout :: Monpad e s a b (Layout a b)
-getCurrentLayout = gets $ fromMaybe currentLayoutError . fmap fst . view currentLayoutMaybe
+getCurrentLayout = gets $ maybe currentLayoutError fst . view currentLayoutMaybe
 runMonpad :: Layouts a b -> Client -> e -> s -> Monpad e s a b x -> IO (Either MonpadException x)
 runMonpad ls c e s mon = runExceptT $ evalStateT
     (runReaderT
@@ -322,7 +325,7 @@ runMonpad ls c e s mon = runExceptT $ evalStateT
     (MonpadState ((fst3 &&& thd3) <$> layoutMap) (fst $ NE.head ls).name s)
   where
     layoutMap = Map.fromList . NE.toList $ ls <&> \(l, d) ->
-        (l.name, (l, d, Map.fromList $ ((hashElementID &&& id) . (.name)) <$> l.elements))
+        (l.name, (l, d, Map.fromList $ (hashElementID &&& id) . (.name) <$> l.elements))
 data MonpadException
     = WebSocketException WS.ConnectionException
     | UpdateDecodeException BSL.ByteString B.ByteOffset String

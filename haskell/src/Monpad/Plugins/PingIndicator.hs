@@ -19,8 +19,8 @@ plugin scale = Plugin $ showPing @() @() scale
 
 showPing :: (Monoid e, Monoid s) => Double -> ServerConfig e s a b
 showPing scale =
-    let onNewConnection = \layouts -> const $ pure (mempty, mempty, [addIndicator . fst $ NE.head layouts])
-        onPong = \time _ _ -> pure
+    let onNewConnection layouts = const $ pure (mempty, mempty, [addIndicator . fst $ NE.head layouts])
+        onPong time _ _ = pure
             let okPing = 1 / 10 -- time in seconds to map to 0.5 goodness
                 goodness :: Double = 0.5 ** (realToFrac time / okPing) -- in range (0, 1]
                 --TODO these values come from `monpad.dhall` - embed at compile time?

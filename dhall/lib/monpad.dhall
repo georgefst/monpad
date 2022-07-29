@@ -45,7 +45,7 @@ let Slider =
         , sliderData : a
         }
 
-let Image = { width : Natural, height : Natural, url : Text }
+let Image = { url : Text }
 
 let TextBox = { text : Text, style : TextStyle }
 

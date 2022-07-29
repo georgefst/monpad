@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use newtype instead of data" #-}
 module Layout where
 
 import Control.Monad.Trans.Maybe (runMaybeT)
@@ -66,7 +69,7 @@ data Element a b
     | Slider (Slider a)
     | Indicator Indicator
     | Input Input
-    | Empty (V2 Word) -- ^ dimensions are needed so that we can calculate an extent for text elements
+    | Empty (V2 Word) -- ^ dimensions are needed so that we can calculate an extent for text and image elements
     deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON (Element a b)
     deriving (Bifunctor) via GenericBifunctor Element
@@ -135,9 +138,7 @@ data TextInput = TextInput'
     deriving (ToJSON) via CustomJSON Opts.JSON TextInput
 
 data Image = Image
-    { width :: Word
-    , height :: Word
-    , url :: Text
+    { url :: Text
     }
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON Image

@@ -209,9 +209,7 @@ flags =
                   , element = Empty { x = 1000, y = 1000 }
                   , image =
                         Just
-                            { width = 1000
-                            , height = 1000
-                            , url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
+                            { url = "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hieronymus_prag_a.jpg"
                             }
                   , text = Nothing
                   }

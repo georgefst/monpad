@@ -151,10 +151,10 @@ view model =
     }
 
 
-viewImage : Image -> Collage Msgs
-viewImage img =
-    html (both toFloat ( img.width, img.height )) [ style "pointer-events" "none" ] <|
-        Html.img [ H.src img.url, H.width img.width, H.height img.height ] []
+viewImage : IntVec2 -> Image -> Collage Msgs
+viewImage size img =
+    html (both toFloat ( size.x, size.y )) [ style "pointer-events" "none" ] <|
+        Html.img [ H.src img.url, H.width size.x, H.height size.y ] []
 
 
 {-| We use a flexbox to center the text.
@@ -269,7 +269,7 @@ viewElement model element =
             Element.Empty _ ->
                 stack []
         )
-            |> maybe identity (impose << viewImage) element.image
+            |> maybe identity (impose << viewImage (elementSize element.element)) element.image
             |> maybe identity (impose << viewText (elementSize element.element)) element.text
             |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 

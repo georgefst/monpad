@@ -206,7 +206,7 @@ flags =
                 , { location = { x = -500, y = 0 }
                   , name = "image"
                   , hidden = False
-                  , element = Empty
+                  , element = Empty { x = 1000, y = 1000 }
                   , image =
                         Just
                             { width = 1000

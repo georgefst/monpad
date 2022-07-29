@@ -161,9 +161,9 @@ viewImage img =
 Rather than attempting to calculate the actual text size, we just set it to the maximum possible
 (which is the size of the viewbox).
 -}
-viewText : ViewBox -> TextBox -> Collage Msgs
-viewText vb x =
-    html (both toFloat ( vb.w, vb.h )) [ style "pointer-events" "none" ] <|
+viewText : IntVec2 -> TextBox -> Collage Msgs
+viewText size x =
+    html (both toFloat ( size.x, size.y )) [ style "pointer-events" "none" ] <|
         div
             [ style "display" "flex"
             , style "align-items" "center"
@@ -175,6 +175,44 @@ viewText vb x =
                 (textStyle x.style)
                 [ Html.text x.text ]
             ]
+
+
+{-| Minimum dimensions of a rectangle which can fully contain the element.
+We can assume the rectangle is centred at the element's position,
+since all element shapes are symmetrical in both dimensions.
+-}
+elementSize : Element.Element -> IntVec2
+elementSize el =
+    let
+        square x =
+            { x = x, y = x }
+
+        shapeSize s =
+            case s of
+                Circle r ->
+                    square <| r * 2
+
+                Rectangle v ->
+                    v
+    in
+    case el of
+        Element.Stick e ->
+            square <| e.radius * 2
+
+        Element.Button e ->
+            shapeSize e.shape
+
+        Element.Slider e ->
+            square <| e.radius * 2
+
+        Element.Indicator e ->
+            shapeSize e.shape
+
+        Element.Input e ->
+            { x = e.width, y = e.height }
+
+        Element.Empty v ->
+            v
 
 
 viewElement : Model -> FullElement -> Collage Msgs
@@ -228,11 +266,11 @@ viewElement model element =
             Element.Input x ->
                 viewInput element.name x
 
-            Element.Empty ->
+            Element.Empty _ ->
                 stack []
         )
             |> maybe identity (impose << viewImage) element.image
-            |> maybe identity (impose << viewText model.layout.layout.viewBox) element.text
+            |> maybe identity (impose << viewText (elementSize element.element)) element.text
             |> shift ( Basics.toFloat element.location.x, Basics.toFloat element.location.y )
 
 

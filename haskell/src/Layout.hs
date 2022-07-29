@@ -66,7 +66,7 @@ data Element a b
     | Slider (Slider a)
     | Indicator Indicator
     | Input Input
-    | Empty
+    | Empty (V2 Word) -- ^ dimensions are needed so that we can calculate an extent for text elements
     deriving (Show, Functor, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON (Element a b)
     deriving (Bifunctor) via GenericBifunctor Element

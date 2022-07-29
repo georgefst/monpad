@@ -83,7 +83,7 @@ let Element =
         | Slider : Slider a
         | Indicator : Indicator
         | Input : Input
-        | Empty
+        | Empty : V2 Natural
         >
 
 let FullElement =

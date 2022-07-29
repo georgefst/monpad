@@ -136,7 +136,7 @@ mkLayoutMeta = foldl' (flip insert) $ LayoutMeta mempty mempty mempty
         Button x -> over #buttonMap $ Map.insert (e ^. #name) (x ^. #buttonData)
         Indicator _ -> id
         Input _ -> id
-        Empty -> id
+        Empty _ -> id
 
 allAxesAndButs :: LayoutMeta -> ([A], [B])
 allAxesAndButs LayoutMeta{..} =

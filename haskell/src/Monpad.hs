@@ -230,40 +230,46 @@ defaultLoginPageOpts = LoginPageOpts
     , submitButtonTextStyle = ""
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
-loginHtml nColours err opts = doctypehtml_ . body_ imageStyle . form_ . mconcat $
-    [ title_ $ fs opts.pageTitle
-    , style_ (commonCSS ())
-    , style_ (loginCSS ())
-    , label_ [Html.for_ nameBoxId, style_ opts.usernamePromptStyle] $ fs opts.usernamePrompt
-    , br_ []
-    , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam, style_ opts.submitButtonStyle]
-    , input_ [type_ "submit", value_ opts.submitButtonText, style_ opts.submitButtonTextStyle]
-    , br_ []
-    ] <>
-    [ div_ [ class_ "colours" ]
-        $ (mconcat . mconcat . replicate nColours)
-        [ input_ [ class_ "colour", type_ "color", name_ "colour"]
-        ]
-    ] <> case err of
-        Nothing -> []
-        Just e ->
-            [ p_ [ style_ "color: red" ] case e of
-                EmptyUsername ->
-                    "Empty usernames are not allowed!"
-                (DuplicateUsername fully (ClientID u)) ->
-                    "The username " <> fs u <> " is already in use!"
-                        <> if fully then mempty else " (though not fully connected)"
-            ]
+loginHtml nColours err opts = doctypehtml_ 
+    do  head_ favicon
+        body_ imageStyle . form_ . mconcat $
+            [ title_ $ fs opts.pageTitle
+            , style_ (commonCSS ())
+            , style_ (loginCSS ())
+            , label_ [Html.for_ nameBoxId, style_ opts.usernamePromptStyle] $ fs opts.usernamePrompt
+            , br_ []
+            , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam, style_ opts.submitButtonStyle]
+            , input_ [type_ "submit", value_ opts.submitButtonText, style_ opts.submitButtonTextStyle]
+            , br_ []
+            ] <>
+            [ div_ [ class_ "colours" ]
+                $ (mconcat . mconcat . replicate nColours)
+                [ input_ [ class_ "colour", type_ "color", name_ "colour"]
+                ]
+            ] <> case err of
+                Nothing -> []
+                Just e ->
+                    [ p_ [ style_ "color: red" ] case e of
+                        EmptyUsername ->
+                            "Empty usernames are not allowed!"
+                        (DuplicateUsername fully (ClientID u)) ->
+                            "The username " <> fs u <> " is already in use!"
+                                <> if fully then mempty else " (though not fully connected)"
+                    ]
   where
     fs = fromString . T.unpack
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
+    favicon =  link_ [href_ "favicon.ico", rel_ "icon",type_ "image"]
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
 mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
     [ meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     , style_ (commonCSS ())
     , style_ (appCSS ())
+    , link_ [href_ "favicon.ico"
+            ,rel_ "icon"
+            ,type_ "image"]
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript

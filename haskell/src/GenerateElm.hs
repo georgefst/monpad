@@ -57,6 +57,8 @@ elm pathToElm = writeDefs pathToElm $ mconcat
     , defAndDecoder @NumberInput
     , defAndDecoder @TextInput
     , defAndDecoder @Image
+    , defAndDecoder @PosX
+    , defAndDecoder @PosY
     , defAndDecoder @TextBox
     , defAndDecoder @TextStyle
     , defAndDecoder @TextShadow
@@ -162,6 +164,16 @@ deriving instance SOP.Generic Image
 deriving instance SOP.HasDatatypeInfo Image
 deriving via Via Image instance HasElmType Image
 deriving via Via Image instance HasElmDecoder J.Value Image
+
+deriving instance SOP.Generic PosY
+deriving instance SOP.HasDatatypeInfo PosY
+deriving via Via PosY instance HasElmType PosY
+deriving via Via PosY instance HasElmDecoder J.Value PosY
+
+deriving instance SOP.Generic PosX
+deriving instance SOP.HasDatatypeInfo PosX
+deriving via Via PosX instance HasElmType PosX
+deriving via Via PosX instance HasElmDecoder J.Value PosX
 
 deriving instance SOP.Generic TextBox
 deriving instance SOP.HasDatatypeInfo TextBox

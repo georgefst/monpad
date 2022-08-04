@@ -98,7 +98,7 @@ import System.IO
 import Util.Util
 
 import Embed
-import Layout
+import Layout hiding (Left, Right)
 import Opts qualified
 import Orphans.Colour ()
 import Orphans.Generic ()

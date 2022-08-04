@@ -49,7 +49,12 @@ in    { elements =
                 }
           , location = { x = +0, y = -300 }
           , name = "Menu"
-          , text = Some { text = "M", style = monpad.defaultTextStyle }
+          , text = Some
+            { text = "M"
+            , style = monpad.defaultTextStyle
+            , alignX = monpad.PosX.Centre
+            , alignY = monpad.PosY.Middle
+            }
           }
         , monpad.Elem::{
           , element =

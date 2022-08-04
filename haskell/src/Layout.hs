@@ -143,9 +143,24 @@ data Image = Image
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON Image
 
+data PosX
+    = Left
+    | Centre
+    | Right
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON PosX
+data PosY
+    = Top
+    | Middle
+    | Bottom
+    deriving (Show, Generic, FromDhall)
+    deriving (ToJSON) via CustomJSON Opts.JSON PosY
+
 data TextBox = TextBox
     { text :: Text
     , style :: TextStyle
+    , alignX :: PosX
+    , alignY :: PosY
     }
     deriving (Show, Generic, FromDhall)
     deriving (ToJSON) via CustomJSON Opts.JSON TextBox
@@ -188,6 +203,7 @@ data TextStyle = TextStyle
     , underline :: Bool
     , shadow :: [TextShadow]
     , rotation :: Double
+    , align :: PosX
     , font :: Text
     -- ^ this is used directly as the value of the HTML `font-family` attribute
     }

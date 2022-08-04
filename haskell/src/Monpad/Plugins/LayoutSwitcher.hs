@@ -44,7 +44,9 @@ switcher scale buttonData =
                         }
                     , text = Just TextBox
                         { text = l.unwrap
-                        , style = TextStyle (size `div` 5) (withOpacity white 1) False False False [] 0 "sans-serif"
+                        , style = TextStyle (size `div` 5) (withOpacity white 1) False False False [] 0 Centre "sans-serif"
+                        , alignX = Centre
+                        , alignY = Middle
                         }
                     , image = Nothing
                     , hidden = False

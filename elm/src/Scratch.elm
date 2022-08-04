@@ -7,6 +7,8 @@ import Auto.Element exposing (..)
 import Auto.ElmFlags exposing (..)
 import Auto.Encoding exposing (..)
 import Auto.FullElement exposing (..)
+import Auto.PosX exposing (..)
+import Auto.PosY exposing (..)
 import Auto.ResetLayout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
@@ -192,9 +194,12 @@ flags =
                                       }
                                     ]
                                 , rotation = 0.1
+                                , align = Centre
                                 , font = "sans-serif"
                                 }
-                            , text = "c'est un button"
+                            , alignX = Centre
+                            , alignY = Middle
+                            , text = "c'est un\nbutton"
                             }
                   , element =
                         Button

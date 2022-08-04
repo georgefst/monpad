@@ -18,7 +18,11 @@ in    { elements =
                   e
                 ∧ { image = None monpad.Image
                   , text = Some
-                    { text = e.name, style = monpad.defaultTextStyle }
+                    { text = e.name
+                    , style = monpad.defaultTextStyle
+                    , alignX = monpad.PosX.Centre
+                    , alignY = monpad.PosY.Middle
+                    }
                   , hidden = False
                   }
             )

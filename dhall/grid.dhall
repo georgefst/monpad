@@ -26,7 +26,12 @@ let tile =
               }
         , location = { x, y }
         , name
-        , text = Some { text = name, style = monpad.defaultTextStyle }
+        , text = Some
+          { text = name
+          , style = monpad.defaultTextStyle
+          , alignX = monpad.PosX.Centre
+          , alignY = monpad.PosY.Middle
+          }
         , image = None monpad.Image
         , hidden = False
         }

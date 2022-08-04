@@ -13,6 +13,8 @@ import Auto.Input exposing (..)
 import Auto.InputType as InputType
 import Auto.IntVec2 exposing (..)
 import Auto.Layout exposing (..)
+import Auto.PosX as PosX
+import Auto.PosY as PosY
 import Auto.ResetLayout exposing (..)
 import Auto.ServerUpdate exposing (..)
 import Auto.Shape exposing (..)
@@ -166,8 +168,26 @@ viewText size x =
     html (both toFloat ( size.x, size.y )) [ style "pointer-events" "none" ] <|
         div
             [ style "display" "flex"
-            , style "align-items" "center"
-            , style "justify-content" "center"
+            , style "justify-content" <|
+                case x.alignX of
+                    PosX.Left ->
+                        "left"
+
+                    PosX.Centre ->
+                        "center"
+
+                    PosX.Right ->
+                        "right"
+            , style "align-items" <|
+                case x.alignY of
+                    PosY.Top ->
+                        "start"
+
+                    PosY.Middle ->
+                        "center"
+
+                    PosY.Bottom ->
+                        "end"
             , style "height" "100%"
             , style "user-select" "none"
             ]
@@ -1091,7 +1111,17 @@ textStyle s =
     , style "text-decoration" <| bool "none" "underline" s.underline
     , style "color" <| Color.toCssString <| fromRgba s.colour
     , style "font-family" s.font
-    , style "text-align" "center"
+    , style "text-align" <|
+        case s.align of
+            PosX.Left ->
+                "left"
+
+            PosX.Centre ->
+                "center"
+
+            PosX.Right ->
+                "right"
+    , style "margin" "0"
     , style "transform" ("rotate(" ++ String.fromFloat s.rotation ++ "rad)")
     ]
         ++ (if List.isEmpty s.shadow then

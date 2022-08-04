@@ -6,6 +6,10 @@ let V2 = λ(a : Type) → { x : a, y : a }
 
 let TextShadow = { offset : V2 Integer, blur : Natural, colour : Colour }
 
+let PosX = < Left | Centre | Right >
+
+let PosY = < Top | Middle | Bottom >
+
 let TextStyle =
       { size : Natural
       , colour : Colour
@@ -14,6 +18,7 @@ let TextStyle =
       , underline : Bool
       , shadow : List TextShadow
       , rotation : Double
+      , align : PosX
       , font : Text
       }
 
@@ -47,7 +52,12 @@ let Slider =
 
 let Image = { url : Text }
 
-let TextBox = { text : Text, style : TextStyle }
+let TextBox =
+      { text : Text
+      , style : TextStyle
+      , alignX : PosX
+      , alignY : PosY
+      }
 
 let Indicator =
       { hollowness : Double
@@ -212,6 +222,7 @@ let noTextStyle =
         , underline = False
         , shadow = [] : List TextShadow
         , rotation = 0.0
+        , align = PosX.Centre
         , font = "sans-serif"
         }
       : TextStyle
@@ -252,6 +263,8 @@ in  λ(a : Type) →
       , Stick = Stick a
       , Slider = Slider a
       , Image
+      , PosX
+      , PosY
       , TextBox
       , Indicator
       , Input

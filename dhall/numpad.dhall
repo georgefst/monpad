@@ -17,7 +17,12 @@ let button =
               }
         , location = { x, y }
         , name
-        , text = Some { style = monpad.defaultTextStyle, text = name }
+        , text = Some
+          { style = monpad.defaultTextStyle
+          , text = name
+          , alignX = monpad.PosX.Centre
+          , alignY = monpad.PosY.Middle
+          }
         , image = None monpad.Image
         , hidden = False
         }

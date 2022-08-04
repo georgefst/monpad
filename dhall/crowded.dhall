@@ -50,7 +50,12 @@ let button2 =
         , name
         , text =
             if    showName
-            then  Some { style = monpad.defaultTextStyle, text = name }
+            then  Some
+                    { style = monpad.defaultTextStyle
+                    , text = name
+                    , alignX = monpad.PosX.Centre
+                    , alignY = monpad.PosY.Middle
+                    }
             else  None monpad.TextBox
         }
 

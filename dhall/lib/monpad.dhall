@@ -229,12 +229,7 @@ let Elem =
       λ(a : Type) →
       λ(b : Type) →
         { Type = FullElement a b
-        , default =
-          { element = (Element a b).Empty
-          , text = None TextBox
-          , image = None Image
-          , hidden = False
-          }
+        , default = { text = None TextBox, image = None Image, hidden = False }
         }
 
 in  λ(a : Type) →

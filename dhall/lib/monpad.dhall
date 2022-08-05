@@ -52,12 +52,7 @@ let Slider =
 
 let Image = { url : Text }
 
-let TextBox =
-      { text : Text
-      , style : TextStyle
-      , alignX : PosX
-      , alignY : PosY
-      }
+let TextBox = { text : Text, style : TextStyle, alignX : PosX, alignY : PosY }
 
 let Indicator =
       { hollowness : Double

@@ -232,50 +232,47 @@ defaultLoginPageOpts = LoginPageOpts
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml nColours err opts = doctypehtml_ do
     head_ faviconLink
-    body_ imageStyle . form_ . mconcat $
-        [ title_ $ fs opts.pageTitle
-        , style_ (commonCSS ())
-        , style_ (loginCSS ())
-        , label_ [Html.for_ nameBoxId, style_ opts.usernamePromptStyle] $ fs opts.usernamePrompt
-        , br_ []
-        , input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam, style_ opts.submitButtonStyle]
-        , input_ [type_ "submit", value_ opts.submitButtonText, style_ opts.submitButtonTextStyle]
-        , br_ []
-        ] <>
-        [ div_ [ class_ "colours" ]
+    body_ imageStyle $ form_ do
+        title_ $ fs opts.pageTitle
+        style_ (commonCSS ())
+        style_ (loginCSS ())
+        label_ [Html.for_ nameBoxId, style_ opts.usernamePromptStyle] $ fs opts.usernamePrompt
+        br_ []
+        input_ [type_ "text", id_ nameBoxId, name_ $ symbolValT @UsernameParam, style_ opts.submitButtonStyle]
+        input_ [type_ "submit", value_ opts.submitButtonText, style_ opts.submitButtonTextStyle]
+        br_ []
+        div_ [ class_ "colours" ]
             $ (mconcat . mconcat . replicate nColours)
             [ input_ [ class_ "colour", type_ "color", name_ "colour"]
             ]
-        ] <> case err of
-            Nothing -> []
+        case err of
+            Nothing -> pure ()
             Just e ->
-                [ p_ [ style_ "color: red" ] case e of
+                p_ [ style_ "color: red" ] case e of
                     EmptyUsername ->
                         "Empty usernames are not allowed!"
                     (DuplicateUsername fully (ClientID u)) ->
                         "The username " <> fs u <> " is already in use!"
                             <> if fully then mempty else " (though not fully connected)"
-                ]
   where
     fs = fromString . T.unpack
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
-mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
-    [ meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
-    , style_ (commonCSS ())
-    , style_ (appCSS ())
-    , faviconLink
-    , script_ [type_ jsScript] (elmJS ())
-    , script_
+mainHtml encoding layouts wsPort = doctypehtml_ do
+    meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
+    style_ (commonCSS ())
+    style_ (appCSS ())
+    faviconLink
+    script_ [type_ jsScript] (elmJS ())
+    script_
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
         , makeAttribute "wsPort" $ showT wsPort
         ]
         (jsJS ())
-    ]
   where
     jsScript = "text/javascript"
 

@@ -230,7 +230,7 @@ defaultLoginPageOpts = LoginPageOpts
     , submitButtonTextStyle = ""
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
-loginHtml nColours err opts = doctypehtml_ 
+loginHtml nColours err opts = doctypehtml_
     do  head_ faviconLink
         body_ imageStyle . form_ . mconcat $
             [ title_ $ fs opts.pageTitle

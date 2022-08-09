@@ -231,7 +231,7 @@ defaultLoginPageOpts = LoginPageOpts
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml nColours err opts = doctypehtml_ 
-    do  head_ favicon
+    do  head_ faviconLink
         body_ imageStyle . form_ . mconcat $
             [ title_ $ fs opts.pageTitle
             , style_ (commonCSS ())
@@ -260,16 +260,13 @@ loginHtml nColours err opts = doctypehtml_
     fs = fromString . T.unpack
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
-    favicon =  link_ [href_ "favicon.ico", rel_ "icon",type_ "image"]
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
 mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
     [ meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     , style_ (commonCSS ())
     , style_ (appCSS ())
-    , link_ [href_ "favicon.ico"
-            ,rel_ "icon"
-            ,type_ "image"]
+    , faviconLink
     , script_ [type_ jsScript] (elmJS ())
     , script_
         [ type_ jsScript
@@ -281,6 +278,10 @@ mainHtml encoding layouts wsPort = doctypehtml_ $ mconcat
     ]
   where
     jsScript = "text/javascript"
+
+-- | This shouldn't strictly be necessary, but it seems to make favicon loading more reliable.
+faviconLink :: Html ()
+faviconLink = link_ [href_ "favicon.ico", rel_ "icon", type_ "image"]
 
 --TODO expose a cleaner interface, rather than requiring use of overloaded-labels lenses?
 -- | The Monpad monad

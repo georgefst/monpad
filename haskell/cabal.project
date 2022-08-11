@@ -4,15 +4,18 @@ source-repository-package
   type: git
   location: https://github.com/georgefst/georgefst-utils
   tag: 8b1b0ff9f5ce8faaf019498f971b545702f836e5
+  --sha256: 64v7crxwy6VV66Tg7JHU3rYI6asjok4+brGHg9VcFBE=
 
 --TODO https://github.com/folq/haskell-to-elm/pull/18
 source-repository-package
   type: git
   location: https://github.com/georgefst/haskell-to-elm
   tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
+  --sha256: o9PSRUJUnPpt883C11wKosr8sOyAD6tjq5UYcxNgwEA=
 
 --TODO https://github.com/xtendo-org/rawfilepath/pull/5
 source-repository-package
   type: git
   location: https://github.com/georgefst/rawfilepath
   tag: f609f22e82de36e0e62a9fc6b1368b50614bf3d1
+  --sha256: trxsDlNDDpv4j2xV9N8P1e4gL6rRFiA+WYF9hiLPQKY=

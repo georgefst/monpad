@@ -56,11 +56,11 @@ rules = do
             need [file]
             trySymlink file link
 
-    let haskell exeName path flags = do
+    let haskell path flags = do
             need assets
             needDirExcept hsBuildDir hsDir
             let args =
-                    [ "exe:" <> exeName
+                    [ "exe:monpad"
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
                     , "--project-file=cabal.project.patched"
@@ -80,9 +80,8 @@ rules = do
                 [path'] -> copyFileChanged path' path
                 fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
-    -- executables e.g. 'dist/monpad'
-    (distDir </> "*") %> \f -> do
-        haskell (takeBaseName f) f "release"
+    monpad %> \_ -> do
+        haskell monpad "release"
 
     let elm opts = do
             needDirExcept elmBuildDir elmDir
@@ -106,7 +105,7 @@ rules = do
 
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
-        haskell "monpad" ("dist" </> "monpad-debug" <.> exe) ""
+        haskell ("dist" </> "monpad-debug" <.> exe) ""
         trySymlink rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]

@@ -143,18 +143,12 @@ rules wanted maybeTarget = do
 
     let rmr dir = liftIO $ removeFiles dir ["//*"]
         clean = do
-            putInfo "Cleaning Shake build artefacts"
             rmr shakeDir
-            putInfo "Cleaning generated assets"
             rmr rscDir
             rmr distDir
+            rmr hsBuildDir
+            rmr elmBuildDir
     "clean" ~> clean
-    "deep-clean" ~> do
-        clean
-        putInfo "Cleaning Haskell build artefacts"
-        rmr hsBuildDir
-        putInfo "Cleaning Elm artefacts"
-        rmr elmBuildDir
 
 {- Constants -}
 

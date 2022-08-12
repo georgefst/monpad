@@ -151,6 +151,9 @@ rules wanted maybeTarget = do
             rmr hsBuildDir
             rmr elmBuildDir
     "clean" ~> clean
+    "clean-all" ~> do
+        clean
+        rmr buildDirBase
 
 {- Constants -}
 

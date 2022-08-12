@@ -152,7 +152,7 @@ rules wanted maybeTarget = do
     "deep-clean" ~> do
         clean
         putInfo "Cleaning Haskell build artefacts"
-        rmr hsBuildDirBase
+        rmr hsBuildDir
         putInfo "Cleaning Elm artefacts"
         rmr elmBuildDir
 

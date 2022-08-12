@@ -21,8 +21,10 @@ module Main (main) where
 import Control.Exception.Extra
 import Control.Monad
 import Control.Monad.Extra
+import Data.Either.Extra
 import Data.Function
 import Data.List
+import System.Console.GetOpt
 import System.IO.Error
 import System.Info.Extra
 
@@ -42,14 +44,38 @@ import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
 
+newtype Args
+    = Target String
+    deriving (Show)
+optDescrs :: [OptDescr (Either String Args)]
+optDescrs =
+    [ Option
+        []
+        ["target"]
+        (OptArg (maybeToEither "no arg" . fmap Target) "triple")
+        "Cross compile. Expects a suitably-prefixed `cabal` to be available."
+    ]
+
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    shakeArgs shakeOptions{shakeColor = True, shakeThreads = 0} rules
+    shakeArgsWith shakeOptions{shakeColor = True, shakeThreads = 0} optDescrs \args wanted ->
+        pure $ pure $ rules wanted case args of
+            Target s : _ -> Just s
+            [] -> Nothing
 
-rules :: Rules ()
-rules = do
-    want [monpad <.> exe]
+rules :: [String] -> Maybe String -> Rules ()
+rules wanted maybeTarget = do
+    let cabal = maybe "cabal" (<> "-cabal") maybeTarget
+        qualify = maybe id (flip (</>)) maybeTarget
+        hsBuildDir = qualify hsBuildDirBase
+        distDir = qualify distDirBase
+        monpad = distDir </> "monpad" <.> exe
+        monpadDebug = distDir </> "monpad-debug" <.> exe
+
+    want case wanted of
+        [] -> [monpad <.> exe]
+        _ -> wanted
 
     forM_ linkedAssets \(file, link) ->
         link %> \_ -> do
@@ -67,13 +93,15 @@ rules = do
                     ]
             cmd_
                 (Cwd hsDir)
-                "cabal build"
+                cabal
+                "build"
                 args
             bins <-
                 lines . fromStdout
                     <$> cmd
                         (Cwd hsDir)
-                        "cabal list-bin"
+                        cabal
+                        "list-bin"
                         args
             case bins of
                 [] -> error "No matches"
@@ -105,7 +133,7 @@ rules = do
 
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
-        haskell ("dist" </> "monpad-debug" <.> exe) ""
+        haskell monpadDebug ""
         trySymlink rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]
@@ -125,20 +153,19 @@ rules = do
     "deep-clean" ~> do
         clean
         putInfo "Cleaning Haskell build artefacts"
-        rmr hsBuildDir
+        rmr hsBuildDirBase
         putInfo "Cleaning Elm artefacts"
         rmr elmBuildDir
 
 {- Constants -}
 
-monpad, shakeDir, distDir, rsc, rscDir, hsDir, hsBuildDir, elmDir, elmBuildDir, elmJS :: FilePath
-monpad = distDir </> "monpad"
+shakeDir, distDirBase, rsc, rscDir, hsDir, hsBuildDirBase, elmDir, elmBuildDir, elmJS :: FilePath
 shakeDir = ".shake"
-distDir = "dist"
+distDirBase = "dist"
 rsc = "rsc"
 rscDir = hsDir </> rsc
 hsDir = "haskell"
-hsBuildDir = ".build" </> "hs"
+hsBuildDirBase = ".build" </> "hs"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 elmJS = rscDir </> "elm" <.> "js"

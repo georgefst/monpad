@@ -142,14 +142,12 @@ rules wanted maybeTarget = do
         need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
     "assets" ~> need assets
 
-    let rmr dir = liftIO $ removeFiles dir ["//*"]
-        clean = do
-            rmr shakeDir
-            rmr rscDir
-            rmr distDir
-            rmr buildDir
-            rmr elmBuildDir
-    "clean" ~> clean
+    "clean" ~> do
+        rmr shakeDir
+        rmr rscDir
+        rmr distDir
+        rmr buildDir
+        rmr elmBuildDir
 
 {- Constants -}
 
@@ -184,6 +182,10 @@ osName
     | otherwise = pack "Linux"
 
 {- Util -}
+
+-- | `rm -r`
+rmr :: FilePath -> Action ()
+rmr dir = liftIO $ removeFiles dir ["//*"]
 
 -- | Need all files in 'dir' except those in 'except'
 needDirExcept :: FilePath -> FilePath -> Action ()

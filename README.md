@@ -46,7 +46,9 @@ The controller layout and button/axis mapping can be fully customised using [Dha
 
 # Compatibility / Troubleshooting
 
-## uinput
+## Linux
+
+### uinput
 
 You will need permissions to write to `/dev/uinput`. This can usually be achieved by creating a group specially for `uinput` permissions:
 ```bash
@@ -57,7 +59,7 @@ echo 'KERNEL=="uinput", GROUP="uinput", MODE:="0660", OPTIONS+="static_node=uinp
 
 Alternatively, you can just run `monpad` as root.
 
-## SDL
+### SDL
 
 The server creates an `evdev` device, via `uinput`, but this in itself is not enough to be picked up by many games. For broad compatibility, you will need to set the `SDL_GAMECONTROLLERCONFIG` environment variable (EDIT: this is less necessary than it used to be, but [I'm unsure of the scope](https://github.com/georgefst/monpad/issues/12)). There are various ways to manage this, such as:
 

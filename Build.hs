@@ -84,7 +84,6 @@ rules wanted maybeTarget = do
 
     let haskell path flags = do
             need assets
-            needDirExcept (hsDir </> "dist-newstyle") hsDir
             let args =
                     [ "exe:monpad"
                     , "--flags=" <> flags

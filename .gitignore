@@ -6,3 +6,4 @@ elm-stuff*/
 cabal.project.local*
 cabal.project.patched*
 haskell/rsc
+result

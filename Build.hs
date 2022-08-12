@@ -68,8 +68,8 @@ rules :: [String] -> Maybe String -> Rules ()
 rules wanted maybeTarget = do
     let cabal = maybe "cabal" (<> "-cabal") maybeTarget
         qualify = maybe id (flip (</>)) maybeTarget
-        hsBuildDir = qualify hsBuildDirBase
-        distDir = qualify distDirBase
+        hsBuildDir = qualify $ ".build" </> "hs"
+        distDir = qualify "dist"
         monpad = distDir </> "monpad" <.> exe
         monpadDebug = distDir </> "monpad-debug" <.> exe
 
@@ -158,13 +158,11 @@ rules wanted maybeTarget = do
 
 {- Constants -}
 
-shakeDir, distDirBase, rsc, rscDir, hsDir, hsBuildDirBase, elmDir, elmBuildDir, elmJS :: FilePath
+shakeDir, rsc, rscDir, hsDir, elmDir, elmBuildDir, elmJS :: FilePath
 shakeDir = ".shake"
-distDirBase = "dist"
 rsc = "rsc"
 rscDir = hsDir </> rsc
 hsDir = "haskell"
-hsBuildDirBase = ".build" </> "hs"
 elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 elmJS = rscDir </> "elm" <.> "js"

@@ -76,9 +76,9 @@ This should register the gamepad correctly with SDL, Unity, Unreal, Steam etc. N
 
 ## Browsers
 
-Due to the use of some bleeding-edge Web APIs, at time of writing, the client only really works satisfactorily on very recent versions of Firefox for Android:
-- The *pointer events* API is unreliable in Chrome (offsets are reported wrong).
+Due to the use of some recent Web APIs, an up to date browser is recommended. Even then, support is not equal across the board:
 - Firefox does not currently give permission to switch to fullscreen on a change of rotation.
+- Safari has [a lot of issues](https://github.com/georgefst/monpad/issues/40).
 
 There is currently no Windows support, but [it's very much on the roadmap](https://github.com/georgefst/monpad/issues/5).
 

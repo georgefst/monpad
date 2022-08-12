@@ -4,6 +4,5 @@ dist*/
 elm-stuff*/
 .ghc.environment.*
 cabal.project.local*
-cabal.project.patched*
 haskell/rsc
 result

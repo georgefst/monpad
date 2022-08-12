@@ -90,7 +90,6 @@ rules wanted maybeTarget = do
                     [ "exe:monpad"
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
-                    , "--project-file=cabal.project.patched"
                     ]
             cmd_
                 (Cwd hsDir)

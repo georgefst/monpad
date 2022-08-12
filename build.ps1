@@ -33,5 +33,5 @@ if ($?) {
     ghc --run Build.hs
 }
 else {
-    cabal run Build.hs --project-file haskell/cabal.project.patched --builddir .build/hs --write-ghc-environment-files=always
+    cabal run Build.hs --project-file haskell/cabal.project --builddir .build/hs --write-ghc-environment-files=always
 }

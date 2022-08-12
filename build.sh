@@ -13,10 +13,8 @@ for i in 'ghc 9.2' 'cabal 3.6' 'elm 0.19' ; do
     fi
 done
 
-cp haskell/cabal.project haskell/cabal.project.patched
-
 if ghc -fno-code Build.hs 2> /dev/null ; then
     ghc --run Build.hs
 else
-    cabal run Build.hs --project-file haskell/cabal.project.patched --builddir .build/hs --write-ghc-environment-files=always
+    cabal run Build.hs --project-file haskell/cabal.project --builddir .build/hs --write-ghc-environment-files=always
 fi

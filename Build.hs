@@ -147,7 +147,7 @@ rules wanted maybeTarget = do
             rmr shakeDir
             rmr rscDir
             rmr distDir
-            rmr hsBuildDir
+            rmr buildDir
             rmr elmBuildDir
     "clean" ~> clean
     "clean-all" ~> do

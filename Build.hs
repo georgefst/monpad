@@ -68,7 +68,8 @@ rules :: [String] -> Maybe String -> Rules ()
 rules wanted maybeTarget = do
     let cabal = maybe "cabal" (<> "-cabal") maybeTarget
         qualify = maybe id (flip (</>)) maybeTarget
-        buildDir = qualify ".build"
+        buildDirBase = ".build"
+        buildDir = qualify buildDirBase
         hsBuildDir = buildDir </> "hs"
         distDir = qualify "dist"
         monpad = distDir </> "monpad" <.> exe

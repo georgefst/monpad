@@ -20,7 +20,7 @@ Prerequisites:
     - `ghc` ≥ 9.2
 - [Elm](https://elm-lang.org/):
     - `elm` ≥ 0.19.1
-- `libevdev` headers:
+- (Linux only) `libevdev` headers:
     - Debian/Ubuntu: `sudo apt install libevdev-dev`
 
 If you haven't done so before, run `cabal update` to grab the latest package index from [Hackage](https://hackage.haskell.org/).

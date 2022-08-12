@@ -17,19 +17,19 @@
                 shell.tools = { cabal = { }; };
                 shell = { inherit crossPlatforms; };
               }
-               // (if pkgs.stdenv.hostPlatform.isMusl then
-                  {
-                    configureArgs =
-                      ''
-                        --disable-executable-dynamic
-                        --disable-shared
-                        --ghc-option=-optl=-pthread
-                        --ghc-option=-optl=-static
-                        --ghc-option=-optl=-L${pkgs.gmp6.override { withStatic = true; }}/lib
-                        --ghc-option=-optl=-L${pkgs.zlib.static}/lib
-                      '';
-                  } else { })
-                );
+              // (if pkgs.stdenv.hostPlatform.isMusl then
+                {
+                  configureArgs =
+                    ''
+                      --disable-executable-dynamic
+                      --disable-shared
+                      --ghc-option=-optl=-pthread
+                      --ghc-option=-optl=-static
+                      --ghc-option=-optl=-L${pkgs.gmp6.override { withStatic = true; }}/lib
+                      --ghc-option=-optl=-L${pkgs.zlib.static}/lib
+                    '';
+                } else { })
+              );
           })
         ];
         pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };

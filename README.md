@@ -59,7 +59,7 @@ Alternatively, you can just run `monpad` as root.
 
 ## SDL
 
-The server creates an `evdev` device, via `uinput`, but this in itself is not enough to be picked up by many games. For broad compatibility, you will need to set the `SDL_GAMECONTROLLERCONFIG` environment variable. There are various ways to manage this, such as:
+The server creates an `evdev` device, via `uinput`, but this in itself is not enough to be picked up by many games. For broad compatibility, you will need to set the `SDL_GAMECONTROLLERCONFIG` environment variable (EDIT: this is less necessary than it used to be, but [I'm unsure of the scope](https://github.com/georgefst/monpad/issues/12)). There are various ways to manage this, such as:
 
 - Set persistently for the current user (you will need to log out and back in for this to take effect):
     ```bash

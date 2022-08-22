@@ -18,6 +18,11 @@
                 shell = { inherit crossPlatforms; };
               });
           })
+
+          haskellNix.overlay
+          (final: prev: prev.lib.optionalAttrs prev.stdenv.hostPlatform.isMusl {
+            libevdev = prev.libevdev.overrideAttrs (_: { dontDisableStatic = true; });
+          })
         ];
         pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };
       in

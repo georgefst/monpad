@@ -76,7 +76,7 @@ rules wanted maybeTarget = do
         monpadDebug = distDir </> "monpad-debug" <.> exe
 
     want case wanted of
-        [] -> [monpad <.> exe]
+        [] -> [monpad]
         _ -> wanted
 
     forM_ linkedAssets \(file, link) ->

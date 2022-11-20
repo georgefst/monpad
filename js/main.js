@@ -5,9 +5,10 @@ const username = params.get("username")
 
 const wsAddress = "ws://" + location.hostname + ":" + attr("wsPort") + "?" + params
 const ws = new WebSocket(wsAddress)
+const wsCloseMessage = attr("wsCloseMessage") // we can't do this lazily - `document.currentScript` may not exist later
 ws.onclose = event => {
-    console.log(event)
-    alert("Connection lost. See console for details.")
+    console.log("WebSocket closed", event)
+    alert(wsCloseMessage)
 }
 
 const layouts = JSON.parse(attr("layouts"))

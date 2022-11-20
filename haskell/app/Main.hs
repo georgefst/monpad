@@ -51,6 +51,7 @@ data Args = Args
     , displayPing :: Bool
     , scale :: Double
     , nColours :: Int
+    , wsCloseMessage :: Maybe Text
     , loginPageTitle :: Maybe Text
     , loginImageUrl :: Maybe Text
     , loginUsernamePrompt :: Maybe Text
@@ -149,6 +150,10 @@ parser = do
         , help "Number of colours associated with each user (default 1)."
         , value 1
         ]
+    wsCloseMessage <- optional . strOption $ mconcat
+        [ long "ws-close-message"
+        , metavar "STRING"
+        ]
     loginPageTitle <- optional . strOption $ mconcat
         [ long "login-title"
         , metavar "STRING"
@@ -190,6 +195,7 @@ main = do
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             , ansi = True
             }
+        wsCloseMessage = fromMaybe "Connection lost. See console for details." args.wsCloseMessage
         loginOpts = LoginPageOpts
             { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle
             , imageUrl = args.loginImageUrl
@@ -206,6 +212,7 @@ main = do
                 args.encoding
                 args.port
                 wsPort
+                wsCloseMessage
                 loginOpts
                 args.nColours
                 args.assetsDir
@@ -227,7 +234,7 @@ main = do
                 $ maybe id ((:) . Logger.plugin write) args.verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write args.pingFrequency args.encoding args.port loginOpts args.nColours args.assetsDir ls
+            runPlugin ls = server write args.pingFrequency args.encoding args.port wsCloseMessage loginOpts args.nColours args.assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

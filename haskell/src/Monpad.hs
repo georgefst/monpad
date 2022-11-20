@@ -259,8 +259,8 @@ loginHtml nColours err opts = doctypehtml_ do
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 
-mainHtml :: Encoding -> Layouts () () -> Port -> Html ()
-mainHtml encoding layouts wsPort = doctypehtml_ do
+mainHtml :: Encoding -> Layouts () () -> Port -> Text -> Html ()
+mainHtml encoding layouts wsPort wsCloseMessage = doctypehtml_ do
     meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
     style_ (appCSS ())
@@ -271,6 +271,7 @@ mainHtml encoding layouts wsPort = doctypehtml_ do
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
         , makeAttribute "wsPort" $ showT wsPort
+        , makeAttribute "wsCloseMessage" wsCloseMessage
         ]
         (jsJS ())
   where
@@ -403,18 +404,19 @@ server ::
     Int ->
     Encoding ->
     Port ->
+    Text ->
     LoginPageOpts ->
     Int ->
     Maybe FilePath ->
     Layouts a b ->
     ServerConfig e s a b ->
     IO ()
-server write pingFrequency encoding port loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server write pingFrequency encoding port wsCloseMessage loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
     run port . serve @(WsApi :<|> HttpApi) mempty $
         websocketServer write pingFrequency encoding layouts conf clients
-            :<|> httpServer port loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
+            :<|> httpServer port wsCloseMessage loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
 serverExtWs ::
@@ -425,27 +427,28 @@ serverExtWs ::
     Port ->
     -- | WS port
     Port ->
+    Text ->
     LoginPageOpts ->
     Int ->
     Maybe FilePath ->
     Layouts () () ->
     IO ()
-serverExtWs onStart encoding httpPort wsPort loginOpts nColours assetsDir layouts = do
+serverExtWs onStart encoding httpPort wsPort wsCloseMessage loginOpts nColours assetsDir layouts = do
     onStart =<< serverAddress httpPort
-    run httpPort . serve @HttpApi mempty $ httpServer wsPort loginOpts nColours assetsDir encoding layouts clients
+    run httpPort . serve @HttpApi mempty $ httpServer wsPort wsCloseMessage loginOpts nColours assetsDir encoding layouts clients
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
 
-httpServer :: Port -> LoginPageOpts -> Int -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
-httpServer wsPort loginOpts nColours assetsDir encoding layouts mclients = core :<|> assets
+httpServer :: Port -> Text -> LoginPageOpts -> Int -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
+httpServer wsPort wsCloseMessage loginOpts nColours assetsDir encoding layouts mclients = core :<|> assets
   where
     core :: Server CoreApi
     core = \case
         Nothing -> pure $ loginHtml nColours Nothing loginOpts
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort) <$> runExceptT do
+            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort wsCloseMessage) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do

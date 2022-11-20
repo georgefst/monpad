@@ -233,6 +233,7 @@ main = do
                 $ maybe id ((:) . QR.plugin write) args.qrPath
                 $ maybe id ((:) . Logger.plugin write) args.verbosity
                 []
+            {- HLINT ignore "Eta reduce" -}
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
             runPlugin ls = server write args.pingFrequency args.encoding args.port wsCloseMessage loginOpts args.nColours args.assetsDir ls
 

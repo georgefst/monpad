@@ -1122,8 +1122,16 @@ textStyle s =
             PosX.Right ->
                 "right"
     , style "margin" "0"
-    , style "transform" ("rotate(" ++ String.fromFloat s.rotation ++ "rad)")
     ]
+        -- Rotating text is broken on Safari etc. - see https://github.com/georgefst/monpad/issues/45.
+        -- We add a guard here so that it at least works when no rotation is actually set.
+        ++ (if s.rotation == 0 then
+                []
+
+            else
+                [ style "transform" ("rotate(" ++ String.fromFloat s.rotation ++ "rad)")
+                ]
+           )
         ++ (if List.isEmpty s.shadow then
                 []
 

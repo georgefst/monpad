@@ -126,7 +126,7 @@ app =
 
 view : Model -> Document Msgs
 view model =
-    { title = "monpad"
+    { title = model.windowTitle
     , body =
         let
             { x, y, w, h } =
@@ -621,6 +621,7 @@ type alias Model =
     , fullscreen : Bool
     , encoding : Encoding
     , supportsFullscreen : Bool
+    , windowTitle : String
     , startTime : Posix
     , layout : LayoutState -- the active layout
     , initialLayouts : Dict String Layout
@@ -688,6 +689,7 @@ load flags =
                                           , fullscreen = False
                                           , encoding = flags.encoding
                                           , supportsFullscreen = flags.supportsFullscreen
+                                          , windowTitle = flags.windowTitle
                                           , startTime = startTime
                                           , initialLayouts = layouts |> Dict.map (always <| \x -> x.layout)
                                           , layouts = layouts

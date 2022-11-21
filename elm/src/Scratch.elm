@@ -111,6 +111,7 @@ flags =
     { username = "GT"
     , encoding = JSONEncoding
     , supportsFullscreen = False
+    , windowTitle = "monpad scratch"
     , layouts =
         [ { elements =
                 [ { location = { x = -600, y = 0 }

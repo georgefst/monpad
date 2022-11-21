@@ -13,7 +13,8 @@ type alias ElmFlags  =
     { layouts : List Auto.Layout.Layout
     , username : String
     , encoding : Auto.Encoding.Encoding
-    , supportsFullscreen : Bool }
+    , supportsFullscreen : Bool
+    , windowTitle : String }
 
 
 decode : Json.Decode.Decoder ElmFlags
@@ -22,4 +23,5 @@ decode =
     Json.Decode.Pipeline.required "layouts" (Json.Decode.list Auto.Layout.decode) |>
     Json.Decode.Pipeline.required "username" Json.Decode.string |>
     Json.Decode.Pipeline.required "encoding" Auto.Encoding.decode |>
-    Json.Decode.Pipeline.required "supportsFullscreen" Json.Decode.bool
+    Json.Decode.Pipeline.required "supportsFullscreen" Json.Decode.bool |>
+    Json.Decode.Pipeline.required "windowTitle" Json.Decode.string

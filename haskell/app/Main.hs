@@ -51,6 +51,7 @@ data Args = Args
     , displayPing :: Bool
     , scale :: Double
     , nColours :: Int
+    , windowTitle :: Maybe Text
     , wsCloseMessage :: Maybe Text
     , loginPageTitle :: Maybe Text
     , loginImageUrl :: Maybe Text
@@ -150,6 +151,10 @@ parser = do
         , help "Number of colours associated with each user (default 1)."
         , value 1
         ]
+    windowTitle <- optional . strOption $ mconcat
+        [ long "window-title"
+        , metavar "STRING"
+        ]
     wsCloseMessage <- optional . strOption $ mconcat
         [ long "ws-close-message"
         , metavar "STRING"
@@ -196,6 +201,7 @@ main = do
             , ansi = True
             }
         wsCloseMessage = fromMaybe "Connection lost. See console for details." args.wsCloseMessage
+        windowTitle = fromMaybe "monpad" args.windowTitle
         loginOpts = LoginPageOpts
             { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle
             , imageUrl = args.loginImageUrl
@@ -212,6 +218,7 @@ main = do
                 args.encoding
                 args.port
                 wsPort
+                windowTitle
                 wsCloseMessage
                 loginOpts
                 args.nColours
@@ -235,7 +242,7 @@ main = do
                 []
             {- HLINT ignore "Eta reduce" -}
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write args.pingFrequency args.encoding args.port wsCloseMessage loginOpts args.nColours args.assetsDir ls
+            runPlugin ls = server write args.pingFrequency args.encoding args.port windowTitle wsCloseMessage loginOpts args.nColours args.assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

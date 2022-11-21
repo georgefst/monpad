@@ -13,13 +13,14 @@ ws.onclose = event => {
 
 const layouts = JSON.parse(attr("layouts"))
 const encoding = JSON.parse(attr("encoding"))
+const windowTitle = attr("windowTitle");
 
 ws.onopen = _event => {
     // Elm
     elmInitialised = false
     const app = Elm.Main.init({
         flags: {
-            username, layouts, encoding,
+            username, layouts, encoding, windowTitle,
             supportsFullscreen: document.documentElement.requestFullscreen != null
         }
     })

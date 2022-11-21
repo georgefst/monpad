@@ -54,6 +54,7 @@ test ps ls lsVoid = do
             JSONEncoding
             8000
             "dropped"
+            "monpad test"
             defaultLoginPageOpts
             nColours
             (Just "../dist/assets")
@@ -69,6 +70,7 @@ testExt = do
         8000
         8001
         "dropped"
+        "monpad test ext"
         defaultLoginPageOpts
         nColours
         (Just "../dist/assets")

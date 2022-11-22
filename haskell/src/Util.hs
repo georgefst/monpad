@@ -33,11 +33,8 @@ import Dhall.Parser qualified as D
 import Dhall.TypeCheck qualified as D
 import Network.HostName (getHostName)
 import Network.Socket (
-    AddrInfo (addrAddress),
     HostAddress,
     HostName,
-    SockAddr (SockAddrInet),
-    getAddrInfo,
     hostAddressToTuple,
  )
 import Safe (tailMay)
@@ -63,16 +60,9 @@ instance Monoid Logger where
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2
 
+--TODO work out why Musl build fails at startup in `getAddrInfo`
 getLocalIp :: IO (Maybe HostAddress)
-getLocalIp = do
-    h <- getHostName'
-    sockAddrs <- map addrAddress <$> getAddrInfo Nothing (Just $ h <> ".local") Nothing
-    pure . find bitOfAHack $ flip mapMaybe sockAddrs \case
-        SockAddrInet _ a -> Just a
-        _ -> Nothing
-  where
-    --TODO
-    bitOfAHack = (== 192) . fst4 . hostAddressToTuple
+getLocalIp = pure Nothing
 
 -- adapted from an internal function of the same name in Network.Socket.Info
 showHostAddress :: HostAddress -> Text

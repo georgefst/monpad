@@ -1,0 +1,28 @@
+body {
+    height: 100vh;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+form {
+    padding: 0.5em;
+    text-align: center;
+    font-size: 5vw;
+}
+
+input {
+    font-size: inherit;
+}
+
+.colours {
+    display: flex;
+    flex-direction: row;
+}
+
+.colour {
+    flex-grow: 1;
+    margin: 3vh;
+    height: 10vh;
+}

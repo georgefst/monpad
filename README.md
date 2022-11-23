@@ -92,10 +92,6 @@ Apple devices (more specifically, WebKit-based browsers) have [a _lot_ of issues
 
 This is mostly down to Apple's refusal to implement Web APIs as specified, due to often-excessive accessibility or security considerations, which demonstrate a lack of trust in both users and developers. In other cases, behaviour is simply buggy. There's a limit to what we can do to work around these problems downstream. Ultimately, Apple devices are currently a poor target platform for complex web applications (as opposed to more traditional web pages).
 
-## Issues
-
-- It is best to wait around a second after the webpage finishes loading, before interacting with the controller. This is likely due to a bug in `libevdev`, or its Haskell bindings. See [here](https://github.com/georgefst/monpad/issues/2).
-
 # Contributing
 
 Get involved! I'm particularly looking for someone who's keen on adding Windows support, since I don't currently have a Windows PC to test on.

@@ -55,6 +55,10 @@ The controller layout and button/axis mapping can be fully customised using [Dha
 
 # Compatibility / Troubleshooting
 
+## Windows
+
+There is currently no support for creating OS-level devices on Windows. But [it's very much on the roadmap](https://github.com/georgefst/monpad/issues/5).
+
 ## Linux
 
 ### uinput
@@ -85,11 +89,17 @@ This should register the gamepad correctly with SDL, Unity, Unreal, Steam etc. N
 
 ## Browsers
 
-Due to the use of some recent Web APIs, an up to date browser is recommended. Even then, support is not equal across the board:
-- Firefox does not currently give permission to switch to fullscreen on a change of rotation.
-- Safari has [a lot of issues](https://github.com/georgefst/monpad/issues/40).
+Due to the use of some recent Web APIs, an up to date browser is recommended. Even then, support is not equal across the board. Firefox (Android and Linux) is the most well-tested, followed by Chrome on Android.
 
-There is currently no Windows support, but [it's very much on the roadmap](https://github.com/georgefst/monpad/issues/5).
+### Miscellaneous issues
+
+- Firefox does not currently give permission to switch to fullscreen on a change of rotation.
+
+### Apple
+
+Apple devices (more specifically, WebKit-based browsers) have [a _lot_ of issues](https://github.com/georgefst/monpad/labels/Apple). This includes Firefox and Chrome on iOS. Many of these issues also apply to Safari on MacOS, but that's unlikely to be a platform anyone's currently using with a touch screen.
+
+This is mostly down to Apple's refusal to implement Web APIs as specified, due to often-excessive accessibility or security considerations, which demonstrate a lack of trust in both users and developers. In other cases, behaviour is simply buggy. There's a limit to what we can do to work around these problems downstream. Ultimately, Apple devices are currently a poor target platform for complex web applications (as opposed to more traditional web pages).
 
 ## Issues
 

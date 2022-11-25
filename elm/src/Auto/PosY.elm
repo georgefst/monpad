@@ -6,10 +6,10 @@ module Auto.PosY exposing
 import Json.Decode
 
 
-type PosY
-    = Top
-    | Middle
-    | Bottom
+type PosY 
+    = Top 
+    | Middle 
+    | Bottom 
 
 
 decode : Json.Decode.Decoder PosY

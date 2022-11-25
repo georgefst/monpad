@@ -102,8 +102,8 @@ defAndDecoder = catMaybes
 
 deriving instance SOP.Generic ClientUpdate
 deriving instance SOP.HasDatatypeInfo ClientUpdate
-deriving via Via ClientUpdate instance HasElmType ClientUpdate
-deriving via Via ClientUpdate instance HasElmEncoder J.Value ClientUpdate
+deriving via Via' "ClientUpdate" ClientUpdate instance HasElmType ClientUpdate
+deriving via Via' "ClientUpdate" ClientUpdate instance HasElmEncoder J.Value ClientUpdate
 
 deriving instance SOP.Generic (ServerUpdate a b)
 deriving instance SOP.HasDatatypeInfo (ServerUpdate a b)

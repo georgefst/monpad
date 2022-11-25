@@ -6,10 +6,10 @@ module Auto.PosX exposing
 import Json.Decode
 
 
-type PosX
-    = Left
-    | Centre
-    | Right
+type PosX 
+    = Left 
+    | Centre 
+    | Right 
 
 
 decode : Json.Decode.Decoder PosX

@@ -44,7 +44,7 @@ data Colour' = Colour'
     }
     deriving (Show, Generic, FromDhall, SOP.Generic, SOP.HasDatatypeInfo)
     deriving (ToJSON) via CustomJSON Opts.JSON Colour'
-    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via Colour'
+    deriving (HasElmType, HasElmDecoder J.Value) via Elm.Via' "Colour" Colour'
 
 instance FromHttpApiData (Colour Float) where
     parseUrlPiece = first T.pack . readEither' . T.unpack

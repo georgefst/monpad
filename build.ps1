@@ -25,9 +25,6 @@ foreach ($prog in $progs) {
     }
 }
 
-#TODO this is a workaround for https://github.com/haskell/cabal/issues/7083
-ghc --run windows-cabal-project-hack.hs
-
 ghc -fno-code Build.hs 2>&1 | out-null
 if ($?) {
     ghc --run Build.hs

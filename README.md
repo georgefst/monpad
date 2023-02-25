@@ -102,4 +102,4 @@ Note that a basic version of the server (which doesn't create `uinput` devices) 
 
 Many thanks to everyone (particularly `xboxdrv` maintainer @Grumbel) who helped me with understanding the mechanisms by which games recognise controllers and receive input on Linux. I never would have pieced that all together myself.
 
-And a shout out to @CPTblackadder and @ortk95 for forcing me to work on all this for far longer than I wanted to.
+And a shout out to @CPTblackadder and @ortk95 for [forcing me to work on all this for far longer than I wanted to](https://store.steampowered.com/app/1969260/Ewephoria/).

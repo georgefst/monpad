@@ -1,6 +1,6 @@
 #!/usr/bin/env cabal
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
 

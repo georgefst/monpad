@@ -12,7 +12,3 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
   --sha256: o9PSRUJUnPpt883C11wKosr8sOyAD6tjq5UYcxNgwEA=
-
-allow-newer:
-  -- https://github.com/alexkazik/qrcode/issues/4
-  qrcode-core:text, qrcode-juicypixels:text,

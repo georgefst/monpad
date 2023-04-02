@@ -27,7 +27,7 @@ foreach ($prog in $progs) {
 
 ghc -fno-code Build.hs 2>&1 | out-null
 if ($?) {
-    ghc --run Build.hs
+    ghc -ignore-dot-ghci --run Build.hs
 }
 else {
     # TODO environment files no longer written - https://github.com/haskell/cabal/issues/6999#issuecomment-1052953251

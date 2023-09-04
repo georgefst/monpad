@@ -99,12 +99,12 @@ rules wanted ghc maybeTarget = do
                     [ "exe:monpad"
                     , "--flags=" <> flags
                     , "--builddir=" <> (".." </> hsBuildDir)
+                    , "-w" <> ghc
                     ]
             cmd_
                 (Cwd hsDir)
                 cabal
                 "build"
-                ["-w", ghc]
                 args
             bins <-
                 lines . fromStdout
@@ -112,7 +112,6 @@ rules wanted ghc maybeTarget = do
                         (Cwd hsDir)
                         cabal
                         "list-bin"
-                        ["-w", ghc]
                         args
             case bins of
                 [] -> error "No matches"

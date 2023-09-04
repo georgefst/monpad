@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for i in 'ghc 9.2' 'cabal 3.6' 'elm 0.19' ; do
+for i in 'ghc 9.4' 'cabal 3.6' 'elm 0.19' ; do
     s=( $i )
     PROG=${s[0]}
     REQUIRED=${s[1]}

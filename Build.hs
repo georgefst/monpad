@@ -45,8 +45,9 @@ import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
 
-newtype Args
+data Args
     = Target String
+    | Compiler String
     deriving (Show)
 optDescrs :: [OptDescr (Either String Args)]
 optDescrs =
@@ -55,18 +56,25 @@ optDescrs =
         ["target"]
         (OptArg (maybeToEither "no arg" . fmap Target) "triple")
         "Cross compile. Expects a suitably-prefixed `cabal` to be available."
+    , Option
+        ['w']
+        []
+        (OptArg (maybeToEither "no arg" . fmap Compiler) "path")
+        "Path to GHC binary to use."
     ]
 
 main :: IO ()
 main = do
     setLocaleEncoding utf8
     shakeArgsWith shakeOptions{shakeColor = True, shakeThreads = 0} optDescrs \args wanted ->
-        pure $ pure $ rules wanted case args of
-            Target s : _ -> Just s
-            [] -> Nothing
+        pure $ pure $ uncurry (rules wanted) case args of
+            [Target s] -> ("ghc", Just s)
+            [Compiler s] -> (s, Nothing)
+            [] -> ("ghc", Nothing)
+            _ -> error "incompatible args"
 
-rules :: [String] -> Maybe String -> Rules ()
-rules wanted maybeTarget = do
+rules :: [String] -> String -> Maybe String -> Rules ()
+rules wanted ghc maybeTarget = do
     let cabal = maybe "cabal" (<> "-cabal") maybeTarget
         qualify = maybe id (flip (</>)) maybeTarget
         buildDirBase = ".build"
@@ -96,6 +104,7 @@ rules wanted maybeTarget = do
                 (Cwd hsDir)
                 cabal
                 "build"
+                ["-w", ghc]
                 args
             bins <-
                 lines . fromStdout
@@ -103,6 +112,7 @@ rules wanted maybeTarget = do
                         (Cwd hsDir)
                         cabal
                         "list-bin"
+                        ["-w", ghc]
                         args
             case bins of
                 [] -> error "No matches"

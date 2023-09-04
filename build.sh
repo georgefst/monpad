@@ -13,9 +13,9 @@ for i in 'ghc 9.4' 'cabal 3.6' 'elm 0.19' ; do
     fi
 done
 
-if ghc -fno-code Build.hs 2> /dev/null ; then
-    ghc -ignore-dot-ghci --run Build.hs
+if ghc-9.4 -fno-code Build.hs 2> /dev/null ; then
+    ghc-9.4 -ignore-dot-ghci --run Build.hs -- -wghc-9.4
 else
     # TODO environment files no longer written - https://github.com/haskell/cabal/issues/6999#issuecomment-1052953251
-    cabal run Build.hs --project-file haskell/cabal.project --builddir .build/hs --write-ghc-environment-files=always
+    cabal run -w ghc-9.4 Build.hs --project-file cabal.project --builddir .build/hs --write-ghc-environment-files=always -- -wghc-9.4
 fi

@@ -1,3 +1,8 @@
+{- TODO this should be in a separate component really (maybe even an actual test)
+but we'll need to wait for GHC's new "multiple home units" support to be used by cabal
+otherwise we'd have very slow turnarounds for testing from making an edit in the core library
+-}
+
 -- | Stuff for quickly playing around in GHCI. Call 'runghc Build.hs assets' before using these.
 module Test where
 

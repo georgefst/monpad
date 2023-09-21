@@ -20,7 +20,7 @@ foreach ($prog in $progs) {
     ).Split(' ') |
     Select-Object -Last 1
     if ([version]$prog.required -gt [version]$installed) {
-        Write-Host "$($prog.prog) version $($prog.required) required - $installed found"
+        Write-Host "$($prog.prog) version >= $($prog.required) required - $installed found"
         exit 1
     }
 }

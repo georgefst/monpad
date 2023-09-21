@@ -32,27 +32,27 @@ instance (EDD a a, KnownSymbol s) => HasElmDecoder J.Value (Via' s a) where
     elmDecoderDefinition = edd @a @a $ symbolValT @s
 
 newtype Via a = Via a
-instance ED a a => HasElmType (Via a) where
+instance (ED a a) => HasElmType (Via a) where
     elmDefinition = ed @a @a (typeRepT @a)
-instance EED a a => HasElmEncoder J.Value (Via a) where
+instance (EED a a) => HasElmEncoder J.Value (Via a) where
     elmEncoderDefinition = eed @a @a (typeRepT @a)
-instance EDD a a => HasElmDecoder J.Value (Via a) where
+instance (EDD a a) => HasElmDecoder J.Value (Via a) where
     elmDecoderDefinition = edd @a @a (typeRepT @a)
 
 newtype Via1 t a = Via1 (t a)
-instance ED t (t ()) => HasElmType (Via1 t a) where
+instance (ED t (t ())) => HasElmType (Via1 t a) where
     elmDefinition = ed @t @(t ()) (typeRepT @t)
-instance EED t (t ()) => HasElmEncoder J.Value (Via1 t ()) where
+instance (EED t (t ())) => HasElmEncoder J.Value (Via1 t ()) where
     elmEncoderDefinition = eed @t @(t ()) (typeRepT @t)
-instance EDD t (t ()) => HasElmDecoder J.Value (Via1 t ()) where
+instance (EDD t (t ())) => HasElmDecoder J.Value (Via1 t ()) where
     elmDecoderDefinition = edd @t @(t ()) (typeRepT @t)
 
 newtype Via2 t a b = Via2 (t a b)
-instance ED t (t () ()) => HasElmType (Via2 t a b) where
+instance (ED t (t () ())) => HasElmType (Via2 t a b) where
     elmDefinition = ed @t @(t () ()) (typeRepT @t)
-instance EED t (t () ()) => HasElmEncoder J.Value (Via2 t () ()) where
+instance (EED t (t () ())) => HasElmEncoder J.Value (Via2 t () ()) where
     elmEncoderDefinition = eed @t @(t () ()) (typeRepT @t)
-instance EDD t (t () ()) => HasElmDecoder J.Value (Via2 t () ()) where
+instance (EDD t (t () ())) => HasElmDecoder J.Value (Via2 t () ()) where
     elmDecoderDefinition = edd @t @(t () ()) (typeRepT @t)
 
 qual :: Text -> Text -> Name.Qualified
@@ -69,7 +69,7 @@ type ED t a = (SOP.HasDatatypeInfo a, A HasElmType a, Typeable t)
 type EED t a = (ED t a, HasElmType a, A (HasElmEncoder J.Value) a)
 type EDD t a = (ED t a, HasElmType a, A (HasElmDecoder J.Value) a)
 
-instance HasElmType a => HasElmType (NonEmpty a) where
+instance (HasElmType a) => HasElmType (NonEmpty a) where
     elmType = elmType @[a]
-instance HasElmDecoder J.Value a => HasElmDecoder J.Value (NonEmpty a) where
+instance (HasElmDecoder J.Value a) => HasElmDecoder J.Value (NonEmpty a) where
     elmDecoder = elmDecoder @J.Value @[a]

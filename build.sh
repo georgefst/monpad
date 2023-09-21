@@ -17,5 +17,5 @@ if ghc -fno-code Build.hs 2> /dev/null ; then
     ghc -ignore-dot-ghci --run Build.hs
 else
     # TODO environment files no longer written - https://github.com/haskell/cabal/issues/6999#issuecomment-1052953251
-    cabal run -w ghc Build.hs --project-file cabal.project --builddir .build/hs --write-ghc-environment-files=always
+    cabal run Build.hs --project-file cabal.project --builddir .build/hs --write-ghc-environment-files=always
 fi

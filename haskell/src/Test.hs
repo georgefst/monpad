@@ -81,6 +81,19 @@ testExt = do
         (Just "../dist/assets")
         layouts
 
+testDump :: IO ()
+testDump = do
+    tmp <- unsafeInterleaveIO getTemporaryDirectory
+    setLocaleEncoding utf8
+    Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
+    justDumpHTML
+        JSONEncoding
+        (tmp </> "monpad.html")
+        8001
+        "dropped"
+        "monpad test dump"
+        layouts
+
 write :: Logger
 write = join Logger T.putStrLn True
 

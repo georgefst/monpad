@@ -5,6 +5,7 @@
 module Monpad (
     server,
     serverExtWs,
+    justDumpHTML,
     LoginPageOpts(..),
     defaultLoginPageOpts,
     Monpad,
@@ -41,12 +42,14 @@ import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Except
+import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Control
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
+import Data.Binary.Builder (toLazyByteString)
 import Data.Binary.Get qualified as B
 import Data.ByteString.Lazy qualified as BSL
 import Data.Colour (Colour)
@@ -443,6 +446,21 @@ serverExtWs onStart encoding httpPort wsPort windowTitle wsCloseMessage loginOpt
   where
     -- we can't detect duplicates when we don't control the websocket, since we don't know when a client disconnects
     clients = Nothing
+
+justDumpHTML ::
+    Encoding ->
+    FilePath ->
+    Port ->
+    Text ->
+    Text ->
+    Layouts () () ->
+    IO ()
+justDumpHTML encoding outPath wsPort windowTitle wsCloseMessage layouts =
+    BSL.writeFile outPath
+        . toLazyByteString
+        . runIdentity
+        . execHtmlT
+        $ mainHtml encoding layouts wsPort windowTitle wsCloseMessage
 
 httpServer :: Port -> Text -> Text -> LoginPageOpts -> Int -> Maybe FilePath -> Encoding -> Layouts () () -> Maybe Clients -> Server HttpApi
 httpServer wsPort windowTitle wsCloseMessage loginOpts nColours assetsDir encoding layouts mclients = core :<|> assets

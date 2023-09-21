@@ -45,6 +45,7 @@ data Args = Args
     , assetsDir :: Maybe FilePath
     , layoutExprs :: [Text]
     , externalWS :: Maybe Port
+    , dumpHTML :: Maybe FilePath
     , encoding :: Encoding
     , qrPath :: Maybe FilePath
     , pingFrequency :: Int
@@ -141,6 +142,11 @@ parser = do
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
             \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
         ]
+    dumpHTML <- optional . option auto $ mconcat
+        [ long "dump-html"
+        , metavar "PATH"
+        , help "Don't run any server. Just dump the HTML to a file. Doesn't handle login or serving assets."
+        ]
     encoding <- flag BinaryEncoding JSONEncoding $ mconcat
         [ long "json"
         , help "Send messages as JSON, instead of more compact binary encoding."
@@ -211,8 +217,21 @@ main = do
             , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText args.loginSubmitButtonText
             , submitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle args.loginSubmitButtonTextStyle
             }
-    case args.externalWS of
-        Just wsPort ->
+    case (args.externalWS, args.dumpHTML) of
+        --TODO bit hacky
+        -- try to specify mutual-exclusivity as part of parser definition, by making it modal (will change CLI)
+        -- also would be good way to make clearer which flags are relevant in which modes
+        -- we actually use the --port flag here for the WS port, when it's usually the HTML one, which is confusing
+        (Just _, Just _) -> error "--dump-html and --ext-ws can't be used together"
+        (Nothing, Just outFile) ->
+            justDumpHTML
+                args.encoding
+                outFile
+                args.port
+                windowTitle
+                wsCloseMessage
+                =<< mkLayouts write dhallLayouts
+        (Just wsPort, Nothing) ->
             serverExtWs
                 (maybe mempty writeQR args.qrPath)
                 args.encoding
@@ -226,7 +245,7 @@ main = do
                 =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
-        Nothing -> if args.systemDevice
+        (Nothing, Nothing) -> if args.systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
             else withPlugin (plugin @() ()) . runPlugin

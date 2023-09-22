@@ -72,12 +72,14 @@ data NormalArgs = NormalArgs
 parser :: Parser Args
 parser = do
     common <- parserCommon
-    normal <- parserNormal -- it's important that these are all optional, since we otherwise require them in all modes
-    mode <- optional $ hsubparser $ mconcat
-        [ command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
-            "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+    mode <- asum
+        [ fmap Right . hsubparser $ mconcat
+            [ command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
+                "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+            ]
+        , Left <$> parserNormal
         ]
-    pure Args{common, mode = maybeToEither normal mode}
+    pure Args{common, mode}
 parserCommon :: Parser CommonArgs
 parserCommon = do
     verbosity <-

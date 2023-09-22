@@ -195,6 +195,13 @@ main = do
     Args
         { wsCloseMessage = fromMaybe "Connection lost. See console for details." -> wsCloseMessage
         , windowTitle = fromMaybe "monpad" -> windowTitle --TODO get GHC to accept `fromMaybe "monpad" -> windowTitle`
+        , loginPageTitle = fromMaybe defaultLoginPageOpts.pageTitle -> pageTitle
+        , loginImageUrl = imageUrl
+        , loginUsernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt -> usernamePrompt
+        , loginUsernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle -> usernamePromptStyle
+        , loginSubmitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle -> submitButtonStyle
+        , loginSubmitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText -> submitButtonText
+        , loginSubmitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle -> submitButtonTextStyle
         , ..
         } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
@@ -204,15 +211,7 @@ main = do
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             , ansi = True
             }
-        loginOpts = LoginPageOpts
-            { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle loginPageTitle
-            , imageUrl = loginImageUrl
-            , usernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt loginUsernamePrompt
-            , usernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle loginUsernamePromptStyle
-            , submitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle loginSubmitButtonStyle
-            , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText loginSubmitButtonText
-            , submitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle loginSubmitButtonTextStyle
-            }
+        loginOpts = LoginPageOpts{..}
     case externalWS of
         Just wsPort ->
             serverExtWs

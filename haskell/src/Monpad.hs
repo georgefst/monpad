@@ -233,6 +233,7 @@ defaultLoginPageOpts = LoginPageOpts
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml nColours err opts = doctypehtml_ do
+    meta_ [charset_ "utf-8"]
     head_ faviconLink
     body_ imageStyle $ form_ do
         title_ $ fs opts.pageTitle
@@ -263,7 +264,7 @@ loginHtml nColours err opts = doctypehtml_ do
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Text -> Text -> Html ()
 mainHtml encoding layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
-    meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
+    meta_ [charset_ "utf-8", name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
     style_ (appCSS ())
     faviconLink

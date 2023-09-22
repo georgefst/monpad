@@ -39,11 +39,10 @@ type Port = Int
 
 data Args = Args
     { common :: CommonArgs
-    , mode :: ModeArgs
+    , mode :: Either NormalArgs ModeArgs
     }
-data ModeArgs
-    = Normal NormalArgs
-    | ExtWs Port
+newtype ModeArgs
+    = ExtWs Port
 data CommonArgs = CommonArgs
     { verbosity :: Maybe Logger.Settings
     , port :: Port
@@ -73,13 +72,12 @@ data NormalArgs = NormalArgs
 parser :: Parser Args
 parser = do
     common <- parserCommon
-    mode <- hsubparser $ mconcat
-        [ command "run" $ info (Normal <$> parserNormal) $ progDesc
-            "Standard mode. Just run the server."
-        , command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
+    normal <- parserNormal -- it's important that these are all optional, since we otherwise require them in all modes
+    mode <- optional $ hsubparser $ mconcat
+        [ command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
             "Don't run the websocket server. Frontend will instead look for an external server at the given port."
         ]
-    pure Args{..}
+    pure Args{common, mode = maybeToEither normal mode}
 parserCommon :: Parser CommonArgs
 parserCommon = do
     verbosity <-
@@ -230,7 +228,7 @@ main = do
             }
         loginOpts = LoginPageOpts{..}
     case modeArgs of
-        Normal NormalArgs{..} -> if systemDevice
+        Left NormalArgs{..} -> if systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
             else withPlugin (plugin @() ()) . runPlugin
@@ -246,7 +244,7 @@ main = do
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
             runPlugin = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir
-        ExtWs wsPort ->
+        Right (ExtWs wsPort) ->
             serverExtWs
                 (maybe mempty writeQR qrPath)
                 encoding

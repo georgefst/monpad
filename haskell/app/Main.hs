@@ -192,41 +192,43 @@ parser = do
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    args <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
-    dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack args.layoutExprs
+    Args
+        { wsCloseMessage = fromMaybe "Connection lost. See console for details." -> wsCloseMessage
+        , windowTitle = fromMaybe "monpad" -> windowTitle --TODO get GHC to accept `fromMaybe "monpad" -> windowTitle`
+        , ..
+        } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+    dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
     let write = Logger
             { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
             , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
             , ansi = True
             }
-        wsCloseMessage = fromMaybe "Connection lost. See console for details." args.wsCloseMessage
-        windowTitle = fromMaybe "monpad" args.windowTitle
         loginOpts = LoginPageOpts
-            { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle args.loginPageTitle
-            , imageUrl = args.loginImageUrl
-            , usernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt args.loginUsernamePrompt
-            , usernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle args.loginUsernamePromptStyle
-            , submitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle args.loginSubmitButtonStyle
-            , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText args.loginSubmitButtonText
-            , submitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle args.loginSubmitButtonTextStyle
+            { pageTitle = fromMaybe defaultLoginPageOpts.pageTitle loginPageTitle
+            , imageUrl = loginImageUrl
+            , usernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt loginUsernamePrompt
+            , usernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle loginUsernamePromptStyle
+            , submitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle loginSubmitButtonStyle
+            , submitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText loginSubmitButtonText
+            , submitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle loginSubmitButtonTextStyle
             }
-    case args.externalWS of
+    case externalWS of
         Just wsPort ->
             serverExtWs
-                (maybe mempty writeQR args.qrPath)
-                args.encoding
-                args.port
+                (maybe mempty writeQR qrPath)
+                encoding
+                port
                 wsPort
                 windowTitle
                 wsCloseMessage
                 loginOpts
-                args.nColours
-                args.assetsDir
+                nColours
+                assetsDir
                 =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
-        Nothing -> if args.systemDevice
+        Nothing -> if systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
             else withPlugin (plugin @() ()) . runPlugin
@@ -234,15 +236,15 @@ main = do
           where
             plugin :: forall a b. (FromDhall a, FromDhall b, Show a, Show b) => b -> Plugin a b
             plugin unknown = plugins
-                $ applyWhen args.displayPing (PingIndicator.plugin args.scale :)
-                $ applyWhen args.watchLayout (WatchLayout.plugin write :)
-                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin args.scale unknown :)
-                $ maybe id ((:) . QR.plugin write) args.qrPath
-                $ maybe id ((:) . Logger.plugin write) args.verbosity
+                $ applyWhen displayPing (PingIndicator.plugin scale :)
+                $ applyWhen watchLayout (WatchLayout.plugin write :)
+                $ applyWhen (length dhallLayouts > 1) (LayoutSwitcher.plugin scale unknown :)
+                $ maybe id ((:) . QR.plugin write) qrPath
+                $ maybe id ((:) . Logger.plugin write) verbosity
                 []
             {- HLINT ignore "Eta reduce" -}
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write args.pingFrequency args.encoding args.port windowTitle wsCloseMessage loginOpts args.nColours args.assetsDir ls
+            runPlugin ls = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir ls
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

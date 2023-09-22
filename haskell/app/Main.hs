@@ -142,7 +142,7 @@ parser = do
             "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
             \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
         ]
-    dumpHTML <- optional . option auto $ mconcat
+    dumpHTML <- optional . strOption $ mconcat
         [ long "dump-html"
         , metavar "PATH"
         , help "Don't run any server. Just dump the HTML to a file. Doesn't handle login or serving assets."

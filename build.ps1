@@ -25,11 +25,4 @@ foreach ($prog in $progs) {
     }
 }
 
-ghc -fno-code Build.hs 2>&1 | out-null
-if ($?) {
-    ghc -ignore-dot-ghci --run Build.hs
-}
-else {
-    # TODO environment files no longer written - https://github.com/haskell/cabal/issues/6999#issuecomment-1052953251
-    cabal run -v1 Build.hs --project-file cabal.project --write-ghc-environment-files=always
-}
+cabal run -v1 Build.hs --project-file cabal.project

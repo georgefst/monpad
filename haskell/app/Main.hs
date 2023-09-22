@@ -38,18 +38,19 @@ import OS qualified
 type Port = Int
 
 data Args = Args
+    { common :: CommonArgs
+    , mode :: ModeArgs
+    }
+data ModeArgs
+    = Normal NormalArgs
+    | ExtWs Port
+data CommonArgs = CommonArgs
     { verbosity :: Maybe Logger.Settings
-    , systemDevice :: Bool
-    , watchLayout :: Bool
     , port :: Port
     , assetsDir :: Maybe FilePath
     , layoutExprs :: [Text]
-    , externalWS :: Maybe Port
     , encoding :: Encoding
     , qrPath :: Maybe FilePath
-    , pingFrequency :: Int
-    , displayPing :: Bool
-    , scale :: Double
     , nColours :: Int
     , windowTitle :: Maybe Text
     , wsCloseMessage :: Maybe Text
@@ -61,9 +62,32 @@ data Args = Args
     , loginSubmitButtonText :: Maybe Text
     , loginSubmitButtonTextStyle :: Maybe Text
     }
+data NormalArgs = NormalArgs
+    { systemDevice :: Bool
+    , watchLayout :: Bool
+    , pingFrequency :: Int
+    , displayPing :: Bool
+    , scale :: Double
+    }
 
 parser :: Parser Args
 parser = do
+    common <- parserCommon
+    mode <- hsubparser $ mconcat
+        [ command "run" $ info (Normal <$> parserNormal) $ progDesc
+            "Standard mode. Just run the server."
+        , command "ext-ws" $ info (ExtWs <$> parserExtWs) $ progDesc
+            "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+        ]
+    pure Args{..}
+  where
+    parserExtWs = option auto $ mconcat
+        [ long "ws-port"
+        , metavar "PORT"
+        , help "Port number on which external websocket server is running."
+        ]
+parserCommon :: Parser CommonArgs
+parserCommon = do
     verbosity <-
         let reader = eitherReader $ maybeToEither errorString . (invert' allValues verbosityToInt <=< readMaybe)
             errorString = "value must be an integer between 0 and " <> show (length allValues - 1)
@@ -101,45 +125,10 @@ parser = do
         , metavar "EXPR"
         , help "Dhall expression to control layout of buttons etc. The first of these will be used initially."
         ]
-    watchLayout <- switch $ mconcat
-        [ long "watch-layout"
-        , help "Watch all files involved in the layout expression, updating client with any changes."
-        ]
     qrPath <- optional . strOption $ mconcat
         [ long "qr"
         , metavar "PATH"
         , help "Write QR encoding of server address as a PNG file."
-        ]
-    pingFrequency <- option auto $ mconcat
-        [ long "ping"
-        , metavar "SECONDS"
-        , value 30
-        , showDefault
-        , help "How often to send the client a ping message to keep it awake."
-        ]
-    displayPing <- switch $ mconcat
-        [ long "show-ping"
-        , help "Indicate the user's current ping in the top-right of the screen."
-        ]
-    scale <- option auto $ mconcat
-        [ long "scale"
-        , metavar "NUMBER"
-        , value 1
-        , showDefault
-        , help
-            "Scale UI elements \
-            \(this only affects those which aren't specified by the layout - e.g. the ping indicator)."
-        ]
-    systemDevice <- fmap not $ switch $ mconcat
-        [ long "no-system-device"
-        , help "Don't create an OS-level virtual device."
-        ]
-    externalWS <- optional . option auto $ mconcat
-        [ long "ext-ws"
-        , metavar "PORT"
-        , help
-            "Don't run the websocket server. Frontend will instead look for an external server at the given port. \
-            \Note that options such as --ping, --show-ping and --watch-layout will have no effect in this mode."
         ]
     encoding <- flag BinaryEncoding JSONEncoding $ mconcat
         [ long "json"
@@ -187,12 +176,43 @@ parser = do
         [ long "login-submit-text-style"
         , metavar "STRING"
         ]
-    pure Args{..}
+    pure CommonArgs{..}
+parserNormal :: Parser NormalArgs
+parserNormal = do
+    systemDevice <- fmap not $ switch $ mconcat
+        [ long "no-system-device"
+        , help "Don't create an OS-level virtual device."
+        ]
+    watchLayout <- switch $ mconcat
+        [ long "watch-layout"
+        , help "Watch all files involved in the layout expression, updating client with any changes."
+        ]
+    pingFrequency <- option auto $ mconcat
+        [ long "ping"
+        , metavar "SECONDS"
+        , value 30
+        , showDefault
+        , help "How often to send the client a ping message to keep it awake."
+        ]
+    displayPing <- switch $ mconcat
+        [ long "show-ping"
+        , help "Indicate the user's current ping in the top-right of the screen."
+        ]
+    scale <- option auto $ mconcat
+        [ long "scale"
+        , metavar "NUMBER"
+        , value 1
+        , showDefault
+        , help
+            "Scale UI elements \
+            \(this only affects those which aren't specified by the layout - e.g. the ping indicator)."
+        ]
+    pure NormalArgs{..}
 
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    Args
+    Args{ common = CommonArgs
         { wsCloseMessage = fromMaybe "Connection lost. See console for details." -> wsCloseMessage
         , windowTitle = fromMaybe "monpad" -> windowTitle --TODO get GHC to accept `fromMaybe "monpad" -> windowTitle`
         , loginPageTitle = fromMaybe defaultLoginPageOpts.pageTitle -> pageTitle
@@ -203,7 +223,9 @@ main = do
         , loginSubmitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText -> submitButtonText
         , loginSubmitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle -> submitButtonTextStyle
         , ..
-        } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+        }
+        , mode = modeArgs
+    } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
     let write = Logger
@@ -212,8 +234,8 @@ main = do
             , ansi = True
             }
         loginOpts = LoginPageOpts{..}
-    case externalWS of
-        Just wsPort ->
+    case modeArgs of
+        ExtWs wsPort ->
             serverExtWs
                 (maybe mempty writeQR qrPath)
                 encoding
@@ -227,7 +249,7 @@ main = do
                 =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
-        Nothing -> if systemDevice
+        Normal NormalArgs{..} -> if systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
             else withPlugin (plugin @() ()) . runPlugin

@@ -3,6 +3,8 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 
 {- cabal:
 build-depends:
@@ -44,6 +46,7 @@ import System.Directory qualified as Dir
 import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
+import Text.Pretty.Simple
 
 data Args
     = Target String
@@ -95,6 +98,9 @@ rules wanted ghc maybeTarget = do
 
     let haskell path flags = do
             need assets
+            -- TODO shouldn't need to exclude `dist-newstyle` but it can still end up being used for `cabal repl` etc.
+            -- due to https://github.com/haskell/cabal/issues/5271
+            needDirExcept (hsDir </> "dist-newstyle") hsDir
             let args =
                     [ "exe:monpad"
                     , "--flags=" <> flags
@@ -119,6 +125,7 @@ rules wanted ghc maybeTarget = do
                 fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     monpad %> \_ -> do
+        pPrint 1
         haskell monpad "release"
 
     let elm opts = do

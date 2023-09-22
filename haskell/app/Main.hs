@@ -242,9 +242,8 @@ main = do
                 $ maybe id ((:) . QR.plugin write) qrPath
                 $ maybe id ((:) . Logger.plugin write) verbosity
                 []
-            {- HLINT ignore "Eta reduce" -}
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin ls = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir ls
+            runPlugin = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

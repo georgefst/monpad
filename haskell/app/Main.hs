@@ -236,20 +236,6 @@ main = do
             }
         loginOpts = LoginPageOpts{..}
     case modeArgs of
-        ExtWs wsPort ->
-            serverExtWs
-                (maybe mempty writeQR qrPath)
-                encoding
-                port
-                wsPort
-                windowTitle
-                wsCloseMessage
-                loginOpts
-                nColours
-                assetsDir
-                =<< mkLayouts write dhallLayouts
-          where
-            writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
         Normal NormalArgs{..} -> if systemDevice
             then withPlugin (plugins [plugin OS.keyUnknown, Plugin OS.conf]) . runPlugin
                 =<< mkLayouts write dhallLayouts
@@ -266,6 +252,20 @@ main = do
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
             runPlugin = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir
+        ExtWs wsPort ->
+            serverExtWs
+                (maybe mempty writeQR qrPath)
+                encoding
+                port
+                wsPort
+                windowTitle
+                wsCloseMessage
+                loginOpts
+                nColours
+                assetsDir
+                =<< mkLayouts write dhallLayouts
+          where
+            writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

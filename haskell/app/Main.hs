@@ -76,16 +76,10 @@ parser = do
     mode <- hsubparser $ mconcat
         [ command "run" $ info (Normal <$> parserNormal) $ progDesc
             "Standard mode. Just run the server."
-        , command "ext-ws" $ info (ExtWs <$> parserExtWs) $ progDesc
+        , command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
             "Don't run the websocket server. Frontend will instead look for an external server at the given port."
         ]
     pure Args{..}
-  where
-    parserExtWs = option auto $ mconcat
-        [ long "ws-port"
-        , metavar "PORT"
-        , help "Port number on which external websocket server is running."
-        ]
 parserCommon :: Parser CommonArgs
 parserCommon = do
     verbosity <-

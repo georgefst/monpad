@@ -212,20 +212,21 @@ parserNormal = do
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    Args{ common = CommonArgs
-        { wsCloseMessage = fromMaybe "Connection lost. See console for details." -> wsCloseMessage
-        , windowTitle = fromMaybe "monpad" -> windowTitle --TODO get GHC to accept `fromMaybe "monpad" -> windowTitle`
-        , loginPageTitle = fromMaybe defaultLoginPageOpts.pageTitle -> pageTitle
-        , loginImageUrl = imageUrl
-        , loginUsernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt -> usernamePrompt
-        , loginUsernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle -> usernamePromptStyle
-        , loginSubmitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle -> submitButtonStyle
-        , loginSubmitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText -> submitButtonText
-        , loginSubmitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle -> submitButtonTextStyle
-        , ..
-        }
+    Args
+        { common = CommonArgs
+            { wsCloseMessage = fromMaybe "Connection lost. See console for details." -> wsCloseMessage
+            , windowTitle = fromMaybe "monpad" -> windowTitle --TODO get GHC to accept `fromMaybe "monpad" -> windowTitle`
+            , loginPageTitle = fromMaybe defaultLoginPageOpts.pageTitle -> pageTitle
+            , loginImageUrl = imageUrl
+            , loginUsernamePrompt = fromMaybe defaultLoginPageOpts.usernamePrompt -> usernamePrompt
+            , loginUsernamePromptStyle = fromMaybe defaultLoginPageOpts.usernamePromptStyle -> usernamePromptStyle
+            , loginSubmitButtonStyle = fromMaybe defaultLoginPageOpts.submitButtonStyle -> submitButtonStyle
+            , loginSubmitButtonText = fromMaybe defaultLoginPageOpts.submitButtonText -> submitButtonText
+            , loginSubmitButtonTextStyle = fromMaybe defaultLoginPageOpts.submitButtonTextStyle -> submitButtonTextStyle
+            , ..
+            }
         , mode = modeArgs
-    } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
+        } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
     stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
     let write = Logger

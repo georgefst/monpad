@@ -202,7 +202,7 @@ needDirExcept :: FilePath -> FilePath -> Action ()
 needDirExcept except dir =
     need . filter (not . (isPrefixOf `on` splitDirectories) except) =<< getDirectoryFiles "" [dir <//> "*"]
 
-minifyFileJS :: Partial => FilePath -> IO ()
+minifyFileJS :: (Partial) => FilePath -> IO ()
 minifyFileJS file =
     readFile file >>= \contents -> case JS.parse contents file of
         Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s

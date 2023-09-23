@@ -92,7 +92,6 @@ rules wanted ghc maybeTarget = do
 
     forM_ copiedAssets \(file, copy) ->
         copy %> \_ -> do
-            need [file]
             copyFileChanged file copy
             when (takeExtension file == ".js") $ liftIO $ minifyFileJS copy
 

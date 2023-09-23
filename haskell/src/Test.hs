@@ -88,7 +88,7 @@ testDump = do
     Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
     dumpHTML
         JSONEncoding
-        (tmp </> "monpad-login.html")
+        (Just $ tmp </> "monpad-login.html")
         (tmp </> "monpad.html")
         Nothing
         8001

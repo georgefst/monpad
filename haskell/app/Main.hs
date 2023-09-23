@@ -43,7 +43,7 @@ data Args = Args
     }
 data ModeArgs
     = ExtWs Port
-    | DumpHTML {loginFile :: FilePath, mainFile :: FilePath, optsFile :: Maybe FilePath}
+    | DumpHTML {loginFile :: Maybe FilePath, mainFile :: FilePath, optsFile :: Maybe FilePath}
 data CommonArgs = CommonArgs
     { port :: Port
     , assetsDir :: Maybe FilePath
@@ -86,7 +86,7 @@ parser = do
     pure Args{common, mode}
   where
     dumpHtmlParser = do
-        loginFile <- strOption $ long "login" <> metavar "FILE"
+        loginFile <- optional $ strOption $ long "login" <> metavar "FILE"
         mainFile <- strOption $ long "main" <> metavar "FILE"
         optsFile <- optional $ strOption $ mconcat
             [ long "opts"

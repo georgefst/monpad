@@ -405,7 +405,7 @@ combineConfs sc1 sc2 = ServerConfig
 
 dumpHTML ::
     Encoding ->
-    FilePath ->
+    Maybe FilePath ->
     FilePath ->
     Maybe FilePath ->
     Port ->
@@ -416,7 +416,7 @@ dumpHTML ::
     Layouts () () ->
     IO ()
 dumpHTML encoding loginFile mainFile optsFile wsPort windowTitle wsCloseMessage loginOpts nColours layouts = do
-    renderToFile loginFile $ loginHtml nColours Nothing loginOpts
+    foldMap renderToFile loginFile $ loginHtml nColours Nothing loginOpts
     renderToFile mainFile $ mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage
 
 server ::

@@ -5,6 +5,7 @@
 module Monpad (
     server,
     serverExtWs,
+    dumpHTML,
     LoginPageOpts(..),
     defaultLoginPageOpts,
     Monpad,
@@ -232,6 +233,7 @@ defaultLoginPageOpts = LoginPageOpts
     }
 loginHtml :: Int -> Maybe UsernameError -> LoginPageOpts -> Html ()
 loginHtml nColours err opts = doctypehtml_ do
+    meta_ [charset_ "utf-8"]
     head_ faviconLink
     body_ imageStyle $ form_ do
         title_ $ fs opts.pageTitle
@@ -262,7 +264,7 @@ loginHtml nColours err opts = doctypehtml_ do
 
 mainHtml :: Encoding -> Layouts () () -> Port -> Text -> Text -> Html ()
 mainHtml encoding layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
-    meta_ [name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
+    meta_ [charset_ "utf-8", name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
     style_ (appCSS ())
     faviconLink
@@ -400,6 +402,21 @@ combineConfs sc1 sc2 = ServerConfig
         (rx, s1) <- runStateT (runReaderT x $ over #extra fst e) $ over #extra fst s0
         (ry, s2) <- runStateT (runReaderT y $ over #extra snd e) $ over #extra (const . snd $ view #extra s0) s1
         pure (rx <> ry, over #extra (view #extra s1,) s2)
+
+dumpHTML ::
+    Encoding ->
+    FilePath ->
+    FilePath ->
+    Port ->
+    Text ->
+    Text ->
+    LoginPageOpts ->
+    Int ->
+    Layouts () () ->
+    IO ()
+dumpHTML encoding loginFile mainFile wsPort windowTitle wsCloseMessage loginOpts nColours layouts = do
+    renderToFile loginFile $ loginHtml nColours Nothing loginOpts
+    renderToFile mainFile $ mainHtml encoding layouts wsPort windowTitle wsCloseMessage
 
 server ::
     Logger ->

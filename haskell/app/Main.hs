@@ -41,8 +41,9 @@ data Args = Args
     { common :: CommonArgs
     , mode :: Either NormalArgs ModeArgs
     }
-newtype ModeArgs
+data ModeArgs
     = ExtWs Port
+    | DumpHTML {loginFile :: FilePath, mainFile :: FilePath}
 data CommonArgs = CommonArgs
     { verbosity :: Maybe Logger.Settings
     , port :: Port
@@ -76,10 +77,17 @@ parser = do
         [ fmap Right . hsubparser $ mconcat
             [ command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
                 "Don't run the websocket server. Frontend will instead look for an external server at the given port."
+            , command "dump-html" $ info dumpHtmlParser $ progDesc
+                "Don't run any server, even for assets. Just dump the HTML in to the given files."
             ]
         , Left <$> parserNormal
         ]
     pure Args{common, mode}
+  where
+    dumpHtmlParser = do
+        loginFile <- strOption $ long "login" <> metavar "FILE"
+        mainFile <- strOption $ long "main" <> metavar "FILE"
+        pure DumpHTML{..}
 parserCommon :: Parser CommonArgs
 parserCommon = do
     verbosity <-
@@ -260,6 +268,17 @@ main = do
                 =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
+        Right (DumpHTML loginFile mainFile) ->
+            dumpHTML
+                encoding
+                loginFile
+                mainFile
+                port
+                windowTitle
+                wsCloseMessage
+                loginOpts
+                nColours
+                =<< mkLayouts write dhallLayouts
 
 -- | Run 'layoutsFromDhall' and exit if it fails.
 mkLayouts :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Layouts a b)

@@ -45,8 +45,7 @@ data ModeArgs
     = ExtWs Port
     | DumpHTML {loginFile :: FilePath, mainFile :: FilePath}
 data CommonArgs = CommonArgs
-    { verbosity :: Maybe Logger.Settings
-    , port :: Port
+    { port :: Port
     , assetsDir :: Maybe FilePath
     , layoutExprs :: [Text]
     , encoding :: Encoding
@@ -63,7 +62,8 @@ data CommonArgs = CommonArgs
     , loginSubmitButtonTextStyle :: Maybe Text
     }
 data NormalArgs = NormalArgs
-    { systemDevice :: Bool
+    { verbosity :: Maybe Logger.Settings
+    , systemDevice :: Bool
     , watchLayout :: Bool
     , pingFrequency :: Int
     , displayPing :: Bool
@@ -90,24 +90,6 @@ parser = do
         pure DumpHTML{..}
 parserCommon :: Parser CommonArgs
 parserCommon = do
-    verbosity <-
-        let reader = eitherReader $ maybeToEither errorString . (invert' allValues verbosityToInt <=< readMaybe)
-            errorString = "value must be an integer between 0 and " <> show (length allValues - 1)
-            allValues = Nothing : map Just enumerate
-            verbosityToInt = \case
-                Nothing -> 0 :: Int
-                Just Logger.Quiet -> 1
-                Just Logger.Normal -> 2
-                Just Logger.Loud -> 3
-         in option reader $ mconcat
-            [ short 'v'
-            , help $
-                "Verbosity (0 to "
-                    ++ show (fromEnum (maxBound @Logger.Settings) + 1)
-                    ++ ") - how much info to log to stdout about messages from clients etc."
-            , value $ Just Logger.Quiet
-            , showDefaultWith $ show . verbosityToInt
-            ]
     port <- option auto $ mconcat
         [ long "port"
         , short 'p'
@@ -181,6 +163,24 @@ parserCommon = do
     pure CommonArgs{..}
 parserNormal :: Parser NormalArgs
 parserNormal = do
+    verbosity <-
+        let reader = eitherReader $ maybeToEither errorString . (invert' allValues verbosityToInt <=< readMaybe)
+            errorString = "value must be an integer between 0 and " <> show (length allValues - 1)
+            allValues = Nothing : map Just enumerate
+            verbosityToInt = \case
+                Nothing -> 0 :: Int
+                Just Logger.Quiet -> 1
+                Just Logger.Normal -> 2
+                Just Logger.Loud -> 3
+         in option reader $ mconcat
+            [ short 'v'
+            , help $
+                "Verbosity (0 to "
+                    ++ show (fromEnum (maxBound @Logger.Settings) + 1)
+                    ++ ") - how much info to log to stdout about messages from clients etc."
+            , value $ Just Logger.Quiet
+            , showDefaultWith $ show . verbosityToInt
+            ]
     systemDevice <- fmap not $ switch $ mconcat
         [ long "no-system-device"
         , help "Don't create an OS-level virtual device."

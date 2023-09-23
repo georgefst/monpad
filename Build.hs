@@ -94,6 +94,7 @@ rules wanted ghc maybeTarget = do
         copy %> \_ -> do
             need [file]
             liftIO $ Dir.copyFile file copy
+            when (takeExtension file == ".js") $ liftIO $ minifyFileJS copy
 
     let haskell path flags = do
             need assets

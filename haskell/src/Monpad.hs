@@ -274,9 +274,9 @@ mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage = doctypeht
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
-        , makeAttribute "wsPort" $ showT wsPort
-        , makeAttribute "windowTitle" windowTitle
-        , makeAttribute "wsCloseMessage" wsCloseMessage
+        , makeAttribute "port" $ showT wsPort
+        , makeAttribute "window-title" windowTitle
+        , makeAttribute "ws-close-message" wsCloseMessage
         ]
   where
     jsScript = "text/javascript"

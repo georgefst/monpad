@@ -268,7 +268,7 @@ main = do
                 =<< mkLayouts write dhallLayouts
           where
             writeQR path url = withPlugin (QR.plugin write path) $ flip (.onStart) url
-        Right (DumpHTML loginFile mainFile) ->
+        Right (DumpHTML{..}) ->
             dumpHTML
                 encoding
                 loginFile

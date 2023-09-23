@@ -93,7 +93,7 @@ rules wanted ghc maybeTarget = do
     forM_ copiedAssets \(file, copy) ->
         copy %> \_ -> do
             need [file]
-            liftIO $ Dir.copyFile file copy
+            copyFile' file copy
             when (takeExtension file == ".js") $ liftIO $ minifyFileJS copy
 
     let haskell path flags = do
@@ -151,7 +151,7 @@ rules wanted ghc maybeTarget = do
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
         haskell monpadDebug ""
-        liftIO $ Dir.copyFile rscDir $ distDir </> rsc
+        copyFile' rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]
     "elm-debug" ~> elm ""

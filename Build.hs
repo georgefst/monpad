@@ -125,7 +125,6 @@ rules wanted ghc maybeTarget = do
                 fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
     monpad %> \_ -> do
-        pPrint 1
         haskell monpad "release"
 
     let elm opts = do

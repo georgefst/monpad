@@ -78,7 +78,8 @@ parser = do
             [ command "ext-ws" $ info (ExtWs <$> argument auto (metavar "PORT")) $ progDesc
                 "Don't run the websocket server. Frontend will instead look for an external server at the given port."
             , command "dump-html" $ info dumpHtmlParser $ progDesc
-                "Don't run any server, even for assets. Just dump the HTML in to the given files."
+                "Don't run any server, even for assets. Just dump the HTML in to the given files. \
+                \It is intended that the login HTML is served when a request has no \"username\" parameter."
             ]
         , Left <$> parserNormal
         ]

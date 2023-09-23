@@ -43,7 +43,7 @@ data Args = Args
     }
 data ModeArgs
     = ExtWs Port
-    | DumpHTML {loginFile :: FilePath, mainFile :: FilePath}
+    | DumpHTML {loginFile :: FilePath, mainFile :: FilePath, optsFile :: Maybe FilePath}
 data CommonArgs = CommonArgs
     { port :: Port
     , assetsDir :: Maybe FilePath
@@ -88,6 +88,11 @@ parser = do
     dumpHtmlParser = do
         loginFile <- strOption $ long "login" <> metavar "FILE"
         mainFile <- strOption $ long "main" <> metavar "FILE"
+        optsFile <- optional $ strOption $ mconcat
+            [ long "opts"
+            , metavar "FILE"
+            , help "A path to a JSON file on the server containing extra configuration."
+            ]
         pure DumpHTML{..}
 parserCommon :: Parser CommonArgs
 parserCommon = do
@@ -274,6 +279,7 @@ main = do
                 encoding
                 loginFile
                 mainFile
+                optsFile
                 port
                 windowTitle
                 wsCloseMessage

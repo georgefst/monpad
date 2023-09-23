@@ -1,4 +1,11 @@
-const attr = s => document.currentScript.attributes.getNamedItem(s).value
+const attrs = document.currentScript.attributes
+// TODO not supported - https://github.com/erikd/language-javascript/issues/71
+// const optsFilePath = attrs.getNamedItem("optsFile")?.value
+const optsFilePath = attrs.getNamedItem("optsFile") ? attrs.getNamedItem("optsFile").value : undefined
+const optsFilePromise = optsFilePath ? fetch(optsFilePath).then(r => r.json()).catch(_ => ({})) : Promise.resolve({})
+optsFilePromise.then(fileOpts => {
+
+const attr = s => fileOpts[s] || attrs.getNamedItem(s).value
 
 const params = new URLSearchParams(window.location.search)
 const username = params.get("username")
@@ -72,3 +79,5 @@ ws.onopen = _event => {
     // logging
     app.ports.logPort.subscribe(console.log)
 }
+
+})

@@ -90,6 +90,7 @@ testDump = do
         JSONEncoding
         (tmp </> "monpad-login.html")
         (tmp </> "monpad.html")
+        Nothing
         8001
         "dropped"
         "monpad test dump"

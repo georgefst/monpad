@@ -51,6 +51,7 @@ import Data.Bifunctor
 import Data.Binary.Get qualified as B
 import Data.ByteString.Lazy qualified as BSL
 import Data.Colour (Colour)
+import Data.Foldable
 import Data.Functor
 import Data.Hash.Murmur
 import Data.IORef
@@ -262,14 +263,14 @@ loginHtml nColours err opts = doctypehtml_ do
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 
-mainHtml :: Encoding -> Layouts () () -> Port -> Text -> Text -> Html ()
-mainHtml encoding layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
+mainHtml :: Encoding -> Maybe FilePath -> Layouts () () -> Port -> Text -> Text -> Html ()
+mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
     meta_ [charset_ "utf-8", name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
     style_ (appCSS ())
     faviconLink
     script_ [type_ jsScript] (elmJS ())
-    script_
+    flip script_ (jsJS ()) $ toList (makeAttribute "optsFile" . T.pack <$> optsFile) <>
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
@@ -277,7 +278,6 @@ mainHtml encoding layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
         , makeAttribute "windowTitle" windowTitle
         , makeAttribute "wsCloseMessage" wsCloseMessage
         ]
-        (jsJS ())
   where
     jsScript = "text/javascript"
 
@@ -407,6 +407,7 @@ dumpHTML ::
     Encoding ->
     FilePath ->
     FilePath ->
+    Maybe FilePath ->
     Port ->
     Text ->
     Text ->
@@ -414,9 +415,9 @@ dumpHTML ::
     Int ->
     Layouts () () ->
     IO ()
-dumpHTML encoding loginFile mainFile wsPort windowTitle wsCloseMessage loginOpts nColours layouts = do
+dumpHTML encoding loginFile mainFile optsFile wsPort windowTitle wsCloseMessage loginOpts nColours layouts = do
     renderToFile loginFile $ loginHtml nColours Nothing loginOpts
-    renderToFile mainFile $ mainHtml encoding layouts wsPort windowTitle wsCloseMessage
+    renderToFile mainFile $ mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage
 
 server ::
     Logger ->
@@ -469,7 +470,7 @@ httpServer wsPort windowTitle wsCloseMessage loginOpts nColours assetsDir encodi
         Nothing -> pure $ loginHtml nColours Nothing loginOpts
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding layouts wsPort windowTitle wsCloseMessage) <$> runExceptT do
+            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding Nothing layouts wsPort windowTitle wsCloseMessage) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do

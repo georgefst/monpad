@@ -1,7 +1,6 @@
 #!/usr/bin/env cabal
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
@@ -91,10 +90,10 @@ rules wanted ghc maybeTarget = do
         [] -> [monpad]
         _ -> wanted
 
-    forM_ linkedAssets \(file, link) ->
-        link %> \_ -> do
+    forM_ copiedAssets \(file, copy) ->
+        copy %> \_ -> do
             need [file]
-            trySymlink file link
+            liftIO $ Dir.copyFile file copy
 
     let haskell path flags = do
             need assets
@@ -151,7 +150,7 @@ rules wanted ghc maybeTarget = do
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
         haskell monpadDebug ""
-        trySymlink rscDir $ distDir </> rsc
+        liftIO $ Dir.copyFile rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]
     "elm-debug" ~> elm ""
@@ -177,8 +176,8 @@ elmDir = "elm"
 elmBuildDir = elmDir </> "elm-stuff"
 elmJS = rscDir </> "elm" <.> "js"
 
-linkedAssets :: [(FilePath, FilePath)]
-linkedAssets =
+copiedAssets :: [(FilePath, FilePath)]
+copiedAssets =
     [ (file, rscDir </> takeFileName file)
     | file <-
         [ "dist" </> "dhall" </> "default.dhall"
@@ -190,7 +189,7 @@ linkedAssets =
     ]
 
 assets :: [FilePath]
-assets = elmJS : map snd linkedAssets
+assets = elmJS : map snd copiedAssets
 
 osName :: Text
 osName
@@ -217,19 +216,3 @@ minifyFileJS file =
 
 bracketed :: Text -> Text
 bracketed t = pack "(" <> t <> pack ")"
-
-catchPermissionError :: IO a -> (IOError -> IO a) -> IO a
-catchPermissionError = catchBool isPermissionError
-
--- | If we can't symlink due to permissions (e.g. Windows non-admin shell), fall back to copying.
-trySymlink :: FilePath -> FilePath -> Action ()
-trySymlink file link = do
-    let copy = liftIO $ Dir.copyFile file link
-    file' <- liftIO $ Dir.makeAbsolute file
-    liftIO (Dir.doesPathExist link) >>= \case
-        True -> unlessM (liftIO $ Dir.pathIsSymbolicLink link) copy
-        False -> do
-            noLinkPermission <- liftIO do
-                (Dir.createFileLink file' link >> pure False)
-                    `catchPermissionError` \_ -> pure True
-            when noLinkPermission $ putWarn "No permission to create symbolic links - copying instead" >> copy

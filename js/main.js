@@ -7,7 +7,9 @@ const optsFilePromise = optsFilePath != undefined
     : Promise.resolve({})
 optsFilePromise.then(fileOpts => {
 
-const attr = s => fileOpts[s] ?? attrs.getNamedItem(s).value
+// TODO not supported - https://github.com/erikd/language-javascript/issues/71
+// const attr = s => fileOpts[s] ?? attrs.getNamedItem(s).value
+const attr = s => fileOpts[s] != undefined ? fileOpts[s] : attrs.getNamedItem(s).value
 
 const params = new URLSearchParams(window.location.search)
 const username = params.get("username")

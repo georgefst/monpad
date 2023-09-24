@@ -255,7 +255,7 @@ loginHtml nColours err opts = doctypehtml_ do
                 p_ [ style_ "color: red" ] case e of
                     EmptyUsername ->
                         "Empty usernames are not allowed!"
-                    (DuplicateUsername fully (ClientID u)) ->
+                    DuplicateUsername fully (ClientID u) ->
                         "The username " <> fs u <> " is already in use!"
                             <> if fully then mempty else " (though not fully connected)"
   where

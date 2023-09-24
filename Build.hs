@@ -95,8 +95,7 @@ rules wanted ghc maybeTarget = do
     forM_ copiedAssets \(file, copy) ->
         copy %> \_ -> do
             putInfo $ "Copying " <> file <> " to " <> copy
-            copyFileChanged file copy
-            when (takeExtension file == ".js") $ liftIO $ minifyFileJS copy
+            bool copyFileChanged minifyFileJS (takeExtension file == ".js") file copy
 
     let haskell path flags = do
             need assets
@@ -132,8 +131,7 @@ rules wanted ghc maybeTarget = do
     let elm optimise = do
             needDirExcept elmBuildDir elmDir
             cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> out) (mwhen optimise "--optimize")
-            copyFileChanged out elmJS
-            when optimise $ liftIO $ minifyFileJS elmJS
+            bool copyFileChanged minifyFileJS optimise out elmJS
           where
             out = buildDir </> "elm" <.> "js"
     elmJS %> \_ -> elm True
@@ -213,11 +211,15 @@ needDirExcept :: FilePath -> FilePath -> Action ()
 needDirExcept except dir =
     need . filter (not . (isPrefixOf `on` splitDirectories) except) =<< getDirectoryFiles "" [dir <//> "*"]
 
-minifyFileJS :: (Partial) => FilePath -> IO ()
-minifyFileJS file =
-    readFile file >>= \contents -> case JS.parse contents file of
-        Left s -> error $ "Failed to parse " <> file <> " as JavaScript:\n" <> s
-        Right ast -> TL.writeFile file $ JS.renderToText $ JS.minifyJS ast
+minifyFileJS :: FilePath -> FilePath -> Action ()
+minifyFileJS in_ out = do
+    need [in_]
+    contents <- liftIO $ readFile in_
+    cmd_ "closure-compiler" in_ "--js_output_file" out `actionCatch` \(e :: IOError) -> do
+        putInfo $ "Failed to run external minifier, trying Haskell version: " <> show e
+        case JS.parse contents in_ of
+            Left s -> error $ "Failed to parse " <> in_ <> " as JavaScript:\n" <> s
+            Right ast -> liftIO $ TL.writeFile out $ JS.renderToText $ JS.minifyJS ast
 
 bracketed :: Text -> Text
 bracketed t = pack "(" <> t <> pack ")"

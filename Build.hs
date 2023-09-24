@@ -23,9 +23,11 @@ module Main (main) where
 import Control.Exception.Extra
 import Control.Monad
 import Control.Monad.Extra
+import Data.Bool
 import Data.Either.Extra
 import Data.Function
 import Data.List
+import Data.Monoid.Extra
 import System.Console.GetOpt
 import System.IO.Error
 import System.Info.Extra
@@ -127,11 +129,14 @@ rules wanted ghc maybeTarget = do
     monpad %> \_ -> do
         haskell monpad "release"
 
-    let elm opts = do
+    let elm optimise = do
             needDirExcept elmBuildDir elmDir
-            cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> elmJS) opts
-            liftIO $ minifyFileJS elmJS
-    elmJS %> \_ -> elm "--optimize"
+            cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> out) (mwhen optimise "--optimize")
+            copyFileChanged out elmJS
+            when optimise $ liftIO $ minifyFileJS elmJS
+          where
+            out = buildDir </> "elm" <.> "js"
+    elmJS %> \_ -> elm True
 
     distDir </> "dhall" </> "*" %> \out -> do
         let in' = "dhall" </> takeFileName out
@@ -153,7 +158,7 @@ rules wanted ghc maybeTarget = do
         copyFileChanged rscDir $ distDir </> rsc
 
     "elm" ~> need [elmJS]
-    "elm-debug" ~> elm ""
+    "elm-debug" ~> elm False
     "dhall" ~> do
         need . map ((distDir </> "dhall") </>) =<< getDirectoryFiles "dhall" ["*"]
     "assets" ~> need assets

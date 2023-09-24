@@ -130,10 +130,9 @@ rules wanted ghc maybeTarget = do
 
     let elm optimise = do
             needDirExcept elmBuildDir elmDir
-            cmd_ (Cwd "elm") "elm make src/Main.elm --output" (".." </> out) (mwhen optimise "--optimize")
-            bool copyFileChanged minifyFileJS optimise out elmJS
-          where
-            out = buildDir </> "elm" <.> "js"
+            out <- liftIO $ (</> "monpad-elm.js") <$> Dir.getTemporaryDirectory
+            cmd_ (Cwd "elm") "elm make src/Main.elm --output" out (mwhen optimise "--optimize")
+            bool (liftIO .: Dir.copyFile) minifyFileJS optimise out elmJS
     elmJS %> \_ -> elm True
 
     distDir </> "dhall" </> "*" %> \out -> do
@@ -223,3 +222,6 @@ minifyFileJS in_ out = do
 
 bracketed :: Text -> Text
 bracketed t = pack "(" <> t <> pack ")"
+
+(.:) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(.:) = (.) . (.)

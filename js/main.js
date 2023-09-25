@@ -3,7 +3,7 @@ const attrs = document.currentScript.attributes
 // const optsFilePath = attrs.getNamedItem("optsFile")?.value
 const optsFilePath = attrs.getNamedItem("optsFile") != undefined ? attrs.getNamedItem("optsFile").value : undefined
 const optsFilePromise = optsFilePath != undefined
-    ? fetch(optsFilePath).then(r => r.json()).catch(_ => ({}))
+    ? fetch(optsFilePath, { cache: "no-store" }).then(r => r.json()).catch(_ => ({}))
     : Promise.resolve({})
 optsFilePromise.then(fileOpts => {
 

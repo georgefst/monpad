@@ -112,8 +112,6 @@ library
     other-modules:
         Test
         Embed
-        GenerateElm
-        GenerateElm.Via
         Layout
         Opts
         Orphans.Colour
@@ -132,13 +130,10 @@ library
         colour ^>= 2.3.5,
         convertible ^>= 1.1.1,
         deriving-aeson ^>= 0.2.6.1,
-        elm-syntax ^>= 0.3.0,
         exceptions ^>= 0.10.4,
         fsnotify ^>= 0.3,
         generic-data ^>= {0.9.2, 1.1},
         generic-functor ^>= {0.2, 1.1},
-        generics-sop ^>= 0.5.0,
-        haskell-to-elm ^>= 0.3.1,
         hostname ^>= 1.0,
         http-types ^>= 0.12.3,
         JuicyPixels ^>= 3.3.5,

@@ -482,7 +482,7 @@ httpServer wsPort windowTitle wsCloseMessage loginOpts nColours assetsDir encodi
     assets :: Server AssetsApi
     assets = maybe
         (pure $ const ($ responseLBS status404 [] "no asset directory specified"))
-        serveDirectoryWebApp
+        (error "assets dir unsupported due to Template Haskell")
         assetsDir
 
 websocketServer ::

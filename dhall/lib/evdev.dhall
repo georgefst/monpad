@@ -54,8 +54,6 @@ let RelAxis =
       | RelDial
       | RelWheel
       | RelMisc
-      | RelHWheelHiRes
-      | RelWheelHiRes
       | RelReserved
       >
 

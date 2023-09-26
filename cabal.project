@@ -12,3 +12,33 @@ source-repository-package
   location: https://github.com/georgefst/haskell-to-elm
   tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
   --sha256: o9PSRUJUnPpt883C11wKosr8sOyAD6tjq5UYcxNgwEA=
+
+--TODO https://github.com/haskell/entropy/pull/20
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/entropy
+  tag: 7c7bd1d24b90d31b38e8b3f8f4b1a8d7ceae792b
+
+--TODO https://github.com/cdepillabout/pretty-simple/pull/107
+source-repository-package
+  type: git
+  location: https://github.com/cdepillabout/pretty-simple
+  tag: 9e74d700b63b35aed3dcbda8afca4e4fce21081e
+
+--TODO custom setup removed, but no release yet
+source-repository-package
+  type: git
+  location: https://github.com/kazu-yamamoto/logger
+  subdir: wai-logger
+  tag: cc1ec1d8e6700b66b1b1c037694e962311d165b8
+
+--TODO https://github.com/haskell-servant/servant/issues/1187#issuecomment-1681962015
+source-repository-package
+  type: git
+  location: https://github.com/georgefst/servant
+  subdir: servant-server servant servant-client
+  tag: 918570fb19f2ef40edafbcba52530f1a23f98e87
+
+allow-newer:
+  --TODO https://github.com/haskell-servant/servant-lucid/issues/29
+  servant-lucid:servant

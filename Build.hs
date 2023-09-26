@@ -98,7 +98,7 @@ rules wanted ghc maybeTarget = do
             putInfo $ "Copying " <> file <> " to " <> copy
             bool copyFileChanged minifyFileJS (takeExtension file == ".js") file copy
 
-    let haskell path flags = do
+    let haskell path flags extra = do
             need assets
             -- TODO shouldn't need to exclude `dist-newstyle` but it can still end up being used for `cabal repl` etc.
             -- due to https://github.com/haskell/cabal/issues/5271
@@ -109,6 +109,7 @@ rules wanted ghc maybeTarget = do
                     , "--builddir=" <> (".." </> hsBuildDir)
                     , "-w" <> ghc
                     ]
+                        <> extra
             cmd_
                 (Cwd hsDir)
                 cabal
@@ -126,8 +127,11 @@ rules wanted ghc maybeTarget = do
                 [path'] -> copyFileChanged path' path
                 fs -> error $ "Multiple matches: " <> intercalate ", " fs
 
+    -- like "debug" in that it doesn't embed files - but optimised and with no suffix on the binary
     monpad %> \_ -> do
-        haskell monpad "release"
+        rscs <- liftIO $ Dir.listDirectory rscDir
+        for_ rscs $ \r -> copyFileChanged (rscDir </> r) (distDir </> rsc </> r)
+        haskell monpad "" ["-O2"]
 
     let elm optimise = do
             needDirExcept elmBuildDir elmDir
@@ -152,7 +156,7 @@ rules wanted ghc maybeTarget = do
 
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
-        haskell monpadDebug ""
+        haskell monpadDebug "" []
         rscs <- liftIO $ Dir.listDirectory rscDir
         for_ rscs $ \r -> copyFileChanged (rscDir </> r) (distDir </> rsc </> r)
 

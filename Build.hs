@@ -25,6 +25,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Data.Bool
 import Data.Either.Extra
+import Data.Foldable
 import Data.Function
 import Data.List
 import Data.Monoid.Extra
@@ -152,7 +153,8 @@ rules wanted ghc maybeTarget = do
     -- unoptimised, and needs to be run from a directory containing `rsc`, with all the JS/CSS etc. assets
     "debug" ~> do
         haskell monpadDebug ""
-        copyFileChanged rscDir $ distDir </> rsc
+        rscs <- liftIO $ Dir.listDirectory rscDir
+        for_ rscs $ \r -> copyFileChanged (rscDir </> r) (distDir </> rsc </> r)
 
     "elm" ~> need [elmJS]
     "elm-debug" ~> elm False

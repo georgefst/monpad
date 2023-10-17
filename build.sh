@@ -13,4 +13,4 @@ for i in 'ghc 9.2' 'cabal 3.6' 'elm 0.19' ; do
     fi
 done
 
-cabal run -v1 Build.hs --project-file cabal.project
+cabal run -v1 Build.hs

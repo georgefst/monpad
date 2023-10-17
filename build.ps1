@@ -25,4 +25,4 @@ foreach ($prog in $progs) {
     }
 }
 
-cabal run -v1 Build.hs --project-file cabal.project
+cabal run -v1 Build.hs

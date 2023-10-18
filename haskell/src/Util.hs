@@ -135,7 +135,7 @@ uniqueNames l xs = flip evalState allNames $ for xs \x ->
         Just n -> pure $ over l (<> " [" <> showT n <> "]") x
   where
     -- the state map stores the number of occurrences of each name seen so far
-    allNames = Map.fromList $ zip (view l <$> toList xs) (repeat (0 :: Int))
+    allNames = Map.fromList $ map (,0 :: Int) (view l <$> toList xs)
     err = error "broken invariant in `uniqueNames` - all names should be in map by construction"
 
 {- | Returns 'True' iff element is new.

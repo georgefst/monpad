@@ -1,5 +1,6 @@
 module Monpad.Plugins.Logger (plugin, Settings (..)) where
 
+import Control.Monad
 import Control.Monad.Reader
 import Data.Time
 import Optics

@@ -1,5 +1,6 @@
 module OS (conf, keyUnknown) where
 
+import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Either

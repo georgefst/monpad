@@ -39,6 +39,7 @@ module Monpad (
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
+import Control.Monad
 import Control.Monad.Base
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Except

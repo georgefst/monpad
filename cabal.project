@@ -10,3 +10,31 @@ source-repository-package
   type: git
   location: https://github.com/georgefst/haskell-to-elm
   tag: fbe8417ebac8d5936bc2f7ca5f39348f7e341b46
+
+--TODO waiting for release with https://github.com/folq/elm-syntax/pull/7
+source-repository-package
+  type: git
+  location: https://github.com/folq/elm-syntax
+  tag: 464cc76582e12ca33d31a3f023b2e3c65317330f
+
+--TODO waiting for release with https://github.com/dhall-lang/dhall-haskell/pull/2532
+source-repository-package
+  type: git
+  location: https://github.com/dhall-lang/dhall-haskell
+  subdir: dhall
+  tag: 55aff097b49ff85bb4eff1cc4f42c9fe40df3f49
+
+--TODO waiting for release - https://github.com/composewell/streamly/issues/2597
+source-repository-package
+  type: git
+  location: https://github.com/composewell/streamly
+  subdir: . core
+  tag: 8e04e4b9885d573bef9a3ccac0f891a35212aaf6
+
+allow-newer:
+  --TODO https://github.com/well-typed/cborg/pull/313#issuecomment-1649639449
+  cborg-json:base,
+  --TODO https://github.com/dhall-lang/dhall-haskell/pull/2532#issuecomment-1747799074
+  dhall:template-haskell,
+  --TODO only necessary because `streamly` hasn't had a revision and the Git version we use is marked 0.10 not 0.9
+  streamly-fsnotify:streamly,

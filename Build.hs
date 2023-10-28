@@ -8,7 +8,7 @@
 {- cabal:
 build-depends:
     base >= 4.16,
-    dhall ^>= 1.41,
+    dhall ^>= {1.41, 1.42},
     directory ^>= 1.3.7.0,
     extra ^>= 1.7.4,
     language-javascript ^>= 0.7.1.0,

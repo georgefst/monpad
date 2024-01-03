@@ -186,7 +186,6 @@ let Key =
       | KeyScale
       | KeyKpcomma
       | KeyHangeul
-      | KeyHanguel
       | KeyHanja
       | KeyYen
       | KeyLeftmeta
@@ -216,10 +215,8 @@ let Key =
       | KeyProg2
       | KeyWww
       | KeyMsdos
-      | KeyCoffee
       | KeyScreenlock
       | KeyRotateDisplay
-      | KeyDirection
       | KeyCyclewindows
       | KeyMail
       | KeyBookmarks
@@ -306,13 +303,10 @@ let Key =
       | KeyVideoPrev
       | KeyBrightnessCycle
       | KeyBrightnessAuto
-      | KeyBrightnessZero
       | KeyDisplayOff
       | KeyWwan
-      | KeyWimax
       | KeyRfkill
       | KeyMicmute
-      | BtnMisc
       | Btn0
       | Btn1
       | Btn2
@@ -323,7 +317,6 @@ let Key =
       | Btn7
       | Btn8
       | Btn9
-      | BtnMouse
       | BtnLeft
       | BtnRight
       | BtnMiddle
@@ -333,7 +326,6 @@ let Key =
       | BtnBack
       | BtnTask
       | BtnJoystick
-      | BtnTrigger
       | BtnThumb
       | BtnThumb2
       | BtnTop
@@ -346,15 +338,10 @@ let Key =
       | BtnBase5
       | BtnBase6
       | BtnDead
-      | BtnGamepad
-      | BtnSouth
       | BtnA
-      | BtnEast
       | BtnB
       | BtnC
-      | BtnNorth
       | BtnX
-      | BtnWest
       | BtnY
       | BtnZ
       | BtnTl
@@ -366,7 +353,6 @@ let Key =
       | BtnMode
       | BtnThumbl
       | BtnThumbr
-      | BtnDigi
       | BtnToolPen
       | BtnToolRubber
       | BtnToolBrush
@@ -382,7 +368,6 @@ let Key =
       | BtnToolDoubletap
       | BtnToolTripletap
       | BtnToolQuadtap
-      | BtnWheel
       | BtnGearDown
       | BtnGearUp
       | KeyOk
@@ -465,7 +450,6 @@ let Key =
       | KeyAddressbook
       | KeyMessenger
       | KeyDisplaytoggle
-      | KeyBrightnessToggle
       | KeySpellcheck
       | KeyLogoff
       | KeyDollar
@@ -563,7 +547,6 @@ let Key =
       | KeyKbdinputassistNextgroup
       | KeyKbdinputassistAccept
       | KeyKbdinputassistCancel
-      | BtnTriggerHappy
       | BtnTriggerHappy1
       | BtnTriggerHappy2
       | BtnTriggerHappy3

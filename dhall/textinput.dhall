@@ -6,7 +6,8 @@ let basic = ./default.dhall
 
 in        basic
       //  { elements =
-                [ monpad.Elem::{
+                basic.elements
+              # [ monpad.Elem::{
                   , element =
                       monpad.Element.Input
                         { width = 400
@@ -22,6 +23,5 @@ in        basic
                   , name = "Text"
                   }
                 ]
-              # basic.elements
           }
     : monpad.Layout

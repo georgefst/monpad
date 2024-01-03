@@ -6,7 +6,9 @@ otherwise we'd have very slow turnarounds for testing from making an edit in the
 -- | Stuff for quickly playing around in GHCI. Call 'runghc Build.hs assets' before using these.
 module Test where
 
+import Control.Concurrent.Extra
 import Control.Monad
+import Data.Functor
 import System.Directory.Extra
 import System.FilePath
 
@@ -39,8 +41,8 @@ data P
     | LS
     | PI
     deriving (Eq, Enum, Bounded)
-plugin :: FilePath -> P -> Plugin () ()
-plugin home = \case
+plugin :: Logger -> FilePath -> P -> Plugin () ()
+plugin write home = \case
     WL -> WatchLayout.plugin write
     QR -> QR.plugin write $ home </> "Desktop"
     LS -> LayoutSwitcher.plugin 1 ()
@@ -50,9 +52,10 @@ test :: [P] -> [Text] -> [Text] -> IO ()
 test ps ls lsVoid = do
     home <- unsafeInterleaveIO getHomeDirectory
     setLocaleEncoding utf8
+    write <- mkLogger
     Just layouts <- layoutsFromDhall write $ NE.appendr lsVoid (dhallLayoutVoid <$> dhallLayoutDefault :| ls)
     withPlugin
-        (plugins $ Logger.plugin write Logger.Normal : map (plugin home) ps)
+        (plugins $ Logger.plugin write Logger.Normal : map (plugin write home) ps)
         $ server
             write
             1
@@ -68,6 +71,7 @@ test ps ls lsVoid = do
 testExt :: IO ()
 testExt = do
     setLocaleEncoding utf8
+    write <- mkLogger
     Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
     serverExtWs
         mempty
@@ -85,6 +89,7 @@ testDump :: IO ()
 testDump = do
     tmp <- unsafeInterleaveIO getTemporaryDirectory
     setLocaleEncoding utf8
+    write <- mkLogger
     Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []
     dumpHTML
         JSONEncoding
@@ -98,8 +103,8 @@ testDump = do
         nColours
         layouts
 
-write :: Logger
-write = join Logger T.putStrLn True
+mkLogger :: IO Logger
+mkLogger = newLock <&> \lock -> join Logger (withLock lock . T.putStrLn) True
 
 nColours :: Int
 nColours = 3

@@ -49,6 +49,15 @@ data Logger = Logger
     , ansi :: Bool
     -- ^ Can we use ANSI escape codes?
     }
+-- TODO is this derivable? it would be if I replaced `Bool` with `All`, but that would need wrapping at every use site
+instance Semigroup Logger where
+    a <> b = Logger
+        { log = a.log <> b.log
+        , logError = a.logError <> b.logError
+        , ansi = a.ansi && b.ansi
+        }
+instance Monoid Logger where
+    mempty = Logger mempty mempty True
 
 zipEndo :: Endo a -> Endo b -> Endo (a, b)
 zipEndo (Endo sf1) (Endo sf2) = Endo $ sf1 *** sf2

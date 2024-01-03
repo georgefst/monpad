@@ -2,18 +2,15 @@ module Monpad.Plugins.PingIndicator (plugin) where
 
 import Data.Colour (withOpacity)
 import Data.Colour.Names qualified as Colours
-import Data.Colour.RGBSpace (uncurryRGB)
-import Data.Colour.SRGB (Colour, sRGB, toSRGB)
-import Data.Convertible (convert)
+import Data.Colour.SRGB (sRGB)
 import Data.List.NonEmpty qualified as NE
-import Data.Prizm.Color as Prizm
-import Data.Prizm.Color.CIE as CIE
 import Data.Text qualified as T
 import Data.Time (defaultTimeLocale, formatTime)
 import Streamly.Data.Stream.Prelude qualified as S
 
 import Monpad hiding (min)
 import Monpad.Plugins
+import Util.Prizm
 
 plugin :: Double -> Plugin a b
 plugin scale = Plugin $ showPing @() @() scale
@@ -28,9 +25,7 @@ showPing scale =
                 r = sRGB 0.85 0.28 0.28
                 y = sRGB 0.94 0.95 0.33
                 g = sRGB 0.2 0.72 0.2
-                colour = flip withOpacity 1 $ fromPrizm if goodness < 0.5
-                    then interpolate (round $ 2 * goodness * 100) (toPrizm r, toPrizm y)
-                    else interpolate (round $ (2 * goodness - 1) * 100) (toPrizm y, toPrizm g)
+                colour = flip withOpacity 1 $ fromPrizm $ interpolateList goodness [r,y,g]
             in  [ SetText elementId $ T.pack $ formatTime defaultTimeLocale "%04Ess" time
                 , SetIndicatorColour elementId colour
                 ]
@@ -74,12 +69,3 @@ showPing scale =
             , onStart = mempty
             , onDroppedConnection = mempty
             }
-
-{- Util -}
-
-toPrizm :: Colour Double -> CIE.LCH
-toPrizm = convert @Prizm.RGB . uncurryRGB mkRGB . fmap (round . (* 255)) . toSRGB
-
-fromPrizm :: CIE.LCH -> Colour Double
-fromPrizm = (\(ColorCoord (red, green, blue)) -> sRGB red green blue) .
-    fmap ((/ 255) . fromIntegral) . unRGB . convert @_ @Prizm.RGB

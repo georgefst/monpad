@@ -121,6 +121,7 @@ library
         Orphans.V2
         ServerUpdate
         Util
+        Util.Prizm
         Util.ShowNewtype
     hs-source-dirs:
         src

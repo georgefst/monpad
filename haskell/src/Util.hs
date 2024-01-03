@@ -167,3 +167,6 @@ setDelete' x s = (Set.size s /= Set.size s', s')
 --TODO for some reason, there is no Stream.head: https://github.com/ekmett/streams/pull/19
 streamHead :: Stream a -> a
 streamHead = (Stream.!! 0)
+
+pairAdjacent :: [a] -> [(a, a)]
+pairAdjacent xs = zip xs $ tail xs

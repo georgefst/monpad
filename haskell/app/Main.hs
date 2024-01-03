@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import Control.Concurrent.Extra
 import Control.Monad
 import Data.Char
 import Data.Either.Extra
@@ -18,7 +19,6 @@ import System.IO
 import Text.Read
 import Util.Util
 
-import Control.Concurrent.Lock qualified as Lock
 import Data.List.NonEmpty (nonEmpty, NonEmpty)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -236,10 +236,10 @@ main = do
         , mode = modeArgs
         } <- execParser $ info (helper <*> parser) (fullDesc <> header "monpad")
     dhallLayouts <- fromMaybe (pure $ defaultDhall ()) . nonEmpty <$> traverse windowsHack layoutExprs
-    stdoutMutex <- Lock.new -- to ensure atomicity of writes to `stdout`
+    stdoutMutex <- newLock -- to ensure atomicity of writes to `stdout`
     let write = Logger
-            { log = \t -> Lock.acquire stdoutMutex >> T.putStrLn t >> Lock.release stdoutMutex
-            , logError = \t -> Lock.acquire stdoutMutex >> T.hPutStrLn stderr t >> Lock.release stdoutMutex
+            { log = withLock stdoutMutex . T.putStrLn
+            , logError = withLock stdoutMutex . T.hPutStrLn stderr
             , ansi = True
             }
         loginOpts = LoginPageOpts{..}

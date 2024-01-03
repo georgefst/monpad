@@ -23,7 +23,6 @@ import Monpad.Plugins.PingIndicator qualified as PingIndicator
 import Monpad.Plugins.QR qualified as QR
 import Monpad.Plugins.WatchLayout qualified as WatchLayout
 import System.IO (utf8)
-import System.IO.Unsafe (unsafeInterleaveIO)
 
 import Monpad
 import Monpad.Plugins
@@ -50,7 +49,7 @@ plugin write home = \case
 
 test :: [P] -> [Text] -> [Text] -> IO ()
 test ps ls lsVoid = do
-    home <- unsafeInterleaveIO getHomeDirectory
+    home <- getHomeDirectory
     setLocaleEncoding utf8
     write <- mkLogger
     Just layouts <- layoutsFromDhall write $ NE.appendr lsVoid (dhallLayoutVoid <$> dhallLayoutDefault :| ls)
@@ -87,7 +86,7 @@ testExt = do
 
 testDump :: IO ()
 testDump = do
-    tmp <- unsafeInterleaveIO getTemporaryDirectory
+    tmp <- getTemporaryDirectory
     setLocaleEncoding utf8
     write <- mkLogger
     Just layouts <- layoutsFromDhall write $ dhallLayoutVoid dhallLayoutDefault :| []

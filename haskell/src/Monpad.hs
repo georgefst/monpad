@@ -661,8 +661,6 @@ warn s = liftIO $ T.hPutStrLn stderr $ "Warning: " <> s
 internalElementTag :: Text
 internalElementTag = "_internal_"
 
-{- Util -}
-
 currentLayout :: AffineTraversal' (MonpadState s a b) (Layout a b)
 currentLayout = currentLayoutMaybe % _Just % _1
 

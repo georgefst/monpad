@@ -86,7 +86,7 @@ getHostName' = f <$> getHostName
     f x = maybe x T.unpack $ T.stripSuffix ".local" $ T.pack x
 
 -- | Attach an extra action to each element of the stream.
-traceStream :: (a -> IO ()) -> S.Stream IO a -> S.Stream IO a
+traceStream :: Monad m => (a -> m ()) -> S.Stream m a -> S.Stream m a
 traceStream f = S.mapM \x -> f x >> pure x
 
 type DhallExpr = D.Expr D.Src D.Import

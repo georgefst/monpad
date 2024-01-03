@@ -40,7 +40,7 @@ import Network.Socket (
     getAddrInfo,
     hostAddressToTuple,
  )
-import Streamly.Prelude qualified as SP
+import Streamly.Data.Stream.Prelude qualified as S
 import System.Directory (getHomeDirectory)
 
 data Logger = Logger
@@ -77,8 +77,8 @@ getHostName' = f <$> getHostName
     f x = maybe x T.unpack $ T.stripSuffix ".local" $ T.pack x
 
 -- | Attach an extra action to each element of the stream.
-traceStream :: (a -> IO ()) -> SP.Serial a -> SP.Serial a
-traceStream f = SP.mapM \x -> f x >> pure x
+traceStream :: (a -> IO ()) -> S.Stream IO a -> S.Stream IO a
+traceStream f = S.mapM \x -> f x >> pure x
 
 type DhallExpr = D.Expr D.Src D.Import
 

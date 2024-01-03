@@ -79,7 +79,6 @@ import Data.Tuple.Extra hiding (first, second)
 import Data.Word
 import Deriving.Aeson (CustomJSON (CustomJSON))
 import GHC.Generics (Generic)
-import GHC.Records (HasField (getField))
 import Linear (V2 (..))
 import Lucid hiding (for_)
 import Lucid qualified as Html
@@ -94,10 +93,11 @@ import Optics.State.Operators
 import Servant hiding (layout)
 import Servant.API.WebSocket
 import Servant.HTML.Lucid
-import Streamly.Internal.Data.Stream.IsStream qualified as SP (hoist)
+import Streamly.Data.Fold.Prelude qualified as SF
+import Streamly.Data.Stream.Prelude qualified as S
 import System.Console.ANSI
-import Streamly.Prelude qualified as SP
 import System.IO
+import Util.Streamly qualified as Stream
 import Util.Util
 
 import Embed
@@ -350,18 +350,18 @@ data ServerConfig e s a b = ServerConfig
     , onDroppedConnection :: MonpadException -> Client -> e -> IO ()
     , onPong :: NominalDiffTime -> Client -> e -> IO [ServerUpdate a b]
     -- ^ when the client sends a pong, this gives us the time since the corresponding ping
-    , updates :: forall m. (SP.IsStream m, MonadIO (m IO)) => MonpadEnv e a b -> m IO [ServerUpdate a b]
+    , updates :: MonpadEnv e a b -> S.Stream IO [ServerUpdate a b]
     , onUpdate :: Update a b -> Monpad e s a b [ServerUpdate a b]
     -- ^ we need to be careful not to cause an infinite loop here, by always generating new events we need to respond to
     }
---TODO find some way to remove this boilerplate (we can't derive Generic because of the higher-rank type of `updates`)
+--TODO if streams had a `Monoid` instance (with parallel composition), we could remove this boilerplate
 instance (Semigroup e, Semigroup s) => Semigroup (ServerConfig e s a b) where
     sc1 <> sc2 = ServerConfig
         { onStart = sc1.onStart <> sc2.onStart
         , onNewConnection = sc1.onNewConnection <> sc2.onNewConnection
         , onDroppedConnection = sc1.onDroppedConnection <> sc2.onDroppedConnection
         , onPong = sc1.onPong <> sc2.onPong
-        , updates = sc1.updates' <> sc2.updates'
+        , updates = \e -> S.parList id [sc1.updates e, sc2.updates e]
         , onUpdate = sc1.onUpdate <> sc2.onUpdate
         }
 instance (Monoid e, Monoid s) => Monoid (ServerConfig e s a b) where
@@ -370,7 +370,7 @@ instance (Monoid e, Monoid s) => Monoid (ServerConfig e s a b) where
         , onNewConnection = mempty
         , onDroppedConnection = mempty
         , onPong = mempty
-        , updates = mempty
+        , updates = const S.nil
         , onUpdate = mempty
         }
 
@@ -389,10 +389,10 @@ combineConfs sc1 sc2 = ServerConfig
     , onPong = pure (pure \f1 f2 (e1, e2) -> (<>) <$> f1 e1 <*> f2 e2)
         <<*>> sc1.onPong
         <<*>> sc2.onPong
-    , updates = \e ->
-        sc1.updates' (over #extra fst e)
-            <>
-        sc2.updates' (over #extra snd e)
+    , updates = \e -> S.parList id
+        [ sc1.updates (over #extra fst e)
+        , sc2.updates (over #extra snd e)
+        ]
     , onUpdate = pure f
         <*> sc1.onUpdate
         <*> sc2.onUpdate
@@ -512,18 +512,15 @@ websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu
                         us <- onPong (t1 - t0) client e
                         putMVar extraUpdates us
             conn <- WS.acceptRequest $ pending & (#pendingOptions % #connectionOnPong) %~ (<> onPong')
-            let {- We have to take care here not to attempt a parallel composition in a stateful monad.
-                This is not supported by Streamly, but the types don't do anything to disallow it.
-                See: https://github.com/composewell/streamly/issues/1203.
-                We instead use an ad-hoc, simpler, monad stack, and only lift to `Monpad` once we're back to `Serial`.
-                -}
-                allUpdates = SP.fromAsync $
-                    (pure . ClientUpdate <<$>> clientUpdates)
-                        <> (pure . map ServerUpdate <$> serverUpdates)
-                clientUpdates = SP.fromSerial . SP.hoist liftIO . SP.repeatM $ getUpdate conn
-                serverUpdates = SP.cons u0 $
-                    (SP.fromSerial . SP.hoist liftIO . updates =<< ask)
-                        <> SP.repeatM (liftIO $ takeMVar extraUpdates)
+            let allUpdates = S.parList id
+                    [ pure . ClientUpdate <<$>> clientUpdates
+                    , pure . map ServerUpdate <$> serverUpdates
+                    ]
+                clientUpdates = S.morphInner liftIO . S.repeatM $ getUpdate conn
+                serverUpdates = S.cons u0 $ S.parList id
+                    [ Stream.withInit ask $ S.morphInner liftIO . updates
+                    , S.repeatM (liftIO $ takeMVar extraUpdates)
+                    ]
                 handleUpdates = sendUpdates conn . map biVoid . concat <=< traverse (go . pure)
                   where
                     go us = if null us
@@ -624,17 +621,17 @@ websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu
                         pure
                     )
                 . runMonpad layouts client e s0
-                . SP.drain
-                . SP.mapM handleUpdates
-                . SP.mapM
+                . S.fold SF.drain
+                . S.mapM handleUpdates
+                . S.mapM
                     ( \us -> do
                         l <- use #layout
                         ls <- use #layouts
                         let (!_, hashes) = fromMaybe (currentLayoutError, error "impossible") $ ls !? l
                         pure $ either (fromMaybe (error "hash not found!") . (hashes !?)) id <<$>> us
                     )
-                . SP.mapM (either throwError pure)
-                . SP.hoist (\x -> liftIO . runReaderT x =<< ask)
+                . S.mapM (either throwError pure)
+                . S.morphInner (\x -> liftIO . runReaderT x =<< ask)
                 $ allUpdates
           where
             decode = case encoding of
@@ -679,9 +676,3 @@ currentLayoutMaybe = lens
 
 currentLayoutError :: Layout a b
 currentLayoutError = error "current layout is not in map!"
-
--- TODO we can't have instances for impredicative types: https://gitlab.haskell.org/ghc/ghc/-/issues/20188
--- workaround from https://gitlab.haskell.org/ghc/ghc/-/wikis/Functional-dependencies-in-GHC/Key-examples#example-6-liberal-can-get-you-dysfunctional
--- TODO we can't even use the name "updates": https://gitlab.haskell.org/ghc/ghc/-/issues/18776
-instance (SP.IsStream m, MonadIO (m IO), HasField "updates'" (ServerConfig e s a b) (MonpadEnv e a b -> m IO [ServerUpdate a b])) => HasField "updates'" (ServerConfig e s a b) (MonpadEnv e a b -> m IO [ServerUpdate a b]) where
-    getField ServerConfig{updates} = updates

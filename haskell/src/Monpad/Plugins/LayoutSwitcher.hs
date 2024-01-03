@@ -10,6 +10,7 @@ import Data.Colour.Names (black, white)
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Stream.Infinite (Stream)
 import Data.Stream.Infinite qualified as Stream
+import Streamly.Data.Stream.Prelude qualified as S
 
 import Monpad
 import Monpad.Plugins
@@ -64,7 +65,7 @@ switcher scale buttonData =
      in ServerConfig
             { onNewConnection
             , onUpdate
-            , updates = mempty
+            , updates = const S.nil
             , onStart = mempty
             , onDroppedConnection = mempty
             , onPong = mempty

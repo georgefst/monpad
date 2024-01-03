@@ -20,6 +20,7 @@ import Dhall (FromDhall)
 import GHC.Generics (Generic)
 import Numeric (readHex)
 import Optics.State.Operators ((.=))
+import Streamly.Data.Stream.Prelude qualified as S
 
 import Evdev hiding (Device, newDevice)
 import Evdev.Uinput
@@ -93,7 +94,7 @@ conf = ServerConfig
     , onStart = mempty
     , onDroppedConnection = mempty
     , onPong = mempty
-    , updates = mempty
+    , updates = const S.nil
     }
   where
     lookup' ::

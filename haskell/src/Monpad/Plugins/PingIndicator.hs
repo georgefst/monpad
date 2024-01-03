@@ -10,6 +10,7 @@ import Data.Prizm.Color as Prizm
 import Data.Prizm.Color.CIE as CIE
 import Data.Text qualified as T
 import Data.Time (defaultTimeLocale, formatTime)
+import Streamly.Data.Stream.Prelude qualified as S
 
 import Monpad hiding (min)
 import Monpad.Plugins
@@ -69,7 +70,7 @@ showPing scale =
             { onNewConnection
             , onPong
             , onUpdate
-            , updates = mempty
+            , updates = const S.nil
             , onStart = mempty
             , onDroppedConnection = mempty
             }

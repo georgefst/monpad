@@ -14,8 +14,8 @@ import Dhall (FromDhall)
 import Dhall.Core qualified as D
 import Dhall.Src qualified as D
 import Optics (view)
-import Streamly.Prelude qualified as SP
-import System.FSNotify (Debounce (Debounce), WatchConfig (confDebounce), defaultConfig)
+import Streamly.Data.Stream.Prelude qualified as S
+import Util.Streamly qualified as Stream
 
 import Monpad
 import Monpad.Plugins
@@ -26,21 +26,20 @@ plugin = Plugin . sendLayout @() @()
 
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
-    { updates = \env -> do
+    { updates = \env ->
         let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
-        flip foldMap exprs \(name, expr) -> do
-            imports <- dhallImports expr
-            evss <- for imports \(dir, toList -> files) -> liftIO do
-                let isImport = EventPredicate $ (`elem` files) . T.pack . takeFileName . eventPath
-                write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                snd <$> watchDirectoryWith conf dir (isModification `conj` isImport)
-            flip foldMap evss $ SP.fromSerial
-                . traceStream (const $ write.log "Sending new layout to client")
-                . SP.map (send name)
-                . SP.mapMaybeM (const $ getLayout write expr)
+         in flip (S.parConcatMap id) (S.fromList exprs) \(name, expr) -> Stream.withInit do
+                imports <- dhallImports expr
+                S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
+                    write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
+                    let isImport = \case
+                            Modified p _ _ -> T.pack (takeFileName p) `elem` files
+                            _ -> False
+                    pure $ Stream.groupByTime 0.1 $ S.filter isImport $ watchDir dir
+            $ traceStream (const $ write.log "Sending new layout to client")
+                . fmap (send name)
+                . S.mapMaybeM (const $ getLayout write expr)
     }
-  where
-    conf = defaultConfig {confDebounce = Debounce 0.1}
 
 getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))
 getLayout write e = runMaybeT do

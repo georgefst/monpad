@@ -119,11 +119,11 @@ let col =
         { red = r, green = g, blue = b, alpha = a }
 
 let cols =
-      { red = col 0.85 0.28 0.28 1.0
-      , green = col 0.20 0.72 0.20 1.0
-      , blue = col 0.28 0.28 0.85 1.0
+      { red = col 0.9 0.2 0.2 1.0
+      , green = col 0.2 0.8 0.2 1.0
+      , blue = col 0.2 0.2 0.9 1.0
       , pastelBlue = col 0.81 0.91 0.97 1.0
-      , yellow = col 0.94 0.95 0.33 1.0
+      , yellow = col 1.0 0.8 0.0 1.0
       , black = col 0.0 0.0 0.0 1.0
       , grey = col 0.35 0.35 0.4 1.0
       , white = col 1.0 1.0 1.0 1.0

@@ -23,18 +23,18 @@ plugin = Plugin . sendLayout @() @()
 
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
-    { updates = \env -> flip (S.parConcatMap id) (S.fromList $ toList env.initialLayouts)
-        \(layout, expr) -> Stream.withInit do
-                imports <- dhallImports expr
-                S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
-                    write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                    let isImport = \case
-                            Modified p _ _ -> T.pack (takeFileName p) `elem` files
-                            _ -> False
-                    pure $ Stream.groupByTime 0.1 $ S.filter isImport $ watchDir dir
-            $ traceStream (const $ write.log "Sending new layout to client")
-                . fmap (send layout.name)
-                . S.mapMaybeM (const $ getLayout write expr)
+    { updates = \env -> flip (S.parConcatMap id) (S.fromList $ toList env.initialLayouts) \(layout, expr) ->
+        Stream.withInit do
+            imports <- dhallImports expr
+            S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
+                write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
+                let isImport = \case
+                        Modified p _ _ -> T.pack (takeFileName p) `elem` files
+                        _ -> False
+                pure $ Stream.groupByTime 0.1 $ S.filter isImport $ watchDir dir
+        $ traceStream (const $ write.log "Sending new layout to client")
+            . fmap (send layout.name)
+            . S.mapMaybeM (const $ getLayout write expr)
     }
 
 getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))

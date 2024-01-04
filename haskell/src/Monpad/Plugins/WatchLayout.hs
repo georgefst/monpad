@@ -38,14 +38,14 @@ sendLayout write = mempty
             . S.mapMaybeM (const $ getLayout write expr)
             . S.parConcat id . S.fromList
             . map \(dir, files) -> case os of
-                    "linux" -> watchDir dir & S.filter \case
-                        CloseWrite p _ _ -> T.pack (takeFileName p) `elem` files
-                        _ -> False
-                    -- if we're on an OS without special `CloseWrite` events,
-                    -- we make do with `Modified`, and debounce those which occur within 0.1s of each other
-                    _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
-                        Modified p _ _ -> T.pack (takeFileName p) `elem` files
-                        _ -> False
+                "linux" -> watchDir dir & S.filter \case
+                    CloseWrite p _ _ -> T.pack (takeFileName p) `elem` files
+                    _ -> False
+                -- if we're on an OS without special `CloseWrite` events,
+                -- we make do with `Modified`, and debounce those which occur within 0.1s of each other
+                _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
+                    Modified p _ _ -> T.pack (takeFileName p) `elem` files
+                    _ -> False
     }
 
 getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))

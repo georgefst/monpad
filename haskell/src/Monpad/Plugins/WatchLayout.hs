@@ -1,6 +1,7 @@
 module Monpad.Plugins.WatchLayout (plugin) where
 
 import Data.Foldable
+import Data.Function
 import Data.Traversable
 import Streamly.FSNotify
 import System.FilePath
@@ -23,7 +24,7 @@ plugin = Plugin . sendLayout @() @()
 
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
-    { updates = \env -> flip (S.parConcatMap id) (S.fromList $ toList env.initialLayouts) \(layout, expr) ->
+    { updates = \env -> S.fromList (toList env.initialLayouts) & S.parConcatMap id \(layout, expr) ->
         Stream.withInit do
             imports <- dhallImports expr
             S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do

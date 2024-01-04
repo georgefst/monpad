@@ -5,9 +5,11 @@ import Data.Function
 import Data.Traversable
 import Streamly.FSNotify
 import System.FilePath
+import System.Info
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
 import Dhall (FromDhall)
 import Dhall.Core qualified as D
@@ -29,9 +31,15 @@ sendLayout write = mempty
             imports <- dhallImports expr
             S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
                 write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                pure $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
-                    Modified p _ _ -> T.pack (takeFileName p) `elem` files
-                    _ -> False
+                pure case os of
+                    "linux" -> watchDir dir & S.filter \case
+                        CloseWrite p _ _ -> T.pack (takeFileName p) `elem` files
+                        _ -> False
+                    -- if we're on an OS without special `CloseWrite` events,
+                    -- we make do with `Modified`, and debounce those which occur within 0.1s of each other
+                    _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
+                        Modified p _ _ -> T.pack (takeFileName p) `elem` files
+                        _ -> False
         $ traceStream (const $ write.log "Sending new layout to client")
             . fmap (send layout.name)
             . S.mapMaybeM (const $ getLayout write expr)

@@ -1,8 +1,6 @@
 module Monpad.Plugins.WatchLayout (plugin) where
 
-import Data.Bifunctor
 import Data.Foldable
-import Data.Maybe
 import Data.Traversable
 import Streamly.FSNotify
 import System.FilePath
@@ -13,7 +11,6 @@ import Data.Text qualified as T
 import Dhall (FromDhall)
 import Dhall.Core qualified as D
 import Dhall.Src qualified as D
-import Optics (view)
 import Streamly.Data.Stream.Prelude qualified as S
 import Util.Streamly qualified as Stream
 
@@ -26,9 +23,8 @@ plugin = Plugin . sendLayout @() @()
 
 sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> ServerConfig e s a b
 sendLayout write = mempty
-    { updates = \env ->
-        let exprs = mapMaybe (sequence . first (view #name)) . toList $ view #initialLayouts env
-         in flip (S.parConcatMap id) (S.fromList exprs) \(name, expr) -> Stream.withInit do
+    { updates = \env -> flip (S.parConcatMap id) (S.fromList $ toList env.initialLayouts)
+        \(layout, expr) -> Stream.withInit do
                 imports <- dhallImports expr
                 S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
                     write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
@@ -37,7 +33,7 @@ sendLayout write = mempty
                             _ -> False
                     pure $ Stream.groupByTime 0.1 $ S.filter isImport $ watchDir dir
             $ traceStream (const $ write.log "Sending new layout to client")
-                . fmap (send name)
+                . fmap (send layout.name)
                 . S.mapMaybeM (const $ getLayout write expr)
     }
 

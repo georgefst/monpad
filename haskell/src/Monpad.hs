@@ -313,7 +313,7 @@ newtype Monpad e s a b x = Monpad
     deriving (Semigroup, Monoid) via Ap (Monpad e s a b) x
 data MonpadEnv e a b = MonpadEnv
     { client :: Client
-    , initialLayouts :: Map LayoutID (Layout a b, Maybe DhallExpr)
+    , initialLayouts :: Map LayoutID (Layout a b, DhallExpr)
     , extra :: e
     }
     deriving (Show, Generic)

@@ -25,12 +25,12 @@ import Opts qualified
 import Util
 
 -- | A (non-empty) list of 'Layout's.
-type Layouts a b = NonEmpty (Layout a b, Maybe DhallExpr)
+type Layouts a b = NonEmpty (Layout a b, DhallExpr)
 layoutsFromDhall :: (FromDhall a, FromDhall b) => Logger -> NonEmpty Text -> IO (Maybe (Layouts a b))
 layoutsFromDhall write = runMaybeT . traverse \t -> do
     e <- dhallExprFromText write t
     (l, _) <- dhallToHs write e
-    pure (l, Just e)
+    pure (l, e)
 
 newtype LayoutID = LayoutID {unwrap :: Text}
     deriving newtype (Eq, Ord, Semigroup, Monoid, ToJSON, FromDhall, HasElmType, HasElmDecoder JSON.Value)

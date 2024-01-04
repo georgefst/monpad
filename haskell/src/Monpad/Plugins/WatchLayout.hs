@@ -1,8 +1,8 @@
 module Monpad.Plugins.WatchLayout (plugin) where
 
+import Data.Bifunctor
 import Data.Foldable
 import Data.Function
-import Data.Traversable
 import Streamly.FSNotify
 import System.FilePath
 import System.Info
@@ -16,6 +16,7 @@ import Dhall.Core qualified as D
 import Dhall.Src qualified as D
 import Streamly.Data.Stream.Prelude qualified as S
 import Util.Streamly qualified as Stream
+import Util.Util ((<<$>>))
 
 import Monpad
 import Monpad.Plugins
@@ -28,10 +29,15 @@ sendLayout :: (Monoid e, Monoid s, FromDhall a, FromDhall b) => Logger -> Server
 sendLayout write = mempty
     { updates = \env -> S.fromList (toList env.initialLayouts) & S.parConcatMap id \(layout, expr) ->
         Stream.withInit do
-            imports <- dhallImports expr
-            S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> do
+            imports <- second toList <<$>> dhallImports expr
+            for_ imports \(dir, files) ->
                 write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
-                pure case os of
+            pure imports
+        $ traceStream (const $ write.log "Sending new layout to client")
+            . fmap (send layout.name)
+            . S.mapMaybeM (const $ getLayout write expr)
+            . S.parConcat id . S.fromList
+            . map \(dir, files) -> case os of
                     "linux" -> watchDir dir & S.filter \case
                         CloseWrite p _ _ -> T.pack (takeFileName p) `elem` files
                         _ -> False
@@ -40,9 +46,6 @@ sendLayout write = mempty
                     _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
                         Modified p _ _ -> T.pack (takeFileName p) `elem` files
                         _ -> False
-        $ traceStream (const $ write.log "Sending new layout to client")
-            . fmap (send layout.name)
-            . S.mapMaybeM (const $ getLayout write expr)
     }
 
 getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))

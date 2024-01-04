@@ -29,7 +29,7 @@ sendLayout write = mempty
     { updates = \env -> S.fromList (toList env.initialLayouts) & S.parConcatMap id \(layout, expr) ->
         Stream.withInit do
             imports <- dhallImports expr
-            S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> liftIO do
+            S.parConcat id . S.fromList <$> for imports \(dir, toList -> files) -> do
                 write.log $ "Watching: " <> T.pack dir <> " (" <> T.intercalate ", " files <> ")"
                 pure case os of
                     "linux" -> watchDir dir & S.filter \case

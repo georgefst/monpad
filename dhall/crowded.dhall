@@ -1,4 +1,3 @@
--- SDL_GAMECONTROLLERCONFIG="000000004d5000004d50000000000000,Monpad,platform:Linux,a:b0,b:b1,x:b3,y:b2,back:b6,guide:b8,start:b7,leftshoulder:b4,rightshoulder:b5,dpup:b9,dpdown:b10,dpleft:b11,dpright:b12,leftx:a0,lefty:a1,rightx:a3,righty:a4,lefttrigger:-a2,righttrigger:-a5,"
 let AllOS = ./lib/all-os.dhall
 
 let monpad = ./lib/monpad.dhall AllOS.Axis AllOS.Button

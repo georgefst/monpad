@@ -424,6 +424,7 @@ server ::
     Logger ->
     Int ->
     Encoding ->
+    Maybe (V2 Double) ->
     Port ->
     Text ->
     Text ->
@@ -433,11 +434,11 @@ server ::
     Layouts a b ->
     ServerConfig e s a b ->
     IO ()
-server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
+server write pingFrequency encoding deadzone port windowTitle wsCloseMessage loginOpts nColours assetsDir (uniqueNames (_1 % #name % coerced) -> layouts) conf = do
     clients <- Clients <$> newTVarIO Set.empty <*> newTVarIO Set.empty
     conf.onStart =<< serverAddress port
     run port . serve @(WsApi :<|> HttpApi) mempty $
-        websocketServer write pingFrequency encoding layouts conf clients
+        websocketServer write pingFrequency encoding deadzone layouts conf clients
             :<|> httpServer port windowTitle wsCloseMessage loginOpts nColours assetsDir encoding (first biVoid <$> layouts) (Just clients)
 
 -- | Runs HTTP server only. Expected that an external websocket server will be run from another program.
@@ -491,11 +492,12 @@ websocketServer ::
     Logger ->
     Int ->
     Encoding ->
+    Maybe (V2 Double) ->
     Layouts a b ->
     ServerConfig e s a b ->
     Clients ->
     Server WsApi
-websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu colour pending = liftIO case mu of
+websocketServer write pingFrequency encoding deadzone layouts ServerConfig{..} clients mu colour pending = liftIO case mu of
     Nothing -> rejectAndLog "no username parameter"
     Just clientId -> registerConnection clientId >>= \case
         False -> rejectAndLog $ "username not in the waiting set: " <> clientId.unwrap
@@ -639,8 +641,11 @@ websocketServer write pingFrequency encoding layouts ServerConfig{..} clients mu
                 JSONEncoding -> bimap JSONUpdateDecodeException (fmap Right) . eitherDecode
             sendUpdates conn = liftIO . WS.sendTextData conn . encode
             getUpdate conn =
-                (decode <=< first WebSocketException)
+                (fmap counterDeadzone . decode <=< first WebSocketException)
                     <$> liftIO (try $ WS.receiveData conn)
+            counterDeadzone = deadzone & maybe id \dz -> \case
+                StickMove m v -> StickMove m $ signum v * dz + v * (1 - dz)
+                e -> e
   where
     rejectAndLog err = do
         write.log $ "Rejecting WS connection: " <> err

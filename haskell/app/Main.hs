@@ -68,6 +68,7 @@ data NormalArgs = NormalArgs
     , pingFrequency :: Int
     , displayPing :: Bool
     , scale :: Double
+    , deadzone :: Maybe Double
     }
 
 parser :: Parser Args
@@ -215,6 +216,13 @@ parserNormal = do
             "Scale UI elements \
             \(this only affects those which aren't specified by the layout - e.g. the ping indicator)."
         ]
+    deadzone <- optional $ option auto $ mconcat
+        [ long "deadzone"
+        , metavar "NUMBER"
+        , help
+            "Add a mimimum magnitude (between 0 and 1) to all non-zero joystick events, \
+            \in order to counteract some application's use of a deadzone."
+        ]
     pure NormalArgs{..}
 
 main :: IO ()
@@ -259,7 +267,7 @@ main = do
                 $ maybe id ((:) . Logger.plugin write) verbosity
                 []
             runPlugin :: Layouts a b -> (forall e s. ServerConfig e s a b -> IO ())
-            runPlugin = server write pingFrequency encoding port windowTitle wsCloseMessage loginOpts nColours assetsDir
+            runPlugin = server write pingFrequency encoding (pure <$> deadzone) port windowTitle wsCloseMessage loginOpts nColours assetsDir
         Right (ExtWs wsPort) ->
             serverExtWs
                 (maybe mempty writeQR qrPath)

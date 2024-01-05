@@ -196,10 +196,11 @@ assets :: [FilePath]
 assets = elmJS : map snd copiedAssets
 
 osName :: Text
-osName
-    | isWindows = pack "Windows"
-    | isMac = pack "Mac"
-    | otherwise = pack "Linux"
+osName = pack case os of
+    "mingw32" -> "Windows"
+    "darwin" -> "Mac"
+    "linux" -> "Linux"
+    _ -> "unknown"
 
 {- Util -}
 

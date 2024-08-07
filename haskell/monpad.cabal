@@ -43,7 +43,7 @@ common common
         either ^>= 5.0.1.1,
         extra ^>= 1.7.4,
         filepath ^>= 1.4.2,
-        linear ^>= {1.21, 1.22},
+        linear ^>= {1.21, 1.22, 1.23},
         monad-loops ^>= 0.4.3,
         mtl ^>= {2.2.2, 2.3},
         murmur3 ^>= 1.0.5,
@@ -145,7 +145,7 @@ library
         JuicyPixels ^>= 3.3.5,
         lucid ^>= 2.11,
         monad-control ^>= 1.0.2.3,
-        network ^>= 3.1.1.1,
+        network ^>= {3.1.1.1, 3.2},
         prettyprinter ^>= 1.7.0,
         prizm ^>= 3.0.0,
         qrcode-core ^>= 0.9.4,
@@ -158,8 +158,8 @@ library
         stm ^>= 2.5,
         transformers-base ^>= 0.4.5.2,
         wai ^>= 3.2.2,
-        warp ^>= 3.3.9,
-        websockets ^>= 0.12.7,
+        warp ^>= {3.3.9, 3.4},
+        websockets ^>= {0.12.7, 0.13},
     other-extensions:
         CPP
         UndecidableInstances

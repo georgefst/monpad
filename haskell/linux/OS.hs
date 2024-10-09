@@ -6,6 +6,7 @@ import Control.Monad.State
 import Data.Either
 import Data.Foldable
 import Data.Int
+import Data.Maybe
 import Data.Traversable
 import Optics hiding (Empty)
 
@@ -148,7 +149,7 @@ allAxesAndButs LayoutMeta{..} =
 
 -- >>> monpadId == sum (zipWith (*) (iterate (* 256) 1) $ map (fromEnum @Char) "MP")
 monpadId :: Int
-monpadId = fst $ head $ readHex "504d"
+monpadId = maybe (error "static hex parse failed") fst $ listToMaybe $ readHex "504d"
 
 data AxisInfo = AxisInfo
     { axis :: Axis

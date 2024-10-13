@@ -8,7 +8,7 @@ import Data.Text qualified as T
 import Data.Time (defaultTimeLocale, formatTime)
 import Streamly.Data.Stream.Prelude qualified as S
 
-import Monpad hiding (min)
+import Monpad
 import Monpad.Plugins
 import Util.Prizm
 

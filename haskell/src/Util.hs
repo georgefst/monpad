@@ -40,6 +40,7 @@ import Network.Socket (
     getAddrInfo,
     hostAddressToTuple,
  )
+import Safe (tailMay)
 import Streamly.Data.Stream.Prelude qualified as S
 import System.Directory (getHomeDirectory)
 
@@ -169,4 +170,4 @@ streamHead :: Stream a -> a
 streamHead = (Stream.!! 0)
 
 pairAdjacent :: [a] -> [(a, a)]
-pairAdjacent xs = zip xs $ tail xs
+pairAdjacent xs = zip xs $ fromMaybe (error "can't happen due to laziness") $ tailMay xs

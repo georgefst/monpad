@@ -8,14 +8,14 @@
 {- cabal:
 build-depends:
     base >= 4.16,
-    dhall ^>= {1.41, 1.42},
-    directory ^>= 1.3.7.0,
-    extra ^>= 1.7.4,
-    language-javascript ^>= 0.7.1.0,
-    pretty-simple ^>= 4.1,
-    shake ^>= 0.19.1,
-    shake-dhall ^>= 0.1.0.0,
-    text ^>= {1.2.3, 1.3, 1.4, 1.5, 2.0},
+    dhall >= 1.41,
+    directory >= 1.3.7.0,
+    extra >= 1.7.4,
+    language-javascript >= 0.7.1.0,
+    pretty-simple >= 4.1,
+    shake >= 0.19.1,
+    shake-dhall >= 0.1.0.0,
+    text >= 1.2.3,
 -}
 
 module Main (main) where

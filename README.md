@@ -29,6 +29,15 @@ Run `./build.sh`* to build. The first time you run this, it could take a while, 
 
 \* On Windows, it's `.\build.ps1`. Though you may need `powershell.exe -executionpolicy bypass -file .\build.ps1` due to permissions issues. I don't personally know a thing about Windows permissions, so if anyone has a better idea please let me know.
 
+## Cross-compiling
+
+If we're on x86-64 Linux, we can use `nix develop` to enter a shell from which we can cross-compile:
+```sh
+~/.ghcup/bin/runghc Build.hs --target=x86_64-w64-mingw32
+~/.ghcup/bin/runghc Build.hs --target=x86_64-unknown-linux-musl
+~/.ghcup/bin/runghc Build.hs --target=aarch64-unknown-linux-gnu
+```
+
 # Run
 
 Run `./dist/monpad` to start the server (you can pass the `-h` flag to see all options).

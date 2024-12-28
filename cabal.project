@@ -3,7 +3,7 @@ optional-packages: haskell
 source-repository-package
   type: git
   location: https://github.com/georgefst/georgefst-utils
-  tag: 783987338067f0b275dfb009b29e4f3bec893d5f
+  tag: 9b864991875b348cb05bb7e9a829c3eb15f98a20
 
 --TODO https://github.com/folq/haskell-to-elm/pull/18
 source-repository-package

@@ -23,8 +23,6 @@ module Monpad (
     ElementHash(..),
     Update,
     Update' (..),
-    ClientUpdate,
-    ClientUpdate' (..),
     ServerUpdate (..),
     ResetLayout (..),
     V2 (..),
@@ -33,7 +31,7 @@ module Monpad (
     warn,
     internalElementTag,
     module Layout,
-    module ServerUpdate,
+    module Monpad.Core,
 ) where
 
 import Control.Concurrent
@@ -46,7 +44,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Control
-import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
+import Data.Aeson (eitherDecode, encode)
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor
 import Data.Binary.Get qualified as B
@@ -54,11 +52,8 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Colour (Colour)
 import Data.Foldable
 import Data.Functor
-import Data.Hash.Murmur
 import Data.IORef
-import Data.Int
 import Data.List.Extra (chunksOf)
-import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map, (!?))
 import Data.Map qualified as Map
@@ -69,15 +64,13 @@ import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text.Encoding (decodeUtf8', encodeUtf8)
+import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Traversable
 import Data.Tuple.Extra hiding (first, second)
-import Data.Word
-import Deriving.Aeson (CustomJSON (CustomJSON))
 import GHC.Generics (Generic)
 import Linear (V2 (..))
 import Lucid hiding (for_)
@@ -101,11 +94,10 @@ import Util.Streamly qualified as Stream
 import Util.Util
 
 import Embed
-import Layout hiding (Left, Right)
-import Opts qualified
+import Layout
+import Monpad.Core hiding (Left, Right)
 import Orphans.Colour ()
 import Orphans.Generic ()
-import ServerUpdate
 import Util
 
 data Client = Client
@@ -143,64 +135,6 @@ data Update' a b i
     = ClientUpdate (ClientUpdate' i)
     | ServerUpdate (ServerUpdate a b)
     deriving (Show, Functor, Foldable, Traversable)
-
--- | A message sent by a client.
-type ClientUpdate = ClientUpdate' ElementID
-data ClientUpdate' m
-    = ButtonUp m
-    | ButtonDown m
-    | StickMove m (V2 Double) -- always a vector within the unit circle
-    | SliderMove m Double -- between 0 and 1
-    | InputBool m Bool
-    | InputNumber m Int32
-    | InputText m Text
-    | SubmitInput m -- for number and text inputs
-    | Pong Text
-    -- ^ See 'ServerUpdate.Ping'.
-    deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-    deriving (FromJSON) via CustomJSON Opts.JSON (ClientUpdate' m)
-
-data Encoding
-    = JSONEncoding
-    | BinaryEncoding
-    deriving (Show, Generic)
-    deriving (ToJSON) via CustomJSON Opts.JSON Encoding
-
-newtype ElementHash = ElementHash Word32
-    deriving (Eq, Ord, Show, Generic)
-    deriving (FromJSON) via CustomJSON Opts.JSON ElementHash
-hashElementID :: ElementID -> ElementHash
-hashElementID = ElementHash . fromIntegral . murmur3 0 . encodeUtf8 . (.unwrap)
-
-decodeUpdate :: BSL.ByteString -> Either (BSL.ByteString, B.ByteOffset, String) (ClientUpdate' ElementHash)
-decodeUpdate = second thd3 . B.runGetOrFail do
-    B.getWord8 >>= \case
-        0 -> ButtonUp <$> getElemHash
-        1 -> ButtonDown <$> getElemHash
-        2 -> StickMove <$> getElemHash <*> getVec
-        3 -> SliderMove <$> getElemHash <*> B.getDoublele
-        4 -> InputBool <$> getElemHash <*> getBool
-        5 -> InputNumber <$> getElemHash <*> B.getInt32le
-        6 -> InputText <$> getElemHash <*> getRemainingText
-        7 -> SubmitInput <$> getElemHash
-        8 -> Pong <$> getRemainingText
-        _ -> fail "unknown constructor"
-  where
-    getElemHash = ElementHash <$> B.getWord32le
-    getVec = V2 <$> B.getDoublele <*> B.getDoublele
-    getBool = (/= 0) <$> B.getWord8
-    getRemainingText = either (fail . show) pure . decodeUtf8' . BSL.toStrict =<< B.getRemainingLazyByteString
-
--- | The arguments with which the frontend is initialised.
-data ElmFlags = ElmFlags
-    { layouts :: NonEmpty (Layout () ())
-    , username :: Text
-    , encoding :: Encoding
-    , supportsFullscreen :: Bool
-    , windowTitle :: Text
-    }
-    deriving (Show, Generic)
-    deriving (ToJSON) via CustomJSON Opts.JSON ElmFlags
 
 type UsernameParam = "username"
 type ColourParam = "colour"

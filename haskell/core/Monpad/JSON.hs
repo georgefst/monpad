@@ -1,5 +1,4 @@
--- | Compile-time configuration.
-module Opts where
+module Monpad.JSON where
 
 import Deriving.Aeson (SumObjectWithSingleField)
 

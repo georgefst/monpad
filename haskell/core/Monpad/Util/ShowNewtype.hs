@@ -1,4 +1,4 @@
-module Util.ShowNewtype where
+module Monpad.Util.ShowNewtype where
 
 import Data.Proxy
 import GHC.TypeLits

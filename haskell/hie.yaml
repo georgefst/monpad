@@ -1,7 +1,13 @@
 cradle:
   cabal:
+    - path: ./core
+      component: lib:monpad-core
+
     - path: ./src
       component: lib:monpad
+
+    - path: ./frontend
+      component: exe:frontend
 
     - path: ./app
       component: exe:monpad

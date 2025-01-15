@@ -25,6 +25,12 @@ source-repository-package
   location: https://github.com/georgefst/diagrams-miso
   tag: 4f95ed29fed23885f5d6fc22382fc09c154d14ab
 
+-- https://github.com/tov/memoize/pull/18
+source-repository-package
+  type: git
+  location: https://github.com/blamario/memoize
+  tag: b5071a8a73230ed51940d182d7830644b5aca7d8
+
 allow-newer:
   -- copied from georgefst-utils - unfortunately cabal solver isn't aware it should ignore some components
   okapi:*,

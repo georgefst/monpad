@@ -227,6 +227,7 @@ executable frontend
         ghc-experimental,
         jsaddle,
         jsaddle-wasm,
+        memoize,
         miso,
         mtl,
         random,

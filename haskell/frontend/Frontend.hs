@@ -2,6 +2,7 @@
 {-# LANGUAGE NegativeLiterals #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-ambiguous-fields #-}
@@ -45,6 +46,38 @@ import Numeric (showHex)
 import Optics hiding (Empty, both, element)
 import Optics.State.Operators
 import Util.Util (mwhen, showT)
+
+import Data.Function.Memoize
+
+deriveMemoizable ''V2
+
+-- deriveMemoizable ''Text
+instance Memoizable Text
+instance Memoizable Double
+instance Memoizable (AlphaColour Double)
+deriveMemoizable ''ElementID
+deriveMemoizable ''LayoutID
+deriveMemoizable ''PosY
+deriveMemoizable ''PosX
+deriveMemoizable ''TextShadow
+deriveMemoizable ''TextStyle
+deriveMemoizable ''ViewBox
+deriveMemoizable ''Shape
+deriveMemoizable ''Indicator
+deriveMemoizable ''TextBox
+deriveMemoizable ''Image
+deriveMemoizable ''TextInput
+deriveMemoizable ''NumberInput
+deriveMemoizable ''InputType
+deriveMemoizable ''Input
+deriveMemoizable ''Slider
+deriveMemoizable ''Button
+deriveMemoizable ''Stick
+deriveMemoizable ''Element
+deriveMemoizable ''FullElement
+deriveMemoizable ''Layout
+deriveMemoizable ''Encoding
+deriveMemoizable ''ResetLayout
 
 app :: JSM ()
 app = do
@@ -213,7 +246,7 @@ elementSize = \case
 
 -- viewElement :: (_) => Model -> FullElement () () -> D
 viewElement :: Model -> FullElement () () -> D
-viewElement model element =
+viewElement = memoize2 \model element ->
     if element.hidden
         then mempty
         else

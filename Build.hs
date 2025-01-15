@@ -106,7 +106,7 @@ rules wanted ghc maybeTarget = do
             let args =
                     [ "exe:monpad"
                     , "--flags=" <> flags
-                    , "--builddir=" <> (".." </> hsBuildDir)
+                    , "--builddir=" <> hsBuildDir
                     , "-w" <> ghc
                     ]
             cmd_

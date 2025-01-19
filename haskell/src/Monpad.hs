@@ -269,6 +269,7 @@ mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage = doctypeht
     meta_ [charset_ "utf-8", name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
     style_ (appCSS ())
+    div_ [id_ "elm-root"] $ pure ()
     faviconLink
     script_ [type_ jsScript] (elmJS ())
     flip script_ (jsJS ()) $ toList (makeAttribute "optsFile" . T.pack <$> optsFile) <>

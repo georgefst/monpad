@@ -29,6 +29,7 @@ ws.onopen = _event => {
     // Elm
     elmInitialised = false
     const app = Elm.Main.init({
+        node: document.getElementById('elm-root'),
         flags: {
             username, layouts, encoding, windowTitle,
             supportsFullscreen: document.documentElement.requestFullscreen != null

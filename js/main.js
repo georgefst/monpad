@@ -8,24 +8,28 @@ const optsFilePromise = optsFilePath != undefined
 optsFilePromise.then(fileOpts => {
 
 // TODO not supported - https://github.com/erikd/language-javascript/issues/71
-// const attr = s => fileOpts[s] ?? attrs.getNamedItem(s).value
-const attr = s => fileOpts[s] != undefined ? fileOpts[s] : attrs.getNamedItem(s).value
+// const attr = s => fileOpts[s] ?? attrs.getNamedItem(s)?.value
+const attr = s => fileOpts[s] != undefined ? fileOpts[s] : attrs.getNamedItem(s) ? attrs.getNamedItem(s).value : undefined
 
 const params = new URLSearchParams(window.location.search)
 const username = params.get("username")
 
-const wsAddress = "ws://" + location.hostname + ":" + attr("port") + "?" + params
-const ws = new WebSocket(wsAddress)
-ws.onclose = event => {
-    console.log("WebSocket closed", event)
-    alert(attr("ws-close-message"))
+const port = attr("port")
+const noWs = !port
+const wsAddress = port ? "ws://" + location.hostname + ":" + port + "?" + params : undefined
+const ws = wsAddress ? new WebSocket(wsAddress) : undefined
+if (!noWs) {
+    ws.onclose = event => {
+        console.log("WebSocket closed", event)
+        alert(attr("ws-close-message"))
+    }
 }
 
 const layouts = JSON.parse(attr("layouts"))
 const encoding = JSON.parse(attr("encoding"))
 const windowTitle = attr("window-title");
 
-ws.onopen = _event => {
+const runApp = () => {
     // Elm
     elmInitialised = false
     const app = Elm.Main.init({
@@ -53,10 +57,14 @@ ws.onopen = _event => {
     }
 
     // update messages
-    app.ports.sendUpdatePortJSON.subscribe(message => ws.send(JSON.stringify(message)))
-    app.ports.sendUpdatePortBinary.subscribe(message => ws.send(Uint8Array.from(message)))
-    ws.addEventListener("message", event => {
-        const send = () => app.ports.receiveUpdatePort.send(JSON.parse(event.data))
+    const sendMessage = message => {
+        if (noWs) window.parent.document.dispatchEvent(new CustomEvent('monpad-client-update', {detail: message}))
+        else ws.send(message)
+    }
+    app.ports.sendUpdatePortJSON.subscribe(message => sendMessage(JSON.stringify(message)))
+    app.ports.sendUpdatePortBinary.subscribe(message => sendMessage(Uint8Array.from(message)))
+    const receiveMessage = (message) => {
+        const send = () => app.ports.receiveUpdatePort.send(message)
         if (elmInitialised) {
             send()
         } else {
@@ -64,7 +72,9 @@ ws.onopen = _event => {
                 setTimeout(send, 0)
             })
         }
-    })
+    }
+    if (noWs) window.parent.document.addEventListener("monpad-server-update", e => receiveMessage(e.detail))
+    else ws.addEventListener("message", event => receiveMessage(JSON.parse(event.data)))
 
     // reset form
     app.ports.resetFormPort.subscribe(id => document.getElementById(id).reset())
@@ -82,6 +92,12 @@ ws.onopen = _event => {
 
     // logging
     app.ports.logPort.subscribe(console.log)
+}
+
+if (noWs) {
+    runApp()
+} else {
+    ws.onopen = _event => runApp()
 }
 
 })

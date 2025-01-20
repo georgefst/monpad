@@ -264,7 +264,7 @@ loginHtml nColours err opts = doctypehtml_ do
     nameBoxId = "name"
     imageStyle = maybe [] (pure . style_ . ("background-image: url(" <>) . (<> ")")) opts.imageUrl
 
-mainHtml :: Encoding -> Maybe FilePath -> Layouts () () -> Port -> Text -> Text -> Html ()
+mainHtml :: Encoding -> Maybe FilePath -> Layouts () () -> Maybe Port -> Text -> Text -> Html ()
 mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage = doctypehtml_ do
     meta_ [charset_ "utf-8", name_ "viewport", content_ "initial-scale=1, maximum-scale=1"]
     style_ (commonCSS ())
@@ -276,10 +276,10 @@ mainHtml encoding optsFile layouts wsPort windowTitle wsCloseMessage = doctypeht
         [ type_ jsScript
         , makeAttribute "layouts" . TL.toStrict . encodeToLazyText $ fst <$> layouts
         , makeAttribute "encoding" . TL.toStrict . encodeToLazyText $ encoding
-        , makeAttribute "port" $ showT wsPort
         , makeAttribute "window-title" windowTitle
         , makeAttribute "ws-close-message" wsCloseMessage
         ]
+        <> maybeToList (makeAttribute "port" . showT <$> wsPort)
   where
     jsScript = "text/javascript"
 
@@ -410,7 +410,7 @@ dumpHTML ::
     Maybe FilePath ->
     FilePath ->
     Maybe FilePath ->
-    Port ->
+    Maybe Port ->
     Text ->
     Text ->
     LoginPageOpts ->
@@ -473,7 +473,7 @@ httpServer wsPort windowTitle wsCloseMessage loginOpts nColours assetsDir encodi
         Nothing -> pure $ loginHtml nColours Nothing loginOpts
         -- there is a username query param in the URL - validate it, and add to waiting list
         Just u -> liftIO $ atomically $
-            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding Nothing layouts wsPort windowTitle wsCloseMessage) <$> runExceptT do
+            either (\err -> loginHtml nColours (Just err) loginOpts) (\() -> mainHtml encoding Nothing layouts (Just wsPort) windowTitle wsCloseMessage) <$> runExceptT do
                 when (u == ClientID "") $ throwError EmptyUsername
                 case mclients of
                     Just Clients{waiting, connected} -> do

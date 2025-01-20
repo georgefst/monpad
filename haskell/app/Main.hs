@@ -43,7 +43,7 @@ data Args = Args
     }
 data ModeArgs
     = ExtWs Port
-    | DumpHTML {loginFile :: Maybe FilePath, mainFile :: FilePath, optsFile :: Maybe FilePath}
+    | DumpHTML {loginFile :: Maybe FilePath, mainFile :: FilePath, optsFile :: Maybe FilePath, noWs :: Bool}
 data CommonArgs = CommonArgs
     { port :: Port
     , assetsDir :: Maybe FilePath
@@ -93,6 +93,10 @@ parser = do
             [ long "opts"
             , metavar "FILE"
             , help "A path to a JSON file on the server containing extra configuration."
+            ]
+        noWs <- switch $ mconcat
+            [ long "no-ws"
+            , help "Just send and receive custom DOM events instead of using websockets."
             ]
         pure DumpHTML{..}
 parserCommon :: Parser CommonArgs
@@ -288,7 +292,7 @@ main = do
                 loginFile
                 mainFile
                 optsFile
-                port
+                (if noWs then Nothing else Just port)
                 windowTitle
                 wsCloseMessage
                 loginOpts

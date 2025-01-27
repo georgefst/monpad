@@ -945,9 +945,13 @@ serverUpdate u model =
             )
 
         SwitchLayout id ->
-            case Dict.get id model.layouts of
+            let
+                layouts =
+                    Dict.insert model.layout.layout.name model.layout model.layouts
+            in
+            case Dict.get id layouts of
                 Just l ->
-                    ( { model | layout = l, layouts = Dict.insert model.layout.layout.name model.layout model.layouts }
+                    ( { model | layout = l, layouts = layouts }
                     , Cmd.none
                     )
 

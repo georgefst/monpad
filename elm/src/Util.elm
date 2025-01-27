@@ -10,6 +10,7 @@ import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
+import Round exposing (roundNum)
 import Task exposing (Task)
 
 
@@ -52,11 +53,17 @@ unVec2 v =
     ( getX v, getY v )
 
 
+encodeFloatRounded : Float -> Json.Encode.Value
+encodeFloatRounded x =
+    -- TODO we might not always want 4 digits - make this configurable
+    Json.Encode.float <| roundNum 4 x
+
+
 encodeVec2 : Vec2 -> Json.Encode.Value
 encodeVec2 v =
     case unVec2 v of
         ( x, y ) ->
-            Json.Encode.list identity [ Json.Encode.float x, Json.Encode.float y ]
+            Json.Encode.list identity [ encodeFloatRounded x, encodeFloatRounded y ]
 
 
 decodeVec2 : Json.Decode.Decoder Vec2

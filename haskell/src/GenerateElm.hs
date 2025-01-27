@@ -45,6 +45,7 @@ elm :: FilePath -> IO ()
 elm pathToElm = writeDefs pathToElm $ mconcat
     [ defAndEncoder @ClientUpdate
     , defAndEncoder @(V2 Double)
+    , defAndEncoder @SliderValue
     , defAndDecoder @(ServerUpdate () ())
     , defAndDecoder @(Layout () ())
     , defAndDecoder @(FullElement () ())
@@ -268,3 +269,8 @@ instance HasElmEncoder J.Value (V2 Double) where
     elmEncoder = Expr.Global $ Name.Qualified ["Util"] "encodeVec2"
 instance HasElmType (V2 Double) where
     elmType = Type.Global $ Name.Qualified ["Math", "Vector2"] "Vec2"
+
+instance HasElmEncoder J.Value SliderValue where
+    elmEncoder = Expr.Global $ Name.Qualified ["Util"] "encodeFloatRounded"
+instance HasElmType SliderValue where
+    elmType = elmType @Double

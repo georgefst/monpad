@@ -35,7 +35,7 @@ encode a =
 
         SliderMove b c ->
             Json.Encode.object [ ("SliderMove" , Json.Encode.list identity [ Json.Encode.string b
-            , Json.Encode.float c ]) ]
+            , Util.encodeFloatRounded c ]) ]
 
         InputBool b c ->
             Json.Encode.object [ ("InputBool" , Json.Encode.list identity [ Json.Encode.string b

@@ -26,6 +26,7 @@ module Monpad (
     ClientUpdate,
     ClientUpdate' (..),
     ServerUpdate (..),
+    SliderValue (..),
     ResetLayout (..),
     V2 (..),
     ElmFlags (..),
@@ -150,7 +151,7 @@ data ClientUpdate' m
     = ButtonUp m
     | ButtonDown m
     | StickMove m (V2 Double) -- always a vector within the unit circle
-    | SliderMove m Double -- between 0 and 1
+    | SliderMove m SliderValue -- between 0 and 1
     | InputBool m Bool
     | InputNumber m Int32
     | InputText m Text
@@ -159,6 +160,9 @@ data ClientUpdate' m
     -- ^ See 'ServerUpdate.Ping'.
     deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
     deriving (FromJSON) via CustomJSON Opts.JSON (ClientUpdate' m)
+
+newtype SliderValue = SliderValue Double
+    deriving newtype (Eq, Ord, Show, FromJSON)
 
 data Encoding
     = JSONEncoding
@@ -178,7 +182,7 @@ decodeUpdate = second thd3 . B.runGetOrFail do
         0 -> ButtonUp <$> getElemHash
         1 -> ButtonDown <$> getElemHash
         2 -> StickMove <$> getElemHash <*> getVec
-        3 -> SliderMove <$> getElemHash <*> B.getDoublele
+        3 -> SliderMove <$> getElemHash <*> (SliderValue <$> B.getDoublele)
         4 -> InputBool <$> getElemHash <*> getBool
         5 -> InputNumber <$> getElemHash <*> B.getInt32le
         6 -> InputText <$> getElemHash <*> getRemainingText

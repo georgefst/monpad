@@ -89,7 +89,7 @@ conf = ServerConfig
             lookup' #buttonMap i $ onButton Pressed
         ClientUpdate (StickMove i (V2 x y)) ->
             lookup' #stickMap i \(x', y') -> onAxis x x' <> onAxis y y'
-        ClientUpdate (SliderMove i x) ->
+        ClientUpdate (SliderMove i (SliderValue x)) ->
             lookup' #sliderMap i . onAxis $ x * 2 - 1
         _ -> mempty
     , onStart = mempty

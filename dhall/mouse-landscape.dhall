@@ -1,6 +1,7 @@
 {-
-This rotate function is a bit wonky, but it's hard because Dhall doesn't let us do arbitrary arithmetic.
+The `rotate` function is a bit wonky, but it's hard because Dhall doesn't let us do arbitrary arithmetic.
 In particular, just swapping (and negating) x and y coords only works because the viewbox is centered at (0,0).
+(N.B. This comment can't be moved to the function itself: https://github.com/dhall-lang/dhall-haskell/issues/145.)
 -}
 let AllOS = ./lib/all-os.dhall
 

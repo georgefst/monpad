@@ -96,7 +96,7 @@ rules wanted ghc maybeTarget = do
     forM_ copiedAssets \(file, copy) ->
         copy %> \_ -> do
             putInfo $ "Copying " <> file <> " to " <> copy
-            bool copyFileChanged minifyFileJS (takeExtension file == ".js") file copy
+            bool copyFileChanged (minifyFileJS False) (takeExtension file == ".js") file copy
 
     let haskell path flags = do
             need assets
@@ -133,7 +133,7 @@ rules wanted ghc maybeTarget = do
             needDirExcept elmBuildDir elmDir
             out <- liftIO $ (</> "monpad-elm.js") <$> Dir.getTemporaryDirectory
             cmd_ (Cwd "elm") "elm make src/Main.elm --output" out (mwhen optimise "--optimize")
-            bool (liftIO .: Dir.copyFile) minifyFileJS optimise out elmJS
+            bool (liftIO .: Dir.copyFile) (minifyFileJS True) optimise out elmJS
     elmJS %> \_ -> elm True
 
     distDir </> "dhall" </> "*" %> \out -> do
@@ -213,9 +213,9 @@ needDirExcept :: FilePath -> FilePath -> Action ()
 needDirExcept except dir =
     need . filter (not . (isPrefixOf `on` splitDirectories) except) =<< getDirectoryFiles "" [dir <//> "*"]
 
-minifyFileJS :: FilePath -> FilePath -> Action ()
-minifyFileJS in_ out = do
-    need [in_]
+minifyFileJS :: Bool -> FilePath -> FilePath -> Action ()
+minifyFileJS skipNeed in_ out = do
+    unless skipNeed $ need [in_]
     contents <- liftIO $ readFile in_
     cmd_ "closure-compiler" in_ "--js_output_file" out `actionCatch` \(e :: IOError) -> do
         putInfo $ "Failed to run external minifier, trying Haskell version: " <> show e

@@ -1,5 +1,6 @@
 module Monpad.Plugins.WatchLayout (plugin) where
 
+import Control.Monad
 import Data.Bifunctor
 import Data.Foldable
 import Data.Function
@@ -35,17 +36,17 @@ sendLayout write = mempty
             pure imports
         $ traceStream (const $ write.log "Sending new layout to client")
             . fmap (send layout.name)
-            . S.mapMaybeM (const $ getLayout write expr)
+            . S.mapMaybeM (\() -> getLayout write expr)
             . S.parConcat id . S.fromList
             . map \(dir, files) -> case os of
-                "linux" -> watchDir dir & S.filter \case
-                    CloseWrite p _ _ -> T.pack (takeFileName p) `elem` files
-                    _ -> False
+                "linux" -> watchDir dir & S.mapMaybe \case
+                    CloseWrite p _ _ -> guard $ T.pack (takeFileName p) `elem` files
+                    _ -> Nothing
                 -- if we're on an OS without special `CloseWrite` events,
                 -- we make do with `Modified`, and debounce those which occur within 0.1s of each other
-                _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.filter \case
-                    Modified p _ _ -> T.pack (takeFileName p) `elem` files
-                    _ -> False
+                _ -> fmap NE.head $ Stream.groupByTime 0.1 $ watchDir dir & S.mapMaybe \case
+                    Modified p _ _ -> guard $ T.pack (takeFileName p) `elem` files
+                    _ -> Nothing
     }
 
 getLayout :: (FromDhall a, FromDhall b) => Logger -> D.Expr D.Src D.Import -> IO (Maybe (Layout a b))

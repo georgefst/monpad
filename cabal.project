@@ -18,23 +18,9 @@ source-repository-package
   location: https://github.com/haskell-fswatch/hfsnotify
   tag: 011d8234b78bbfa5d3717fb3af435c4ba21f97fd
 
-constraints:
-  --TODO https://github.com/haskell-fswatch/hinotify/pull/39#issuecomment-2677168495
-  hinotify >= 0.4.2,
-
 allow-newer:
   -- copied from georgefst-utils - unfortunately cabal solver isn't aware it should ignore some components
   okapi:*,
   -- deprecated library - can be removed once `evdev` stops depending on it
   filepath-bytestring:base,
 
-if impl(ghc >= 9.10)
-  -- 9.10 supported but unreleased:
-  -- https://github.com/composewell/streamly/pull/2749
-  -- https://github.com/composewell/streamly/issues/2748
-  source-repository-package
-    type: git
-    location: https://github.com/georgefst/streamly
-    tag: b2047c3b89537f93a686ddd8cf1879ffb81a8f9a
-    subdir: . core
-  allow-newer: *:streamly, *:streamly-core

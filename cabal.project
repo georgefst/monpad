@@ -23,4 +23,3 @@ allow-newer:
   okapi:*,
   -- deprecated library - can be removed once `evdev` stops depending on it
   filepath-bytestring:base,
-

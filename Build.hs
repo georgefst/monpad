@@ -1,5 +1,5 @@
 #!/usr/bin/env cabal
-{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE GHC2024 #-}
 {-# LANGUAGE BlockArguments #-}
 {-# OPTIONS_GHC -Wall #-}
 

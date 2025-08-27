@@ -2,8 +2,6 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE BlockArguments #-}
 {-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS_GHC -Wno-type-defaults #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
 
 {- cabal:
 build-depends:
@@ -24,9 +22,7 @@ build-depends:
 
 module Main (main) where
 
-import Control.Exception.Extra
 import Control.Monad
-import Control.Monad.Extra
 import Data.Bool
 import Data.Either.Extra
 import Data.Foldable
@@ -34,7 +30,6 @@ import Data.Function
 import Data.List
 import Data.Monoid.Extra
 import System.Console.GetOpt
-import System.IO.Error
 import System.Info.Extra
 
 import Data.Text (Text, pack)
@@ -52,7 +47,6 @@ import System.Directory qualified as Dir
 import Development.Shake
 import Development.Shake.Dhall
 import Development.Shake.FilePath
-import Text.Pretty.Simple
 
 data Args
     = Target String

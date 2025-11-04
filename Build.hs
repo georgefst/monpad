@@ -15,10 +15,6 @@ build-depends:
     shake-dhall >= 0.1.0.0,
     text >= 1.2.3,
 -}
-{- project:
-    allow-newer: dhall:template-haskell
-    constraints: time<1.14
--}
 
 module Main (main) where
 

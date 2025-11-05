@@ -21,6 +21,11 @@
                 shell.tools = { cabal = { }; };
                 configureArgs = "-frelease";
                 inherit crossPlatforms;
+                # TODO apply this only on Windows targets somehow?
+                # unclear how to do that here, or correct syntax for putting `configureFlags` in `cabal.project`
+                # if possible we should just avoid `basement` due to abandonment and memory safety issues
+                # we only rely on it due to TLS stuff in Dhall
+                modules = [{ packages.basement.configureFlags = [ "--gcc-option=-Wno-error=int-conversion" ]; }];
               };
           })
           (final: prev: prev.lib.optionalAttrs prev.stdenv.hostPlatform.isMusl {

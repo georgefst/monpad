@@ -13,21 +13,16 @@
           haskellNix.overlay
           (final: prev: {
             myHaskellProject =
-              final.haskell-nix.cabalProject' ({
-                src = ./haskell;
-                compiler-nix-name = "ghc924";
+              final.haskell-nix.hix.project {
+                src = ./.;
+                compiler-nix-name = "ghc9122";
                 shell.tools = { cabal = { }; };
-                shell = { inherit crossPlatforms; };
                 configureArgs = "-frelease";
-              });
-          })
-
-          haskellNix.overlay
-          (final: prev: prev.lib.optionalAttrs prev.stdenv.hostPlatform.isMusl {
-            libevdev = prev.libevdev.overrideAttrs (_: { dontDisableStatic = true; });
+                inherit crossPlatforms;
+              };
           })
         ];
         pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };
       in
-      pkgs.myHaskellProject.flake { inherit crossPlatforms; });
+      pkgs.myHaskellProject.flake { });
 }

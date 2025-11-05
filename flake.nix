@@ -16,6 +16,7 @@
               final.haskell-nix.hix.project {
                 src = ./.;
                 compiler-nix-name = "ghc9122";
+                evalSystem = "x86_64-linux";
                 shell.tools = { cabal = { }; };
                 configureArgs = "-frelease";
                 inherit crossPlatforms;

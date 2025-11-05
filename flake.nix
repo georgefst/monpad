@@ -17,6 +17,7 @@
                 src = ./.;
                 compiler-nix-name = "ghc9122";
                 evalSystem = "x86_64-linux";
+                index-state = "2025-11-03T00:00:00Z";
                 shell.tools = { cabal = { }; };
                 configureArgs = "-frelease";
                 inherit crossPlatforms;

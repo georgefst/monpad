@@ -100,10 +100,10 @@ let slider =
         }
 
 in    { elements =
-        [ button +160 +140 ButtonL.BtnY "Blue" monpad.cols.blue
+        [ button +160 +140 ButtonL.BtnX "Blue" monpad.cols.blue
         , button +360 -60 ButtonL.BtnA "Green" monpad.cols.green
         , button +560 +140 ButtonL.BtnB "Red" monpad.cols.red
-        , button +360 +340 ButtonL.BtnX "Yellow" monpad.cols.yellow
+        , button +360 +340 ButtonL.BtnY "Yellow" monpad.cols.yellow
         , button -560 +140 ButtonL.BtnDpadLeft "Left" monpad.cols.grey
         , button -360 -60 ButtonL.BtnDpadDown "Down" monpad.cols.grey
         , button -160 +140 ButtonL.BtnDpadRight "Right" monpad.cols.grey

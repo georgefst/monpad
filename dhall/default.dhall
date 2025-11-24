@@ -35,10 +35,10 @@ let button =
         }
 
 in    { elements =
-        [ button +250 +0 ButtonL.BtnY {=} "Blue" monpad.cols.blue
+        [ button +250 +0 ButtonL.BtnX {=} "Blue" monpad.cols.blue
         , button +500 -250 ButtonL.BtnA {=} "Green" monpad.cols.green
         , button +750 +0 ButtonL.BtnB {=} "Red" monpad.cols.red
-        , button +500 +250 ButtonL.BtnX {=} "Yellow" monpad.cols.yellow
+        , button +500 +250 ButtonL.BtnY {=} "Yellow" monpad.cols.yellow
         , monpad.Elem::{
           , element =
               monpad.Element.Button

@@ -28,7 +28,7 @@ let button =
             monpad.Element.Button
               { buttonData = { linux, windows, mac = {=} }
               , colour
-              , shape = monpad.Shape.Circle 120
+              , shape = monpad.Shape.Circle 135
               }
         , location = { x, y }
         , name

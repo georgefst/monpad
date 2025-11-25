@@ -36,8 +36,8 @@ let button =
 
 let layoutAll =
         { elements =
-          [ button -300 +1650 ButtonL.BtnLeft {=} "Blue" monpad.cols.blue
-          , button +300 +1650 ButtonL.BtnRight {=} "Red" monpad.cols.red
+          [ button -300 +1650 ButtonL.BtnLeft {=} "Left" monpad.cols.blue
+          , button +300 +1650 ButtonL.BtnRight {=} "Right" monpad.cols.red
           , monpad.Elem::{
             , element =
                 monpad.simpleSlider

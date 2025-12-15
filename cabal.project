@@ -12,6 +12,11 @@ source-repository-package
   tag: fe615b57548c74767586244c27e0e2dfbd52f861
 allow-newer: haskell-to-elm:text
 
+--TODO this just avoids a transient Haskell.Nix issue, where it tries to apply a redundant patch to 0.2.3.1
+if os(windows)
+  constraints:
+    streaming-commons==0.2.3.0
+
 allow-newer:
   -- deprecated library - can be removed once `evdev` stops depending on it
   filepath-bytestring:base,

@@ -8,7 +8,7 @@
   outputs = { self, nixpkgs, flake-utils, haskellNix }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        crossPlatforms = p: [ p.mingwW64 p.musl64 ];
+        crossPlatforms = p: [ p.musl64 ];
         overlays = [
           haskellNix.overlay
           (final: prev: {

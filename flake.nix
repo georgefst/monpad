@@ -2,7 +2,7 @@
   description = "monpad";
   inputs = {
     haskellNix.url = "github:input-output-hk/haskell.nix";
-    nixpkgs.follows = "haskellNix/nixpkgs-unstable";
+    nixpkgs.follows = "haskellNix/nixpkgs-2511";
     flake-utils.url = "github:numtide/flake-utils";
   };
   outputs = { self, nixpkgs, flake-utils, haskellNix }:
@@ -17,7 +17,6 @@
                 src = ./.;
                 compiler-nix-name = "ghc9122";
                 evalSystem = "x86_64-linux";
-                index-state = "2025-11-03T00:00:00Z";
                 shell.tools = { cabal = "latest"; haskell-language-server = "latest"; };
                 configureArgs = "-frelease";
                 # closurecompiler

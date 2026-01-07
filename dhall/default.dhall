@@ -28,17 +28,17 @@ let button =
             monpad.Element.Button
               { buttonData = { linux, windows, mac = {=} }
               , colour
-              , shape = monpad.Shape.Circle 135
+              , shape = monpad.Shape.Rectangle { x = 340, y = 340 }
               }
         , location = { x, y }
         , name
         }
 
 in    { elements =
-        [ button +250 +0 ButtonL.BtnX {=} "Blue" monpad.cols.blue
-        , button +500 -250 ButtonL.BtnA {=} "Green" monpad.cols.green
-        , button +750 +0 ButtonL.BtnB {=} "Red" monpad.cols.red
-        , button +500 +250 ButtonL.BtnY {=} "Yellow" monpad.cols.yellow
+        [ button +330 +170 ButtonL.BtnX {=} "Blue" monpad.cols.blue
+        , button +330 -170 ButtonL.BtnA {=} "Green" monpad.cols.green
+        , button +670 -170 ButtonL.BtnB {=} "Red" monpad.cols.red
+        , button +670 +170 ButtonL.BtnY {=} "Yellow" monpad.cols.yellow
         , monpad.Elem::{
           , element =
               monpad.Element.Button

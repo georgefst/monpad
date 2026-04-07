@@ -5,3 +5,4 @@ elm-stuff*/
 .ghc.environment.*
 cabal.project.local*
 result
+hie.yaml

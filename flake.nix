@@ -8,7 +8,7 @@
   outputs = { self, nixpkgs, flake-utils, haskellNix }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        crossPlatforms = p: [ p.musl64 p.wasi32 ];
+        crossPlatforms = p: [ p.musl64 ];
         overlays = [
           haskellNix.overlay
           (final: prev: {
@@ -69,7 +69,7 @@
                 # closurecompiler
                 # elmPackages.elm
                 # dhall
-                inherit crossPlatforms;
+                # inherit crossPlatforms;
                 # TODO apply this only on Windows targets somehow?
                 # unclear how to do that here, or correct syntax for putting `configureFlags` in `cabal.project`
                 # if possible we should just avoid `basement` due to abandonment and memory safety issues

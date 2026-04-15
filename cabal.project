@@ -4,13 +4,20 @@ source-repository-package
   type: git
   location: https://github.com/georgefst/georgefst-utils
   tag: 8e9bb485dab5a9a1de08555dd86431d8992a3076
+  --sha256: 1m92p4q37bfpl6lhpjk4zxhsg6xiwhfy3kdfwd7nxpv4y3jfy8c2
 
 --TODO https://github.com/folq/haskell-to-elm/pull/18
 source-repository-package
   type: git
   location: https://github.com/georgefst/haskell-to-elm
   tag: fe615b57548c74767586244c27e0e2dfbd52f861
+  --sha256: 13454dn0g5z7v5w615xcr9zyjvlzpva7kfr0f4nx9b6fny0i8ka7
 allow-newer: haskell-to-elm:text
+
+--TODO this just avoids a transient Haskell.Nix issue, where it tries to apply a redundant patch to 0.2.3.1
+if os(windows)
+  constraints:
+    streaming-commons==0.2.3.0
 
 allow-newer:
   -- deprecated library - can be removed once `evdev` stops depending on it

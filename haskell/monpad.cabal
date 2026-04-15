@@ -138,7 +138,6 @@ library
         fsnotify >= 0.4,
         generic-data >= 0.9.2,
         generic-functor >= 0.2,
-        generics-sop >= 0.5.0,
         haskell-to-elm >= 0.3.1,
         hostname >= 1.0,
         http-types >= 0.12.3,
